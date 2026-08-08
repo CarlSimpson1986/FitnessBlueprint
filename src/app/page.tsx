@@ -86,12 +86,12 @@ export default async function HomePage() {
           >
             View timetable
           </Link>
-          {profile.role === "owner" && (
+          {(profile.role === "owner" || profile.role === "coach") && (
             <Link
-              href="/owner/members"
+              href="/admin"
               className="text-xs font-mono uppercase tracking-wide text-blueprint-ink border border-blueprint-line rounded px-4 py-3 hover:border-blueprint-accent transition"
             >
-              Manage members
+              Admin
             </Link>
           )}
         </div>

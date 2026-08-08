@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireOwner } from "@/lib/auth";
 import { AssignMembershipForm } from "./AssignMembershipForm";
 import { CreateMemberForm } from "./CreateMemberForm";
@@ -26,6 +27,12 @@ export default async function OwnerMembersPage() {
   return (
     <main className="blueprint-grid min-h-screen px-6 py-16">
       <div className="max-w-3xl mx-auto">
+        <Link
+          href="/admin"
+          className="inline-block font-mono text-xs tracking-wide text-blueprint-muted hover:text-blueprint-accent transition mb-6"
+        >
+          ← Admin
+        </Link>
         <p className="font-mono text-xs tracking-[0.2em] text-blueprint-accent uppercase mb-3">
           Owner
         </p>

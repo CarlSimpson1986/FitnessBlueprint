@@ -41,3 +41,14 @@ export async function requireOwner() {
 
   return result;
 }
+
+/** Same as requireProfile, but also redirects home unless the caller is a coach or the owner. */
+export async function requireCoachOrOwner() {
+  const result = await requireProfile();
+
+  if (result.profile.role !== "coach" && result.profile.role !== "owner") {
+    redirect("/");
+  }
+
+  return result;
+}
