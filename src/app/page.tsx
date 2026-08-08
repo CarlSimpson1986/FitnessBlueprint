@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
 import { formatSessionDate, formatSessionTime } from "@/lib/format";
+import { BookingButton } from "./sessions/BookingButton";
 
 export default async function HomePage() {
   const { supabase, user, profile } = await requireProfile();
@@ -33,6 +34,7 @@ export default async function HomePage() {
     : { data: [] };
 
   const templateById = new Map((templates ?? []).map((t) => [t.id, t]));
+  const bookingIdBySession = new Map((myBookingRows ?? []).map((b) => [b.session_id, b.id]));
   const firstName = profile.full_name.split(" ")[0];
 
   return (
@@ -41,29 +43,36 @@ export default async function HomePage() {
         <p className="font-mono text-xs tracking-[0.2em] text-blueprint-accent uppercase mb-3">
           Fitness Blueprint
         </p>
-        <h1 className="font-display text-3xl text-blueprint-ink mb-2">Hey {firstName}</h1>
-        <p className="text-blueprint-muted mb-10 text-sm leading-relaxed">
-          {sessionRows.length > 0
-            ? "Here's what you've got booked."
-            : "Nothing booked yet — check the timetable to grab a session."}
-        </p>
+        <h1 className="font-display text-3xl text-blueprint-ink mb-10">Hey {firstName}</h1>
 
-        {sessionRows.length > 0 && (
+        <h2 className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-3">
+          Your upcoming bookings
+        </h2>
+
+        {sessionRows.length === 0 ? (
+          <p className="text-blueprint-muted text-sm mb-10">
+            Nothing booked yet — check the timetable to grab a session.
+          </p>
+        ) : (
           <ul className="space-y-3 mb-10">
             {sessionRows.map((session) => {
               const template = templateById.get(session.template_id);
+              const bookingId = bookingIdBySession.get(session.id) ?? null;
               return (
                 <li
                   key={session.id}
-                  className="border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-4 py-3"
+                  className="flex items-center justify-between gap-4 border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-4 py-3"
                 >
-                  <p className="text-blueprint-ink font-medium">
-                    {formatSessionDate(session.session_date)} ·{" "}
-                    {formatSessionTime(session.start_time)}
-                  </p>
-                  <p className="text-xs text-blueprint-muted mt-1">
-                    {template?.name ?? "Session"}
-                  </p>
+                  <div>
+                    <p className="text-blueprint-ink font-medium">
+                      {formatSessionDate(session.session_date)} ·{" "}
+                      {formatSessionTime(session.start_time)}
+                    </p>
+                    <p className="text-xs text-blueprint-muted mt-1">
+                      {template?.name ?? "Session"}
+                    </p>
+                  </div>
+                  <BookingButton sessionId={session.id} bookingId={bookingId} isFull={false} />
                 </li>
               );
             })}
