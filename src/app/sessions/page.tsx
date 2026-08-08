@@ -1,38 +1,9 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { requireProfile } from "@/lib/auth";
+import { formatSessionDate, formatSessionTime } from "@/lib/format";
 import { BookingButton } from "./BookingButton";
 
-function formatDate(dateStr: string) {
-  return new Date(`${dateStr}T00:00:00`).toLocaleDateString("en-GB", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-}
-
-function formatTime(timeStr: string) {
-  return timeStr.slice(0, 5);
-}
-
 export default async function SessionsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (!profile) {
-    redirect("/onboarding");
-  }
+  const { supabase, user } = await requireProfile();
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -90,7 +61,7 @@ export default async function SessionsPage() {
           {Array.from(sessionsByDate.entries()).map(([date, daySessions]) => (
             <section key={date}>
               <h2 className="font-mono text-xs tracking-[0.15em] text-blueprint-muted uppercase mb-3">
-                {formatDate(date)}
+                {formatSessionDate(date)}
               </h2>
               <ul className="space-y-3">
                 {daySessions.map((session) => {
@@ -107,7 +78,7 @@ export default async function SessionsPage() {
                     >
                       <div>
                         <p className="text-blueprint-ink font-medium">
-                          {formatTime(session.start_time)} — {template?.name ?? "Session"}
+                          {formatSessionTime(session.start_time)} — {template?.name ?? "Session"}
                         </p>
                         <p className="text-xs text-blueprint-muted mt-1">
                           {coach ? coach.full_name : "Coach TBC"} · {taken}/{session.capacity}{" "}

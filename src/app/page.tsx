@@ -1,76 +1,91 @@
-const SCAFFOLDED = [
-  "Next.js + TypeScript strict + Tailwind",
-  "Supabase client/server/admin split",
-  "Database schema — members, sessions, bookings, credits, waitlist",
-  "Row Level Security on every table",
-  "Coach Ted schema — RAG + self-learning Q&A cache",
-  "Security headers (CSP, HSTS, frame protection) via middleware",
-  "PWA manifest + offline-capable service worker",
-  "Claude Code hooks — blocks secrets exposure & force-push to main",
-  "Auth — magic link sign-in + onboarding",
-  "Member booking flow — timetable, book/cancel, capacity-safe",
-];
+import Link from "next/link";
+import { requireProfile } from "@/lib/auth";
+import { formatSessionDate, formatSessionTime } from "@/lib/format";
 
-const NOT_YET_BUILT = [
-  "Credit-pack deduction on booking (needs checkout first)",
-  "Waitlist when a session is full",
-  "Coach live session cockpit",
-  "Owner dashboard",
-  "Stripe / GoCardless checkout",
-  "Coach Ted chat UI",
-];
+export default async function HomePage() {
+  const { supabase, user, profile } = await requireProfile();
 
-export default function Home() {
+  const today = new Date().toISOString().slice(0, 10);
+
+  const { data: myBookingRows } = await supabase
+    .from("bookings")
+    .select("id, session_id")
+    .eq("member_id", user.id)
+    .eq("status", "booked");
+
+  const bookedSessionIds = (myBookingRows ?? []).map((b) => b.session_id);
+
+  const { data: sessions } = bookedSessionIds.length
+    ? await supabase
+        .from("sessions")
+        .select("*")
+        .in("id", bookedSessionIds)
+        .gte("session_date", today)
+        .order("session_date")
+        .order("start_time")
+    : { data: [] };
+
+  const sessionRows = sessions ?? [];
+  const templateIds = Array.from(new Set(sessionRows.map((s) => s.template_id)));
+
+  const { data: templates } = templateIds.length
+    ? await supabase.from("session_templates").select("id, name").in("id", templateIds)
+    : { data: [] };
+
+  const templateById = new Map((templates ?? []).map((t) => [t.id, t]));
+  const firstName = profile.full_name.split(" ")[0];
+
   return (
-    <main className="blueprint-grid min-h-screen flex items-center justify-center px-6 py-16">
-      <div className="max-w-xl w-full">
+    <main className="blueprint-grid min-h-screen px-6 py-16">
+      <div className="max-w-2xl mx-auto">
         <p className="font-mono text-xs tracking-[0.2em] text-blueprint-accent uppercase mb-3">
-          Fitness Blueprint — Build Status
+          Fitness Blueprint
         </p>
-        <h1 className="font-display text-3xl sm:text-4xl mb-2 text-blueprint-ink">
-          Scaffold is live.
-        </h1>
-        <p className="text-blueprint-muted mb-10 leading-relaxed">
-          This page confirms the app boots, Tailwind and the design tokens
-          are wired up, and the service worker registers. Everything below
-          is what Claude Code has to build next.
+        <h1 className="font-display text-3xl text-blueprint-ink mb-2">Hey {firstName}</h1>
+        <p className="text-blueprint-muted mb-10 text-sm leading-relaxed">
+          {sessionRows.length > 0
+            ? "Here's what you've got booked."
+            : "Nothing booked yet — check the timetable to grab a session."}
         </p>
 
-        <section className="mb-8">
-          <h2 className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-3">
-            ✓ Scaffolded
-          </h2>
-          <ul className="space-y-2">
-            {SCAFFOLDED.map((item) => (
-              <li
-                key={item}
-                className="flex gap-3 text-sm text-blueprint-ink/90 border-l-2 border-blueprint-line pl-3 py-0.5"
-              >
-                {item}
-              </li>
-            ))}
+        {sessionRows.length > 0 && (
+          <ul className="space-y-3 mb-10">
+            {sessionRows.map((session) => {
+              const template = templateById.get(session.template_id);
+              return (
+                <li
+                  key={session.id}
+                  className="border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-4 py-3"
+                >
+                  <p className="text-blueprint-ink font-medium">
+                    {formatSessionDate(session.session_date)} ·{" "}
+                    {formatSessionTime(session.start_time)}
+                  </p>
+                  <p className="text-xs text-blueprint-muted mt-1">
+                    {template?.name ?? "Session"}
+                  </p>
+                </li>
+              );
+            })}
           </ul>
-        </section>
+        )}
 
-        <section>
-          <h2 className="font-mono text-xs tracking-[0.15em] text-blueprint-muted uppercase mb-3">
-            Not built yet
-          </h2>
-          <ul className="space-y-2">
-            {NOT_YET_BUILT.map((item) => (
-              <li
-                key={item}
-                className="flex gap-3 text-sm text-blueprint-muted border-l-2 border-blueprint-muted/30 pl-3 py-0.5"
-              >
-                {item}
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <p className="mt-12 text-xs text-blueprint-muted font-mono">
-          See CLAUDE.md and SECURITY.md before extending this.
-        </p>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href="/sessions"
+            className="text-xs font-mono uppercase tracking-wide text-blueprint-bg bg-blueprint-accent rounded px-4 py-3 hover:opacity-90 transition"
+          >
+            View timetable
+          </Link>
+          {profile.role === "owner" && (
+            <Link
+              href="/owner/members"
+              className="text-xs font-mono uppercase tracking-wide text-blueprint-ink border border-blueprint-line rounded px-4 py-3 hover:border-blueprint-accent transition"
+            >
+              Manage members
+            </Link>
+          )}
+        </div>
       </div>
     </main>
   );
