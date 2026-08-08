@@ -11,11 +11,15 @@ export function ResetPasswordButton({ memberId }: { memberId: string }) {
   function handleClick() {
     setError(null);
     startTransition(async () => {
-      const result = await resetMemberPassword(memberId);
-      if (result.error) {
-        setError(result.error);
-      } else if (result.password) {
-        setPassword(result.password);
+      try {
+        const result = await resetMemberPassword(memberId);
+        if (result.error) {
+          setError(result.error);
+        } else if (result.password) {
+          setPassword(result.password);
+        }
+      } catch {
+        setError("Something went wrong — please try again.");
       }
     });
   }

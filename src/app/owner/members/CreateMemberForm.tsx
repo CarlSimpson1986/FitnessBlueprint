@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useTransition, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { createMemberAccount } from "./actions";
 
 export function CreateMemberForm() {
+  const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -16,13 +18,26 @@ export function CreateMemberForm() {
     setGeneratedPassword(null);
 
     startTransition(async () => {
-      const result = await createMemberAccount(fullName, email);
-      if (result.error) {
-        setError(result.error);
-      } else if (result.password) {
-        setGeneratedPassword(result.password);
-        setFullName("");
-        setEmail("");
+      let succeeded = false;
+
+      try {
+        const result = await createMemberAccount(fullName, email);
+        if (result.error) {
+          setError(result.error);
+        } else if (result.password) {
+          setGeneratedPassword(result.password);
+          setFullName("");
+          setEmail("");
+          succeeded = true;
+        }
+      } catch {
+        setError("Something went wrong — please try again.");
+      }
+
+      if (succeeded) {
+        startTransition(() => {
+          router.refresh();
+        });
       }
     });
   }

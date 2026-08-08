@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { bookSession, cancelBooking } from "./actions";
 
 export function BookingButton({
@@ -12,18 +13,38 @@ export function BookingButton({
   bookingId: string | null;
   isFull: boolean;
 }) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   function handleClick() {
     setError(null);
     startTransition(async () => {
-      const result = bookingId
-        ? await cancelBooking(bookingId)
-        : await bookSession(sessionId);
+      let succeeded = false;
 
-      if (result.error) {
-        setError(result.error);
+      try {
+        const result = bookingId
+          ? await cancelBooking(bookingId)
+          : await bookSession(sessionId);
+
+        if (result.error) {
+          setError(result.error);
+        } else {
+          succeeded = true;
+        }
+      } catch {
+        setError("Something went wrong — please try again.");
+      }
+
+      // router.refresh() runs its own internal transition — starting it
+      // as a fresh transition here (rather than nesting the call inside
+      // the one above) is what keeps isPending true until the refreshed
+      // data actually lands, instead of resolving early and only
+      // visibly updating once some other transition happens to flush it.
+      if (succeeded) {
+        startTransition(() => {
+          router.refresh();
+        });
       }
     });
   }

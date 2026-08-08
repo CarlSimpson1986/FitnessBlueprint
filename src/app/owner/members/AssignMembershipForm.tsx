@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { assignMembership } from "./actions";
 
 type Plan = {
@@ -17,6 +18,7 @@ export function AssignMembershipForm({
   memberId: string;
   plans: Plan[];
 }) {
+  const router = useRouter();
   const [planId, setPlanId] = useState(plans[0]?.id ?? "");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -28,11 +30,24 @@ export function AssignMembershipForm({
     setSuccess(false);
 
     startTransition(async () => {
-      const result = await assignMembership(memberId, planId);
-      if (result.error) {
-        setError(result.error);
-      } else {
-        setSuccess(true);
+      let succeeded = false;
+
+      try {
+        const result = await assignMembership(memberId, planId);
+        if (result.error) {
+          setError(result.error);
+        } else {
+          setSuccess(true);
+          succeeded = true;
+        }
+      } catch {
+        setError("Something went wrong — please try again.");
+      }
+
+      if (succeeded) {
+        startTransition(() => {
+          router.refresh();
+        });
       }
     });
   }

@@ -1,9 +1,14 @@
 "use server";
 
 import { randomBytes } from "crypto";
-import { revalidatePath } from "next/cache";
 import { requireOwner } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+
+// Deliberately no revalidatePath() in these — they're called directly
+// from a client startTransition (not a <form action>), and pairing that
+// with revalidatePath caused the transition's pending state to hang
+// client-side indefinitely on success (see sessions/actions.ts). Each
+// client component calls router.refresh() itself after success instead.
 
 export type ActionResult = { error?: string };
 export type CreateAccountResult = { error?: string; password?: string };
@@ -57,7 +62,6 @@ export async function createMemberAccount(
     return { error: `Account created but profile setup failed: ${profileError.message}` };
   }
 
-  revalidatePath("/owner/members");
   return { password };
 }
 
@@ -118,6 +122,18 @@ export async function assignMembership(
     return { error: "Plan not found." };
   }
 
+  // A member should only ever have one active membership at a time —
+  // retire any existing one before activating the new plan.
+  const { error: retireError } = await admin
+    .from("member_memberships")
+    .update({ status: "cancelled" })
+    .eq("member_id", memberId)
+    .eq("status", "active");
+
+  if (retireError) {
+    return { error: retireError.message };
+  }
+
   const { error: membershipError } = await admin.from("member_memberships").insert({
     member_id: memberId,
     plan_id: planId,
@@ -141,6 +157,5 @@ export async function assignMembership(
     }
   }
 
-  revalidatePath("/owner/members");
   return {};
 }

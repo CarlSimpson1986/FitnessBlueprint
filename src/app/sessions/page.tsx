@@ -7,29 +7,54 @@ export default async function SessionsPage() {
 
   const today = new Date().toISOString().slice(0, 10);
 
-  const { data: sessions } = await supabase
-    .from("sessions")
-    .select("*")
-    .eq("status", "scheduled")
-    .gte("session_date", today)
-    .order("session_date")
-    .order("start_time");
+  const [
+    { data: sessions },
+    { data: templates },
+    { data: coaches },
+    { data: activeMembership },
+    { data: allPlans },
+    { data: creditLedgerRows },
+  ] = await Promise.all([
+    supabase
+      .from("sessions")
+      .select("*")
+      .eq("status", "scheduled")
+      .gte("session_date", today)
+      .order("session_date")
+      .order("start_time"),
+    supabase.from("session_templates").select("id, name"),
+    supabase.from("profiles").select("id, full_name").in("role", ["coach", "owner"]),
+    supabase
+      .from("member_memberships")
+      .select("plan_id")
+      .eq("member_id", user.id)
+      .eq("status", "active")
+      .order("started_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase.from("membership_plans").select("id, name, credit_pack_size"),
+    supabase.from("credit_ledger").select("delta").eq("member_id", user.id),
+  ]);
 
   const sessionRows = sessions ?? [];
   const sessionIds = sessionRows.map((s) => s.id);
 
-  const [{ data: templates }, { data: coaches }, { data: myBookings }, { data: spotsTaken }] =
-    await Promise.all([
-      supabase.from("session_templates").select("id, name"),
-      supabase.from("profiles").select("id, full_name").in("role", ["coach", "owner"]),
-      supabase
-        .from("bookings")
-        .select("id, session_id")
-        .eq("member_id", user.id)
-        .eq("status", "booked")
-        .in("session_id", sessionIds),
-      supabase.rpc("session_spots_taken", { p_session_ids: sessionIds }),
-    ]);
+  const [{ data: myBookings }, { data: spotsTaken }] = await Promise.all([
+    supabase
+      .from("bookings")
+      .select("id, session_id")
+      .eq("member_id", user.id)
+      .eq("status", "booked")
+      .in("session_id", sessionIds),
+    supabase.rpc("session_spots_taken", { p_session_ids: sessionIds }),
+  ]);
+
+  const planById = new Map((allPlans ?? []).map((p) => [p.id, p]));
+  const activePlan = activeMembership ? planById.get(activeMembership.plan_id) : null;
+  const activePlanName = activePlan?.name ?? null;
+  const creditBalance = activePlan?.credit_pack_size
+    ? (creditLedgerRows ?? []).reduce((sum, row) => sum + row.delta, 0)
+    : null;
 
   const templateById = new Map((templates ?? []).map((t) => [t.id, t]));
   const coachById = new Map((coaches ?? []).map((c) => [c.id, c]));
@@ -51,7 +76,19 @@ export default async function SessionsPage() {
         <p className="font-mono text-xs tracking-[0.2em] text-blueprint-accent uppercase mb-3">
           Fitness Blueprint
         </p>
-        <h1 className="font-display text-3xl text-blueprint-ink mb-10">Timetable</h1>
+        <h1 className="font-display text-3xl text-blueprint-ink mb-2">Timetable</h1>
+
+        {!activeMembership ? (
+          <p className="text-sm text-red-400 mb-10 border-l-2 border-red-400 pl-3">
+            No active membership — see the owner to get set up before booking.
+          </p>
+        ) : (
+          <p className="text-xs text-blueprint-muted mb-10">
+            {activePlanName}
+            {creditBalance !== null &&
+              ` · ${creditBalance} credit${creditBalance === 1 ? "" : "s"} remaining`}
+          </p>
+        )}
 
         {sessionsByDate.size === 0 && (
           <p className="text-blueprint-muted text-sm">No upcoming sessions scheduled yet.</p>
