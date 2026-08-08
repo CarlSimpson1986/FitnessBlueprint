@@ -7,11 +7,13 @@ const SCAFFOLDED = [
   "Security headers (CSP, HSTS, frame protection) via middleware",
   "PWA manifest + offline-capable service worker",
   "Claude Code hooks — blocks secrets exposure & force-push to main",
+  "Auth — magic link sign-in + onboarding",
+  "Member booking flow — timetable, book/cancel, capacity-safe",
 ];
 
 const NOT_YET_BUILT = [
-  "Auth screens (sign in / magic link)",
-  "Member booking flow",
+  "Credit-pack deduction on booking (needs checkout first)",
+  "Waitlist when a session is full",
   "Coach live session cockpit",
   "Owner dashboard",
   "Stripe / GoCardless checkout",

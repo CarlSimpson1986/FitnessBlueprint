@@ -644,6 +644,43 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      book_session: {
+        Args: {
+          p_session_id: string
+        }
+        Returns: {
+          id: string
+          session_id: string
+          member_id: string
+          status: Database['public']['Enums']['booking_status']
+          booked_at: string
+          cancelled_at: string | null
+          credit_ledger_id: string | null
+        }
+      }
+      cancel_booking: {
+        Args: {
+          p_booking_id: string
+        }
+        Returns: {
+          id: string
+          session_id: string
+          member_id: string
+          status: Database['public']['Enums']['booking_status']
+          booked_at: string
+          cancelled_at: string | null
+          credit_ledger_id: string | null
+        }
+      }
+      session_spots_taken: {
+        Args: {
+          p_session_ids: string[]
+        }
+        Returns: {
+          session_id: string
+          spots_taken: number
+        }[]
+      }
       match_qa_cache: {
         Args: {
           query_embedding: number[]
