@@ -10,6 +10,7 @@ const config: Config = {
       colors: {
         blueprint: {
           bg: "var(--fb-bg)",
+          raised: "var(--fb-bg-raised)",
           line: "var(--fb-line)",
           accent: "var(--fb-accent)",
           ink: "var(--fb-ink)",
