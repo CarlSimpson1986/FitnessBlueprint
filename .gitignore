@@ -1,0 +1,42 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# testing
+coverage/
+
+# next.js
+.next/
+out/
+build/
+next-env.d.ts
+
+# secrets — never commit real environment values
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+*.pem
+*.key
+*.p12
+
+# supabase local dev
+supabase/.temp/
+supabase/.branches/
+
+# vercel
+.vercel
+
+# misc
+.DS_Store
+*.log
+npm-debug.log*
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# generated types (regenerate with npm run db:types)
+# keep this tracked so the team shares one source of truth — comment out to ignore instead
+*.tsbuildinfo
