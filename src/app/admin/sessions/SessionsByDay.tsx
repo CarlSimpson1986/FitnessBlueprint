@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { formatSessionTime, toLocalDateKey } from "@/lib/format";
 import { CancelSessionButton } from "./CancelSessionButton";
+import { SessionRoster } from "./SessionRoster";
 
 type EnrichedSession = {
   id: string;
@@ -33,6 +35,7 @@ export function SessionsByDay({
   onSelectDate: (date: string) => void;
 }) {
   const days = buildDayRange(14);
+  const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
 
   const sessionsByDate = new Map<string, EnrichedSession[]>();
   for (const session of sessions) {
@@ -88,22 +91,33 @@ export function SessionsByDay({
         <p className="text-blueprint-muted text-sm">No sessions scheduled this day.</p>
       ) : (
         <ul className="space-y-3">
-          {selectedSessions.map((session) => (
-            <li
-              key={session.id}
-              className="flex items-center justify-between gap-4 border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-4 py-3"
-            >
-              <div>
-                <p className="text-blueprint-ink font-medium">
-                  {formatSessionTime(session.start_time)} — {session.templateName}
-                </p>
-                <p className="text-xs text-blueprint-muted mt-1">
-                  {session.coachName} · {session.spotsTaken}/{session.capacity} booked
-                </p>
-              </div>
-              <CancelSessionButton sessionId={session.id} />
-            </li>
-          ))}
+          {selectedSessions.map((session) => {
+            const isExpanded = expandedSessionId === session.id;
+
+            return (
+              <li
+                key={session.id}
+                className="border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded"
+              >
+                <div className="flex items-center justify-between gap-4 px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedSessionId(isExpanded ? null : session.id)}
+                    className="text-left flex-1"
+                  >
+                    <p className="text-blueprint-ink font-medium">
+                      {formatSessionTime(session.start_time)} — {session.templateName}
+                    </p>
+                    <p className="text-xs text-blueprint-muted mt-1">
+                      {session.coachName} · {session.spotsTaken}/{session.capacity} booked
+                    </p>
+                  </button>
+                  <CancelSessionButton sessionId={session.id} />
+                </div>
+                {isExpanded && <SessionRoster sessionId={session.id} />}
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

@@ -60,6 +60,83 @@ export async function createSessions(input: {
   return {};
 }
 
+export type RosterEntry = {
+  bookingId: string;
+  memberName: string;
+  status: "booked" | "cancelled" | "attended" | "no_show" | "excused";
+};
+
+/**
+ * Roster is read via the RLS-respecting client — "coaches and owner read
+ * all bookings" and "coaches and owner read all profiles" (0002) already
+ * cover this, so there's nothing to bypass here.
+ */
+export async function getSessionRoster(sessionId: string): Promise<{ roster?: RosterEntry[]; error?: string }> {
+  const { supabase } = await requireCoachOrOwner();
+
+  const { data: bookings, error } = await supabase
+    .from("bookings")
+    .select("id, member_id, status")
+    .eq("session_id", sessionId)
+    .order("booked_at");
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  const memberIds = (bookings ?? []).map((b) => b.member_id);
+  const { data: members, error: membersError } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .in("id", memberIds.length > 0 ? memberIds : [""]);
+
+  if (membersError) {
+    return { error: membersError.message };
+  }
+
+  const nameById = new Map((members ?? []).map((m) => [m.id, m.full_name]));
+
+  const roster = (bookings ?? []).map((booking) => ({
+    bookingId: booking.id,
+    memberName: nameById.get(booking.member_id) ?? "Unknown member",
+    status: booking.status,
+  }));
+
+  return { roster };
+}
+
+const MARKABLE_STATUSES = ["attended", "no_show", "excused"] as const;
+type MarkableStatus = (typeof MARKABLE_STATUSES)[number];
+
+/**
+ * Marking attendance updates a single booking — "coaches and owner
+ * update any booking" (0002) covers this, so again no admin client.
+ */
+export async function markAttendance(bookingId: string, status: MarkableStatus): Promise<ActionResult> {
+  const { supabase } = await requireCoachOrOwner();
+
+  if (!MARKABLE_STATUSES.includes(status)) {
+    return { error: "Invalid attendance status." };
+  }
+
+  const { data, error } = await supabase
+    .from("bookings")
+    .update({ status })
+    .eq("id", bookingId)
+    .eq("status", "booked")
+    .select("id");
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  if (!data || data.length === 0) {
+    return { error: "This booking is no longer marked as booked — refresh and try again." };
+  }
+
+  return {};
+}
+
 /**
  * Cancelling a session isn't just an update to the sessions row — any
  * member who'd booked (and paid a credit for) it needs that credit back,

@@ -26,15 +26,23 @@ export default async function ManageSessionsPage() {
   const sessionRows = sessions ?? [];
   const sessionIds = sessionRows.map((s) => s.id);
 
-  const { data: spotsTaken } = await supabase.rpc("session_spots_taken", {
-    p_session_ids: sessionIds,
-  });
+  // Unlike the member-facing timetable (src/app/sessions/page.tsx), which
+  // uses session_spots_taken() (status = 'booked' only) to check remaining
+  // capacity, this admin view shows "how many are in this session" —
+  // anyone not cancelled, including attended/no_show/excused, so the count
+  // doesn't drop as a coach marks attendance after the fact.
+  const { data: activeBookings } = await supabase
+    .from("bookings")
+    .select("session_id, status")
+    .in("session_id", sessionIds.length > 0 ? sessionIds : [""])
+    .neq("status", "cancelled");
 
   const templateById = new Map((templates ?? []).map((t) => [t.id, t]));
   const coachById = new Map((coaches ?? []).map((c) => [c.id, c]));
-  const spotsBySession = new Map(
-    (spotsTaken ?? []).map((s) => [s.session_id, Number(s.spots_taken)])
-  );
+  const spotsBySession = new Map<string, number>();
+  for (const booking of activeBookings ?? []) {
+    spotsBySession.set(booking.session_id, (spotsBySession.get(booking.session_id) ?? 0) + 1);
+  }
 
   const enrichedSessions = sessionRows.map((session) => ({
     id: session.id,
