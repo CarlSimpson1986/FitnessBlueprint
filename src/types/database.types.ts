@@ -24,6 +24,7 @@ export type Database = {
           role: Database['public']['Enums']['member_role']
           coach_access_level: Database['public']['Enums']['coach_access_level'] | null
           full_name: string
+          email: string
           phone: string | null
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
@@ -35,6 +36,7 @@ export type Database = {
           role?: Database['public']['Enums']['member_role']
           coach_access_level?: Database['public']['Enums']['coach_access_level'] | null
           full_name: string
+          email: string
           phone?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
@@ -46,6 +48,7 @@ export type Database = {
           role?: Database['public']['Enums']['member_role']
           coach_access_level?: Database['public']['Enums']['coach_access_level'] | null
           full_name?: string
+          email?: string
           phone?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null

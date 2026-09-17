@@ -54,6 +54,7 @@ export async function createMemberAccount(
 
   const { error: profileError } = await admin.from("profiles").insert({
     id: data.user.id,
+    email: trimmedEmail,
     full_name: trimmedName,
     role: "member",
   });

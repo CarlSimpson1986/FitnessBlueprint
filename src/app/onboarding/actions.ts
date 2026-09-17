@@ -18,6 +18,10 @@ export async function createProfile(
     redirect("/login");
   }
 
+  if (!user.email) {
+    return { error: "Your account has no email on file — contact the owner." };
+  }
+
   const fullName = String(formData.get("full_name") ?? "").trim();
   if (!fullName) {
     return { error: "Full name is required." };
@@ -32,6 +36,7 @@ export async function createProfile(
   // the RLS insert policy (0004) rejects anything else from a self-insert.
   const { error } = await supabase.from("profiles").insert({
     id: user.id,
+    email: user.email,
     full_name: fullName,
     phone: optional("phone"),
     emergency_contact_name: optional("emergency_contact_name"),

@@ -10,7 +10,7 @@ export default async function OwnerMembersPage() {
   const [{ data: members }, { data: plans }, { data: memberships }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("id, full_name, phone")
+      .select("id, full_name, phone, email")
       .eq("role", "member")
       .order("full_name"),
     supabase
@@ -62,6 +62,7 @@ export default async function OwnerMembersPage() {
               >
                 <div>
                   <p className="text-blueprint-ink font-medium">{member.full_name}</p>
+                  <p className="text-xs text-blueprint-muted mt-1">{member.email}</p>
                   <p className="text-xs text-blueprint-muted mt-1">
                     {activePlan ? `Active: ${activePlan.name}` : "No active plan"}
                   </p>
