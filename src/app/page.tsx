@@ -2,6 +2,9 @@ import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
 import { formatSessionDate, formatSessionTime } from "@/lib/format";
 import { BookingButton } from "./sessions/BookingButton";
+import { FeedbackList } from "./FeedbackList";
+
+const FEEDBACK_LOOKBACK_DAYS = 14;
 
 export default async function HomePage() {
   const { supabase, user, profile } = await requireProfile();
@@ -36,6 +39,45 @@ export default async function HomePage() {
   const templateById = new Map((templates ?? []).map((t) => [t.id, t]));
   const bookingIdBySession = new Map((myBookingRows ?? []).map((b) => [b.session_id, b.id]));
   const firstName = profile.full_name.split(" ")[0];
+
+  const feedbackLookbackStart = new Date();
+  feedbackLookbackStart.setDate(feedbackLookbackStart.getDate() - FEEDBACK_LOOKBACK_DAYS);
+
+  const { data: attendedBookings } = await supabase
+    .from("bookings")
+    .select("session_id")
+    .eq("member_id", user.id)
+    .eq("status", "attended");
+
+  const attendedSessionIds = (attendedBookings ?? []).map((b) => b.session_id);
+
+  const { data: attendedSessions } = attendedSessionIds.length
+    ? await supabase
+        .from("sessions")
+        .select("id, session_date, start_time, template_id")
+        .in("id", attendedSessionIds)
+        .gte("session_date", feedbackLookbackStart.toISOString().slice(0, 10))
+        .order("session_date", { ascending: false })
+        .order("start_time", { ascending: false })
+    : { data: [] };
+
+  const attendedSessionRows = attendedSessions ?? [];
+  const feedbackTemplateIds = Array.from(
+    new Set(attendedSessionRows.map((s) => s.template_id))
+  );
+
+  const { data: feedbackTemplates } = feedbackTemplateIds.length
+    ? await supabase.from("session_templates").select("id, name").in("id", feedbackTemplateIds)
+    : { data: [] };
+
+  const feedbackTemplateById = new Map((feedbackTemplates ?? []).map((t) => [t.id, t.name]));
+
+  const feedbackItems = attendedSessionRows.map((session) => ({
+    sessionId: session.id,
+    sessionDate: session.session_date,
+    startTime: session.start_time,
+    templateName: feedbackTemplateById.get(session.template_id) ?? "Session",
+  }));
 
   return (
     <main className="blueprint-grid min-h-screen px-6 py-16">
@@ -79,6 +121,17 @@ export default async function HomePage() {
           </ul>
         )}
 
+        {feedbackItems.length > 0 && (
+          <>
+            <h2 className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-3">
+              Rate your last session
+            </h2>
+            <div className="mb-10">
+              <FeedbackList items={feedbackItems} />
+            </div>
+          </>
+        )}
+
         <div className="flex flex-wrap gap-3">
           <Link
             href="/sessions"
@@ -87,10 +140,10 @@ export default async function HomePage() {
             View timetable
           </Link>
           <Link
-            href="/feedback"
+            href="/account"
             className="text-xs font-mono uppercase tracking-wide text-blueprint-ink border border-blueprint-line rounded px-4 py-3 hover:border-blueprint-accent transition"
           >
-            Rate sessions
+            Account
           </Link>
           {(profile.role === "owner" || profile.role === "coach") && (
             <Link

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { formatSessionDate, formatSessionTime } from "@/lib/format";
-import { submitFeedback } from "./actions";
+import { submitFeedback } from "./feedback-actions";
 
 const STORAGE_KEY = "fb-rated-sessions";
 
