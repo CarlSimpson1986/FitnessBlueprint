@@ -40,6 +40,20 @@ export default async function AdminPage() {
               </p>
             </Link>
           )}
+
+          {profile.role === "owner" && (
+            <Link
+              href="/owner/feedback"
+              className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
+            >
+              <p className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-2">
+                Feedback
+              </p>
+              <p className="text-blueprint-muted text-sm leading-relaxed">
+                Member session ratings — private to you.
+              </p>
+            </Link>
+          )}
         </div>
       </div>
     </main>

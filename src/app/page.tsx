@@ -86,6 +86,12 @@ export default async function HomePage() {
           >
             View timetable
           </Link>
+          <Link
+            href="/feedback"
+            className="text-xs font-mono uppercase tracking-wide text-blueprint-ink border border-blueprint-line rounded px-4 py-3 hover:border-blueprint-accent transition"
+          >
+            Rate sessions
+          </Link>
           {(profile.role === "owner" || profile.role === "coach") && (
             <Link
               href="/admin"
