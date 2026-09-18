@@ -81,6 +81,39 @@ spec lives in the shared Google Doc; this is status, not spec.
   by hand via the hosted project's SQL Editor because the `supabase` CLI's
   browser-login token wasn't reaching either the sandboxed or interactive
   shell here. Worth revisiting so `supabase db push` actually works.
+- **Cancellation window is not enforced — a real bug against the
+  confirmed policy.** `cancel_booking()` (`0005_booking_functions.sql`/
+  `0007_credit_deduction.sql`) always refunds the credit on cancel with
+  no time check at all. Confirmed policy: cancelling within 3 hours of
+  session start should forfeit the credit (no extra fee); only outside
+  that window should it refund. Needs a new migration.
+- **Waitlist is schema-only, zero app code.** `waitlist_entries` +
+  `waitlist_status` enum exist since `0001_init_core_schema.sql`
+  (including a `buddy_member_id` column already anticipating buddy
+  waitlists) but nothing in `src/` reads or writes the table. Biggest
+  "half-built" feature in the schema.
+- **Buddy booking / buddy waitlist** — not started. Explicitly flagged
+  by the owner as a feature members would actually use (see spec notes
+  in memory). No schema for member-to-member links yet.
+- **"What's On Today" session preview** — not started. Owner wants
+  bulk-upload of a whole training block's session plans that then
+  auto-publish day by day, not one-at-a-time entry.
+- **6-week challenge tracker** — not started. Distinct from the simpler
+  Progress tab shipped above; this is the day-count/programme-phase
+  framing tied to the onboarding funnel (`member_memberships`), plus a
+  shareable end-of-programme summary card.
+- **Readiness check-in** — not started. Pre-session push notification
+  10-second check-in (feeling/pain/sleep), separate from the
+  post-session feedback that already ships.
+- **Owner/business dashboards** — not started: at-risk member alerts,
+  session economics (fill rate/no-show/revenue per session or coach),
+  trial-to-member conversion tracking for the 6-week funnel.
+- **Engine Race & events section** — not started. Low-effort per the
+  owner (3 races/year, monthly socials) but currently split across
+  Squarespace/social with nothing in-app.
+- **Merch** — deliberately trivial: just a link-out to the existing
+  Squarespace shop, not a native shop. Owner confirmed volume doesn't
+  justify more.
 
 ## Infra notes worth remembering
 
