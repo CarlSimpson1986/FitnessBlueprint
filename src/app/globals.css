@@ -3,21 +3,23 @@
 @tailwind utilities;
 
 /*
-  Design tokens — "blueprint" direction, grounded in the gym's own name.
-  Deep technical-drawing navy, cyanotype-blue linework, off-white ink.
-  Deliberately not the generic warm-cream/terracotta AI-default palette.
+  Design tokens — v2 direction, prototyped in Claude Desktop against the
+  original "blueprint" navy/mono theme after it was flagged as visually
+  noisy (busy tiled grid + tiny tracked-out mono labels everywhere).
+  Near-black, card-based, plain sans-serif, single blue accent.
 */
 :root {
-  --fb-bg: #0e1a2b;
-  --fb-bg-raised: #142338;
-  --fb-line: #3a6ea5;
-  --fb-accent: #6ec1e4;
-  --fb-ink: #f5f3ee;
-  --fb-muted: #93a9c2;
+  --fb-bg: #000000;
+  --fb-bg-raised: #141414;
+  --fb-line: #2a2a2a;
+  --fb-accent: #2e9bf0;
+  --fb-ink: #ffffff;
+  --fb-muted: #a8a8a8;
+  --fb-dim: #6a6a6a;
 
-  --font-display: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, monospace;
   --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
-  --font-mono: var(--font-display);
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, monospace;
+  --font-display: var(--font-body);
 }
 
 * {
@@ -33,12 +35,59 @@ body {
   font-family: var(--font-body);
 }
 
-/* Subtle blueprint grid — the signature visual element, used once, quietly. */
-.blueprint-grid {
-  background-image:
-    linear-gradient(to right, rgba(58, 110, 165, 0.14) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(58, 110, 165, 0.14) 1px, transparent 1px);
-  background-size: 32px 32px;
+@layer components {
+  /* Small uppercase accent label — brand mark and card/section labels. */
+  .fb-eyebrow {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--fb-accent);
+  }
+
+  .fb-card {
+    background-color: var(--fb-bg-raised);
+    border: 1px solid var(--fb-line);
+    border-radius: 0.5rem;
+    padding: 1rem 1.1rem;
+  }
+
+  .fb-card-accent {
+    background-color: var(--fb-bg-raised);
+    border: 2px solid var(--fb-accent);
+    border-radius: 0.5rem;
+    padding: 1rem 1.1rem;
+  }
+
+  .fb-btn-primary {
+    display: inline-block;
+    background-color: var(--fb-accent);
+    color: #000000;
+    font-weight: 600;
+    font-size: 0.8125rem;
+    border-radius: 0.5rem;
+    padding: 0.7rem 1.1rem;
+    transition: opacity 0.15s;
+  }
+  .fb-btn-primary:hover {
+    opacity: 0.9;
+  }
+
+  .fb-btn-secondary {
+    display: inline-block;
+    background-color: transparent;
+    color: var(--fb-ink);
+    border: 1px solid var(--fb-line);
+    font-weight: 600;
+    font-size: 0.8125rem;
+    border-radius: 0.5rem;
+    padding: 0.7rem 1.1rem;
+    transition: border-color 0.15s;
+  }
+  .fb-btn-secondary:hover {
+    border-color: var(--fb-accent);
+  }
 }
 
 /* Always show a visible focus ring — never remove this for aesthetics. */

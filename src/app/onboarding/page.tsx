@@ -23,12 +23,12 @@ export default async function OnboardingPage() {
   }
 
   return (
-    <main className="blueprint-grid min-h-screen flex items-center justify-center px-6 py-16">
+    <main className="min-h-screen flex items-center justify-center px-6 py-16">
       <div className="max-w-md w-full">
-        <p className="font-mono text-xs tracking-[0.2em] text-blueprint-accent uppercase mb-3">
+        <p className="fb-eyebrow mb-1">
           Welcome to Fitness Blueprint
         </p>
-        <h1 className="font-display text-3xl text-blueprint-ink mb-2">Tell us about you</h1>
+        <h1 className="text-2xl font-semibold text-blueprint-ink mb-2">Tell us about you</h1>
         <p className="text-blueprint-muted mb-8 text-sm leading-relaxed">
           Just the essentials — you can add more later.
         </p>

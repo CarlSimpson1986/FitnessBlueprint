@@ -5,12 +5,12 @@ export default async function AdminPage() {
   const { profile } = await requireCoachOrOwner();
 
   return (
-    <main className="blueprint-grid min-h-screen px-6 py-16">
+    <main className="min-h-screen px-6 py-16">
       <div className="max-w-2xl mx-auto">
-        <p className="font-mono text-xs tracking-[0.2em] text-blueprint-accent uppercase mb-3">
+        <p className="fb-eyebrow mb-1">
           Admin
         </p>
-        <h1 className="font-display text-3xl text-blueprint-ink mb-10">
+        <h1 className="text-2xl font-semibold text-blueprint-ink mb-10">
           {profile.role === "owner" ? "Everything, in one place" : "Coach tools"}
         </h1>
 

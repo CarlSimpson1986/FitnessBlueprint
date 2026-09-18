@@ -4,8 +4,8 @@
   "description": "Book sessions, track progress, and stay connected with your coaches at Fitness Blueprint.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0E1A2B",
-  "theme_color": "#0E1A2B",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "orientation": "portrait-primary",
   "icons": [
     { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },

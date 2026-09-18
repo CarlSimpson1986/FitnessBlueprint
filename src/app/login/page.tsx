@@ -67,9 +67,9 @@ export default function LoginPage() {
 
   if (status === "sent") {
     return (
-      <main className="blueprint-grid min-h-screen flex items-center justify-center px-6 py-16">
+      <main className="min-h-screen flex items-center justify-center px-6 py-16">
         <div className="max-w-md w-full text-center">
-          <p className="font-mono text-xs tracking-[0.2em] text-blueprint-accent uppercase mb-3">
+          <p className="fb-eyebrow mb-1">
             Check your inbox
           </p>
           <h1 className="font-display text-2xl text-blueprint-ink mb-3">
@@ -84,12 +84,12 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="blueprint-grid min-h-screen flex items-center justify-center px-6 py-16">
+    <main className="min-h-screen flex items-center justify-center px-6 py-16">
       <div className="max-w-md w-full">
-        <p className="font-mono text-xs tracking-[0.2em] text-blueprint-accent uppercase mb-3">
+        <p className="fb-eyebrow mb-1">
           Fitness Blueprint
         </p>
-        <h1 className="font-display text-3xl text-blueprint-ink mb-2">Sign in</h1>
+        <h1 className="text-2xl font-semibold text-blueprint-ink mb-2">Sign in</h1>
         <p className="text-blueprint-muted mb-8 text-sm leading-relaxed">
           {mode === "magic-link"
             ? "Enter your email and we'll send you a link to sign in — no password needed."

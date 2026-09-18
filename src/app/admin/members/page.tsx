@@ -25,7 +25,7 @@ export default async function OwnerMembersPage() {
   const activeMembershipByMember = new Map((memberships ?? []).map((m) => [m.member_id, m]));
 
   return (
-    <main className="blueprint-grid min-h-screen px-6 py-16">
+    <main className="min-h-screen px-6 py-16">
       <div className="max-w-3xl mx-auto">
         <Link
           href="/admin"
@@ -33,10 +33,10 @@ export default async function OwnerMembersPage() {
         >
           ← Admin
         </Link>
-        <p className="font-mono text-xs tracking-[0.2em] text-blueprint-accent uppercase mb-3">
+        <p className="fb-eyebrow mb-1">
           Owner
         </p>
-        <h1 className="font-display text-3xl text-blueprint-ink mb-2">Members</h1>
+        <h1 className="text-2xl font-semibold text-blueprint-ink mb-2">Members</h1>
         <p className="text-blueprint-muted mb-10 text-sm leading-relaxed">
           Assign a plan after payment&apos;s been taken outside the app (Stripe link, GoCardless
           mandate). Credit-pack plans grant the credits immediately.

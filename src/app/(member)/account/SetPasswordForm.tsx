@@ -44,7 +44,7 @@ export function SetPasswordForm() {
       <div>
         <label
           htmlFor="password"
-          className="block text-xs font-mono uppercase tracking-wide text-blueprint-muted mb-2"
+          className="block text-xs font-medium text-blueprint-muted mb-2"
         >
           New password
         </label>
@@ -56,13 +56,13 @@ export function SetPasswordForm() {
           autoComplete="new-password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          className="w-full bg-blueprint-raised border border-blueprint-line rounded px-4 py-3 text-blueprint-ink focus:outline-none focus:border-blueprint-accent"
+          className="w-full bg-blueprint-raised border border-blueprint-line rounded-lg px-4 py-3 text-blueprint-ink focus:outline-none focus:border-blueprint-accent"
         />
       </div>
       <div>
         <label
           htmlFor="confirm_password"
-          className="block text-xs font-mono uppercase tracking-wide text-blueprint-muted mb-2"
+          className="block text-xs font-medium text-blueprint-muted mb-2"
         >
           Confirm password
         </label>
@@ -74,7 +74,7 @@ export function SetPasswordForm() {
           autoComplete="new-password"
           value={confirmPassword}
           onChange={(event) => setConfirmPassword(event.target.value)}
-          className="w-full bg-blueprint-raised border border-blueprint-line rounded px-4 py-3 text-blueprint-ink focus:outline-none focus:border-blueprint-accent"
+          className="w-full bg-blueprint-raised border border-blueprint-line rounded-lg px-4 py-3 text-blueprint-ink focus:outline-none focus:border-blueprint-accent"
         />
       </div>
       {error && (
@@ -86,7 +86,7 @@ export function SetPasswordForm() {
       <button
         type="submit"
         disabled={isPending}
-        className="w-full bg-blueprint-accent text-blueprint-bg font-mono text-sm uppercase tracking-wide py-3 rounded hover:opacity-90 disabled:opacity-50 transition"
+        className="w-full bg-blueprint-accent text-black font-semibold text-sm py-3 rounded-lg hover:opacity-90 disabled:opacity-50 transition"
       >
         {isPending ? "Saving…" : "Set password"}
       </button>

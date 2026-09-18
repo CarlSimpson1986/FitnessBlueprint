@@ -55,7 +55,7 @@ export default async function ManageSessionsPage() {
   }));
 
   return (
-    <main className="blueprint-grid min-h-screen px-6 py-16">
+    <main className="min-h-screen px-6 py-16">
       <div className="max-w-3xl mx-auto">
         <Link
           href="/admin"
@@ -63,10 +63,10 @@ export default async function ManageSessionsPage() {
         >
           ← Admin
         </Link>
-        <p className="font-mono text-xs tracking-[0.2em] text-blueprint-accent uppercase mb-3">
+        <p className="fb-eyebrow mb-1">
           Coach
         </p>
-        <h1 className="font-display text-3xl text-blueprint-ink mb-2">Manage sessions</h1>
+        <h1 className="text-2xl font-semibold text-blueprint-ink mb-2">Manage sessions</h1>
         <p className="text-blueprint-muted mb-10 text-sm leading-relaxed">
           Schedule new timetable slots, or cancel one — anyone already booked gets their session
           cancelled and any spent credit refunded automatically.

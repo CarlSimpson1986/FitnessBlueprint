@@ -93,8 +93,8 @@ function RatingPicker({
             onClick={() => onChange(n)}
             className={
               n <= value
-                ? "w-7 h-7 text-xs font-mono rounded border border-blueprint-accent bg-blueprint-accent text-blueprint-bg transition"
-                : "w-7 h-7 text-xs font-mono rounded border border-blueprint-line text-blueprint-muted hover:border-blueprint-accent transition"
+                ? "w-7 h-7 text-xs rounded border border-blueprint-accent bg-blueprint-accent text-black transition"
+                : "w-7 h-7 text-xs rounded border border-blueprint-line text-blueprint-muted hover:border-blueprint-accent transition"
             }
           >
             {n}
@@ -141,7 +141,7 @@ function FeedbackCard({ item, onDone }: { item: FeedbackItem; onDone: () => void
   }
 
   return (
-    <li className="border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-4 py-4">
+    <li className="fb-card">
       <p className="text-blueprint-ink font-medium mb-3">
         {formatSessionDate(item.sessionDate)} · {formatSessionTime(item.startTime)} ·{" "}
         {item.templateName}
@@ -166,7 +166,7 @@ function FeedbackCard({ item, onDone }: { item: FeedbackItem; onDone: () => void
           type="button"
           onClick={handleSubmit}
           disabled={!canSubmit}
-          className="text-xs font-mono uppercase tracking-wide text-blueprint-bg bg-blueprint-accent rounded px-4 py-2 hover:opacity-90 disabled:opacity-50 transition"
+          className="fb-btn-primary disabled:opacity-50"
         >
           {isSubmitting ? "…" : "Submit"}
         </button>

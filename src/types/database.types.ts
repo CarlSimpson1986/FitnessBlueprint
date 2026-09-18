@@ -642,6 +642,75 @@ export type Database = {
         }
         Relationships: []
       }
+      habit_definitions: {
+        Row: {
+          id: string
+          name: string
+          sort_order: number
+          is_active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          sort_order?: number
+          is_active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          sort_order?: number
+          is_active?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
+      habit_logs: {
+        Row: {
+          id: string
+          member_id: string
+          habit_id: string
+          log_date: string
+          completed_at: string
+        }
+        Insert: {
+          id?: string
+          member_id: string
+          habit_id: string
+          log_date: string
+          completed_at?: string
+        }
+        Update: {
+          id?: string
+          member_id?: string
+          habit_id?: string
+          log_date?: string
+          completed_at?: string
+        }
+        Relationships: []
+      }
+      weigh_ins: {
+        Row: {
+          id: string
+          member_id: string
+          weight_kg: number
+          recorded_at: string
+        }
+        Insert: {
+          id?: string
+          member_id: string
+          weight_kg: number
+          recorded_at?: string
+        }
+        Update: {
+          id?: string
+          member_id?: string
+          weight_kg?: number
+          recorded_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

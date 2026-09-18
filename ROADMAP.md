@@ -28,6 +28,29 @@ spec lives in the shared Google Doc; this is status, not spec.
 - **Optional password**: `/account` lets a self-signup (magic-link)
   member opt into setting a password, instead of only being available
   as an owner-forced fallback.
+- **Design system v2 + bottom tab bar**: replaced the "blueprint" navy/
+  monospace/tiled-grid theme (flagged as visually noisy) with a dark
+  card-based look prototyped in Claude Desktop — near-black background,
+  blue accent, plain sans-serif. Member-facing routes moved under
+  `src/app/(member)/` behind a shared layout with a persistent bottom
+  tab bar (Profile / My bookings / Coach Ted / Progress). Admin/auth
+  routes keep the old page-based nav, just retextured to match.
+- **Coach Ted — chat UI**: `src/lib/coach-ted/gemini.ts` and
+  `src/app/api/coach-ted/route.ts` (Gemini 2.5 Flash + pgvector RAG,
+  20 questions/member/day) existed fully built with **no frontend** —
+  this was missing from this roadmap entirely until now. Added
+  `/coach-ted` — a simple chat screen (`TedChat.tsx`) that calls the
+  existing route and reads/displays conversation history from
+  `coach_ted_conversations`. The backend itself is unchanged and still
+  has no multi-turn memory (each question is answered independently).
+- **Habits + progress tracking**: new `/progress` tab — a fixed,
+  migration-seeded daily habit checklist (`habit_definitions`/
+  `habit_logs`) and member-logged bodyweight (`weigh_ins`) feeding a
+  simple weight-change stat, plus an attendance streak computed from
+  `bookings.status = 'attended'` (consecutive weeks with ≥1 session,
+  see `src/lib/progress.ts`). No admin UI to edit the habit list yet,
+  and no "total lifted" stat — that needs exercise/set-logging schema
+  that doesn't exist (see below).
 
 ## Known gaps / not started
 
@@ -45,6 +68,14 @@ spec lives in the shared Google Doc; this is status, not spec.
   can see or do. Right now Tommy has identical access to a full coach.
   `0001_init_core_schema.sql` even flags this in a comment on the
   `sessions` table (`valid_coach` constraint is a no-op placeholder).
+- **No exercise/set logging.** There's no schema for coaches or members
+  to log individual lifts (exercise, weight, reps) — session planning
+  from a curated exercise library is still a whole unbuilt v1 feature.
+  This is why Progress has no "total lifted" stat; add it once that
+  schema exists rather than bolting on a throwaway manual-entry table.
+- **Migration `0009_habit_and_progress_tracking.sql` needs manual
+  application** — like every migration so far, apply it via the hosted
+  Supabase project's SQL Editor (see the CLI gap below).
 - **No local/CI Supabase.** This project has no `supabase start` (Docker)
   workflow verified working in this environment — migrations were applied
   by hand via the hosted project's SQL Editor because the `supabase` CLI's

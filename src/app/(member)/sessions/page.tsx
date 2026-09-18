@@ -71,19 +71,17 @@ export default async function SessionsPage() {
   }
 
   return (
-    <main className="blueprint-grid min-h-screen px-6 py-16">
+    <main className="min-h-screen px-5 py-8">
       <div className="max-w-2xl mx-auto">
-        <p className="font-mono text-xs tracking-[0.2em] text-blueprint-accent uppercase mb-3">
-          Fitness Blueprint
-        </p>
-        <h1 className="font-display text-3xl text-blueprint-ink mb-2">Timetable</h1>
+        <p className="fb-eyebrow mb-1">Fitness Blueprint</p>
+        <h1 className="text-2xl font-semibold text-blueprint-ink mb-2">Timetable</h1>
 
         {!activeMembership ? (
-          <p className="text-sm text-red-400 mb-10 border-l-2 border-red-400 pl-3">
+          <p className="text-sm text-red-400 mb-6 border-l-2 border-red-400 pl-3">
             No active membership — see the owner to get set up before booking.
           </p>
         ) : (
-          <p className="text-xs text-blueprint-muted mb-10">
+          <p className="text-xs text-blueprint-muted mb-6">
             {activePlanName}
             {creditBalance !== null &&
               ` · ${creditBalance} credit${creditBalance === 1 ? "" : "s"} remaining`}
@@ -94,13 +92,11 @@ export default async function SessionsPage() {
           <p className="text-blueprint-muted text-sm">No upcoming sessions scheduled yet.</p>
         )}
 
-        <div className="space-y-10">
+        <div className="space-y-8">
           {Array.from(sessionsByDate.entries()).map(([date, daySessions]) => (
             <section key={date}>
-              <h2 className="font-mono text-xs tracking-[0.15em] text-blueprint-muted uppercase mb-3">
-                {formatSessionDate(date)}
-              </h2>
-              <ul className="space-y-3">
+              <p className="fb-eyebrow mb-2">{formatSessionDate(date)}</p>
+              <ul className="space-y-2">
                 {daySessions.map((session) => {
                   const template = templateById.get(session.template_id);
                   const coach = coachById.get(session.coach_id);
@@ -111,7 +107,7 @@ export default async function SessionsPage() {
                   return (
                     <li
                       key={session.id}
-                      className="flex items-center justify-between gap-4 border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-4 py-3"
+                      className="fb-card flex items-center justify-between gap-4"
                     >
                       <div>
                         <p className="text-blueprint-ink font-medium">

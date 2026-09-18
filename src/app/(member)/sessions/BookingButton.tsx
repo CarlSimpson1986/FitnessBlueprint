@@ -51,7 +51,7 @@ export function BookingButton({
 
   if (!bookingId && isFull) {
     return (
-      <span className="text-xs font-mono uppercase tracking-wide text-blueprint-muted border border-blueprint-line/60 rounded px-3 py-2">
+      <span className="text-xs font-medium text-blueprint-muted border border-blueprint-line/60 rounded-lg px-3 py-2">
         Full
       </span>
     );
@@ -65,8 +65,8 @@ export function BookingButton({
         disabled={isPending}
         className={
           bookingId
-            ? "text-xs font-mono uppercase tracking-wide text-blueprint-muted border border-blueprint-line rounded px-3 py-2 hover:border-red-400 hover:text-red-400 disabled:opacity-50 transition"
-            : "text-xs font-mono uppercase tracking-wide text-blueprint-bg bg-blueprint-accent rounded px-3 py-2 hover:opacity-90 disabled:opacity-50 transition"
+            ? "text-xs font-medium text-blueprint-muted border border-blueprint-line rounded-lg px-3 py-2 hover:border-red-400 hover:text-red-400 disabled:opacity-50 transition"
+            : "text-xs font-medium text-black bg-blueprint-accent rounded-lg px-3 py-2 hover:opacity-90 disabled:opacity-50 transition"
         }
       >
         {isPending ? "…" : bookingId ? "Cancel" : "Book"}

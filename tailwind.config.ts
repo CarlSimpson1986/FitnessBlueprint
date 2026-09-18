@@ -15,6 +15,7 @@ const config: Config = {
           accent: "var(--fb-accent)",
           ink: "var(--fb-ink)",
           muted: "var(--fb-muted)",
+          dim: "var(--fb-dim)",
         },
       },
       fontFamily: {

@@ -36,12 +36,12 @@ export default async function OwnerFeedbackPage() {
   const memberById = new Map((members ?? []).map((m) => [m.id, m.full_name]));
 
   return (
-    <main className="blueprint-grid min-h-screen px-6 py-16">
+    <main className="min-h-screen px-6 py-16">
       <div className="max-w-2xl mx-auto">
-        <p className="font-mono text-xs tracking-[0.2em] text-blueprint-accent uppercase mb-3">
+        <p className="fb-eyebrow mb-1">
           Owner
         </p>
-        <h1 className="font-display text-3xl text-blueprint-ink mb-2">Session feedback</h1>
+        <h1 className="text-2xl font-semibold text-blueprint-ink mb-2">Session feedback</h1>
         <p className="text-xs text-blueprint-muted mb-10">
           Private to you — coaches and members can&apos;t see this.
         </p>

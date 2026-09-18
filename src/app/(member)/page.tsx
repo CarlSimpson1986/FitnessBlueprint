@@ -79,81 +79,80 @@ export default async function HomePage() {
     templateName: feedbackTemplateById.get(session.template_id) ?? "Session",
   }));
 
+  const [nextSession, ...restSessions] = sessionRows;
+  const nextTemplate = nextSession ? templateById.get(nextSession.template_id) : undefined;
+  const nextBookingId = nextSession ? bookingIdBySession.get(nextSession.id) ?? null : null;
+
   return (
-    <main className="blueprint-grid min-h-screen px-6 py-16">
+    <main className="min-h-screen px-5 py-8">
       <div className="max-w-2xl mx-auto">
-        <p className="font-mono text-xs tracking-[0.2em] text-blueprint-accent uppercase mb-3">
-          Fitness Blueprint
-        </p>
-        <h1 className="font-display text-3xl text-blueprint-ink mb-10">Hey {firstName}</h1>
+        <p className="fb-eyebrow mb-1">Fitness Blueprint</p>
+        <h1 className="text-2xl font-semibold text-blueprint-ink mb-6">Hey {firstName}</h1>
 
-        <h2 className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-3">
-          Your upcoming bookings
-        </h2>
-
-        {sessionRows.length === 0 ? (
-          <p className="text-blueprint-muted text-sm mb-10">
-            Nothing booked yet — check the timetable to grab a session.
-          </p>
+        {nextSession ? (
+          <div className="fb-card-accent mb-4">
+            <p className="fb-eyebrow mb-2">Coming up</p>
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-blueprint-ink font-medium">
+                  {nextTemplate?.name ?? "Session"}
+                </p>
+                <p className="text-xs text-blueprint-muted mt-1">
+                  {formatSessionDate(nextSession.session_date)} ·{" "}
+                  {formatSessionTime(nextSession.start_time)}
+                </p>
+              </div>
+              <BookingButton sessionId={nextSession.id} bookingId={nextBookingId} isFull={false} />
+            </div>
+          </div>
         ) : (
-          <ul className="space-y-3 mb-10">
-            {sessionRows.map((session) => {
-              const template = templateById.get(session.template_id);
-              const bookingId = bookingIdBySession.get(session.id) ?? null;
-              return (
-                <li
-                  key={session.id}
-                  className="flex items-center justify-between gap-4 border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-4 py-3"
-                >
-                  <div>
-                    <p className="text-blueprint-ink font-medium">
-                      {formatSessionDate(session.session_date)} ·{" "}
-                      {formatSessionTime(session.start_time)}
-                    </p>
-                    <p className="text-xs text-blueprint-muted mt-1">
-                      {template?.name ?? "Session"}
-                    </p>
-                  </div>
-                  <BookingButton sessionId={session.id} bookingId={bookingId} isFull={false} />
-                </li>
-              );
-            })}
-          </ul>
+          <div className="fb-card mb-4">
+            <p className="text-blueprint-muted text-sm mb-3">
+              Nothing booked yet — check the timetable to grab a session.
+            </p>
+            <Link href="/sessions" className="fb-btn-primary">
+              View timetable
+            </Link>
+          </div>
+        )}
+
+        {restSessions.length > 0 && (
+          <>
+            <p className="fb-eyebrow mb-2 mt-6">Also upcoming</p>
+            <ul className="space-y-2 mb-4">
+              {restSessions.map((session) => {
+                const template = templateById.get(session.template_id);
+                const bookingId = bookingIdBySession.get(session.id) ?? null;
+                return (
+                  <li
+                    key={session.id}
+                    className="fb-card flex items-center justify-between gap-4"
+                  >
+                    <div>
+                      <p className="text-blueprint-ink font-medium">
+                        {formatSessionDate(session.session_date)} ·{" "}
+                        {formatSessionTime(session.start_time)}
+                      </p>
+                      <p className="text-xs text-blueprint-muted mt-1">
+                        {template?.name ?? "Session"}
+                      </p>
+                    </div>
+                    <BookingButton sessionId={session.id} bookingId={bookingId} isFull={false} />
+                  </li>
+                );
+              })}
+            </ul>
+          </>
         )}
 
         {feedbackItems.length > 0 && (
           <>
-            <h2 className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-3">
-              Rate your last session
-            </h2>
-            <div className="mb-10">
+            <p className="fb-eyebrow mb-2 mt-6">Rate your last session</p>
+            <div className="mb-4">
               <FeedbackList items={feedbackItems} />
             </div>
           </>
         )}
-
-        <div className="flex flex-wrap gap-3">
-          <Link
-            href="/sessions"
-            className="text-xs font-mono uppercase tracking-wide text-blueprint-bg bg-blueprint-accent rounded px-4 py-3 hover:opacity-90 transition"
-          >
-            View timetable
-          </Link>
-          <Link
-            href="/account"
-            className="text-xs font-mono uppercase tracking-wide text-blueprint-ink border border-blueprint-line rounded px-4 py-3 hover:border-blueprint-accent transition"
-          >
-            Account
-          </Link>
-          {(profile.role === "owner" || profile.role === "coach") && (
-            <Link
-              href="/admin"
-              className="text-xs font-mono uppercase tracking-wide text-blueprint-ink border border-blueprint-line rounded px-4 py-3 hover:border-blueprint-accent transition"
-            >
-              Admin
-            </Link>
-          )}
-        </div>
       </div>
     </main>
   );
