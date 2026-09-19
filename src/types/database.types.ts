@@ -753,6 +753,62 @@ export type Database = {
           spots_taken: number
         }[]
       }
+      join_waitlist: {
+        Args: {
+          p_session_id: string
+          p_buddy_member_id?: string | null
+        }
+        Returns: {
+          id: string
+          session_id: string
+          member_id: string
+          buddy_member_id: string | null
+          position: number
+          status: Database['public']['Enums']['waitlist_status']
+          offered_at: string | null
+          offer_expires_at: string | null
+          created_at: string
+        }
+      }
+      leave_waitlist: {
+        Args: {
+          p_entry_id: string
+        }
+        Returns: {
+          id: string
+          session_id: string
+          member_id: string
+          buddy_member_id: string | null
+          position: number
+          status: Database['public']['Enums']['waitlist_status']
+          offered_at: string | null
+          offer_expires_at: string | null
+          created_at: string
+        }
+      }
+      accept_waitlist_offer: {
+        Args: {
+          p_entry_id: string
+        }
+        Returns: {
+          id: string
+          session_id: string
+          member_id: string
+          status: Database['public']['Enums']['booking_status']
+          booked_at: string
+          cancelled_at: string | null
+          credit_ledger_id: string | null
+        }
+      }
+      lookup_member_by_email: {
+        Args: {
+          p_email: string
+        }
+        Returns: {
+          id: string
+          full_name: string
+        }[]
+      }
       match_qa_cache: {
         Args: {
           query_embedding: number[]

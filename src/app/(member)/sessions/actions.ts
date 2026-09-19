@@ -32,3 +32,62 @@ export async function cancelBooking(bookingId: string): Promise<ActionResult> {
 
   return {};
 }
+
+export async function joinWaitlist(
+  sessionId: string,
+  buddyEmail: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  let buddyMemberId: string | null = null;
+
+  const trimmedEmail = buddyEmail.trim();
+  if (trimmedEmail) {
+    const { data, error } = await supabase.rpc("lookup_member_by_email", {
+      p_email: trimmedEmail,
+    });
+
+    if (error) {
+      return { error: error.message };
+    }
+
+    const buddy = data?.[0];
+    if (!buddy) {
+      return { error: "No member found with that email." };
+    }
+
+    buddyMemberId = buddy.id;
+  }
+
+  const { error } = await supabase.rpc("join_waitlist", {
+    p_session_id: sessionId,
+    p_buddy_member_id: buddyMemberId,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return {};
+}
+
+export async function leaveWaitlist(entryId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("leave_waitlist", { p_entry_id: entryId });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return {};
+}
+
+export async function acceptWaitlistOffer(entryId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("accept_waitlist_offer", { p_entry_id: entryId });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return {};
+}

@@ -51,6 +51,20 @@ spec lives in the shared Google Doc; this is status, not spec.
   see `src/lib/progress.ts`). No admin UI to edit the habit list yet,
   and no "total lifted" stat — that needs exercise/set-logging schema
   that doesn't exist (see below).
+- **Waitlist + buddy waitlist**: `waitlist_entries` (schema-only since
+  `0001`) now has app code, wired up in migration `0010_waitlist.sql`.
+  Members join a full session's waitlist, optionally naming a buddy by
+  email ("only promote me if my friend also gets a spot" — confirmed
+  owner priority); a freed spot becomes a **timed offer** (2-hour
+  window, matches the `offered`/`offer_expires_at` columns already in
+  the schema) rather than an instant auto-book. A buddy pair is only
+  offered together, and if either half declines or times out the other
+  reverts to waiting rather than losing their place. No push
+  notifications or cron exist yet, so offers are swept lazily (next
+  time `promote_waitlist` runs, e.g. on the next cancellation or
+  accept/decline) instead of by a scheduled job — a member only learns
+  about an offer by opening the app. Frontend: `WaitlistPanel.tsx` on
+  the timetable, next to `BookingButton.tsx`.
 
 ## Known gaps / not started
 
@@ -73,9 +87,21 @@ spec lives in the shared Google Doc; this is status, not spec.
   from a curated exercise library is still a whole unbuilt v1 feature.
   This is why Progress has no "total lifted" stat; add it once that
   schema exists rather than bolting on a throwaway manual-entry table.
-- **Migration `0009_habit_and_progress_tracking.sql` needs manual
-  application** — like every migration so far, apply it via the hosted
-  Supabase project's SQL Editor (see the CLI gap below).
+- **Migrations `0009_habit_and_progress_tracking.sql` and
+  `0010_waitlist.sql` need manual application** — like every migration
+  so far, apply them via the hosted Supabase project's SQL Editor (see
+  the CLI gap below).
+- **Members likely can't see coach names on the timetable — a latent
+  bug found while building the waitlist (not caused by it).**
+  `src/app/(member)/sessions/page.tsx` selects `profiles` rows for
+  coaches/owner as the signed-in member, but `0002_rls_policies.sql`
+  only lets a member read their *own* profile row (`auth.uid() = id`);
+  there's no policy letting a member read a coach's row. RLS silently
+  filters rather than erroring, so this likely renders as "Coach TBC"
+  for every session, every member, right now. Needs a narrow RLS policy
+  (e.g. members can read `id, full_name` for rows where `role in
+  ('coach', 'owner')`) in its own migration — not fixed here since it's
+  unrelated to the waitlist and deserves its own PR.
 - **No local/CI Supabase.** This project has no `supabase start` (Docker)
   workflow verified working in this environment — migrations were applied
   by hand via the hosted project's SQL Editor because the `supabase` CLI's
@@ -87,14 +113,10 @@ spec lives in the shared Google Doc; this is status, not spec.
   no time check at all. Confirmed policy: cancelling within 3 hours of
   session start should forfeit the credit (no extra fee); only outside
   that window should it refund. Needs a new migration.
-- **Waitlist is schema-only, zero app code.** `waitlist_entries` +
-  `waitlist_status` enum exist since `0001_init_core_schema.sql`
-  (including a `buddy_member_id` column already anticipating buddy
-  waitlists) but nothing in `src/` reads or writes the table. Biggest
-  "half-built" feature in the schema.
-- **Buddy booking / buddy waitlist** — not started. Explicitly flagged
-  by the owner as a feature members would actually use (see spec notes
-  in memory). No schema for member-to-member links yet.
+- **Buddy *booking*** (nominating a buddy for a normal, non-waitlist
+  booking, not just the waitlist) — not started. Buddy *waitlist* now
+  ships (see "Done" above); this is the separate, smaller piece still
+  open.
 - **"What's On Today" session preview** — not started. Owner wants
   bulk-upload of a whole training block's session plans that then
   auto-publish day by day, not one-at-a-time entry.

@@ -1,6 +1,7 @@
 import { requireProfile } from "@/lib/auth";
 import { formatSessionDate, formatSessionTime } from "@/lib/format";
 import { BookingButton } from "./BookingButton";
+import { WaitlistPanel } from "./WaitlistPanel";
 
 export default async function SessionsPage() {
   const { supabase, user } = await requireProfile();
@@ -39,15 +40,47 @@ export default async function SessionsPage() {
   const sessionRows = sessions ?? [];
   const sessionIds = sessionRows.map((s) => s.id);
 
-  const [{ data: myBookings }, { data: spotsTaken }] = await Promise.all([
-    supabase
-      .from("bookings")
-      .select("id, session_id")
-      .eq("member_id", user.id)
-      .eq("status", "booked")
-      .in("session_id", sessionIds),
-    supabase.rpc("session_spots_taken", { p_session_ids: sessionIds }),
-  ]);
+  const [{ data: myBookings }, { data: spotsTaken }, { data: myWaitlistEntries }] =
+    await Promise.all([
+      supabase
+        .from("bookings")
+        .select("id, session_id")
+        .eq("member_id", user.id)
+        .eq("status", "booked")
+        .in("session_id", sessionIds),
+      supabase.rpc("session_spots_taken", { p_session_ids: sessionIds }),
+      supabase
+        .from("waitlist_entries")
+        .select("id, session_id, status, buddy_member_id, offer_expires_at")
+        .eq("member_id", user.id)
+        .in("session_id", sessionIds)
+        .in("status", ["waiting", "offered"]),
+    ]);
+
+  const buddyIds = Array.from(
+    new Set(
+      (myWaitlistEntries ?? [])
+        .map((e) => e.buddy_member_id)
+        .filter((id): id is string => id !== null)
+    )
+  );
+
+  const { data: buddyProfiles } = buddyIds.length
+    ? await supabase.from("profiles").select("id, full_name").in("id", buddyIds)
+    : { data: [] };
+
+  const buddyNameById = new Map((buddyProfiles ?? []).map((p) => [p.id, p.full_name]));
+  const waitlistEntryBySession = new Map(
+    (myWaitlistEntries ?? []).map((e) => [
+      e.session_id,
+      {
+        id: e.id,
+        status: e.status as "waiting" | "offered",
+        buddyName: e.buddy_member_id ? (buddyNameById.get(e.buddy_member_id) ?? null) : null,
+        offerExpiresAt: e.offer_expires_at,
+      },
+    ])
+  );
 
   const planById = new Map((allPlans ?? []).map((p) => [p.id, p]));
   const activePlan = activeMembership ? planById.get(activeMembership.plan_id) : null;
@@ -118,11 +151,18 @@ export default async function SessionsPage() {
                           booked
                         </p>
                       </div>
-                      <BookingButton
-                        sessionId={session.id}
-                        bookingId={bookingId}
-                        isFull={isFull}
-                      />
+                      {isFull && !bookingId ? (
+                        <WaitlistPanel
+                          sessionId={session.id}
+                          entry={waitlistEntryBySession.get(session.id) ?? null}
+                        />
+                      ) : (
+                        <BookingButton
+                          sessionId={session.id}
+                          bookingId={bookingId}
+                          isFull={isFull}
+                        />
+                      )}
                     </li>
                   );
                 })}
