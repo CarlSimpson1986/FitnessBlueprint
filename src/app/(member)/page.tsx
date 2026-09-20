@@ -3,6 +3,7 @@ import { requireProfile } from "@/lib/auth";
 import { formatSessionDate, formatSessionTime } from "@/lib/format";
 import { BookingButton } from "./sessions/BookingButton";
 import { FeedbackList } from "./FeedbackList";
+import { EventsList, type EventItem } from "./EventsList";
 
 const FEEDBACK_LOOKBACK_DAYS = 14;
 
@@ -79,6 +80,40 @@ export default async function HomePage() {
     templateName: feedbackTemplateById.get(session.template_id) ?? "Session",
   }));
 
+  const { data: upcomingEvents } = await supabase
+    .from("events")
+    .select("*")
+    .or(`event_date.is.null,event_date.gte.${today}`)
+    .order("event_date", { ascending: true })
+    .limit(6);
+
+  const eventRows = upcomingEvents ?? [];
+  const eventIds = eventRows.map((e) => e.id);
+
+  const { data: interestRows } = eventIds.length
+    ? await supabase.from("event_interests").select("event_id, member_id").in("event_id", eventIds)
+    : { data: [] };
+
+  const interestCountByEvent = new Map<string, number>();
+  const myInterestSet = new Set<string>();
+  for (const row of interestRows ?? []) {
+    interestCountByEvent.set(row.event_id, (interestCountByEvent.get(row.event_id) ?? 0) + 1);
+    if (row.member_id === user.id) myInterestSet.add(row.event_id);
+  }
+
+  const eventItems: EventItem[] = eventRows.map((e) => ({
+    id: e.id,
+    title: e.title,
+    description: e.description,
+    eventType: e.event_type,
+    eventDate: e.event_date,
+    location: e.location,
+    registrationUrl: e.registration_url,
+    isPaid: e.is_paid,
+    interestCount: interestCountByEvent.get(e.id) ?? 0,
+    isInterested: myInterestSet.has(e.id),
+  }));
+
   const [nextSession, ...restSessions] = sessionRows;
   const nextTemplate = nextSession ? templateById.get(nextSession.template_id) : undefined;
   const nextBookingId = nextSession ? bookingIdBySession.get(nextSession.id) ?? null : null;
@@ -153,6 +188,9 @@ export default async function HomePage() {
             </div>
           </>
         )}
+
+        <p className="fb-eyebrow mb-2 mt-6">Events</p>
+        <EventsList events={eventItems} />
       </div>
     </main>
   );

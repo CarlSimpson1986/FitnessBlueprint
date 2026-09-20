@@ -90,6 +90,16 @@ spec lives in the shared Google Doc; this is status, not spec.
   session" path always refunds every booked member regardless of
   timing, since that's the gym cancelling, not a member's late
   cancellation. Noted here only so it isn't mistaken for a gap later.
+- **Engine Race & events section** — `events`/`event_interests` (schema
+  + RLS since `0001`/`0002`) had zero app code; now wired up. Homepage
+  gets a folded-in "Events" section (same convention as session
+  feedback) listing upcoming gym + member-posted events with an
+  "I'm in" interest toggle (one-way — no delete/update policy on
+  `event_interests`, same append-only shape as `challenge_participants`)
+  and a "Post your own event" form for members. Coaches/owner get
+  `/admin/events` to post official gym events (date, location,
+  registration link, paid flag). No dedicated bottom-nav tab —
+  low-frequency content, same reasoning that kept feedback off the nav.
 
 ## Known gaps / not started
 
@@ -134,9 +144,6 @@ spec lives in the shared Google Doc; this is status, not spec.
 - **Owner/business dashboards** — not started: at-risk member alerts,
   session economics (fill rate/no-show/revenue per session or coach),
   trial-to-member conversion tracking for the 6-week funnel.
-- **Engine Race & events section** — not started. Low-effort per the
-  owner (3 races/year, monthly socials) but currently split across
-  Squarespace/social with nothing in-app.
 - **Merch** — deliberately trivial: just a link-out to the existing
   Squarespace shop, not a native shop. Owner confirmed volume doesn't
   justify more.
