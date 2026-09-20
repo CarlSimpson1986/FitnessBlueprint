@@ -66,7 +66,7 @@ export type SleepQuality = "good" | "average" | "poor";
 export type RosterEntry = {
   bookingId: string;
   memberName: string;
-  status: "booked" | "cancelled" | "attended" | "no_show" | "excused";
+  status: "booked" | "cancelled" | "attended" | "no_show" | "excused" | "invited";
   readiness: {
     feeling: Feeling;
     sleepQuality: SleepQuality | null;

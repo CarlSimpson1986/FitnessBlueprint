@@ -267,6 +267,8 @@ export type Database = {
           booked_at: string
           cancelled_at: string | null
           credit_ledger_id: string | null
+          invited_by: string | null
+          invite_expires_at: string | null
         }
         Insert: {
           id?: string
@@ -276,6 +278,8 @@ export type Database = {
           booked_at?: string
           cancelled_at?: string | null
           credit_ledger_id?: string | null
+          invited_by?: string | null
+          invite_expires_at?: string | null
         }
         Update: {
           id?: string
@@ -285,6 +289,8 @@ export type Database = {
           booked_at?: string
           cancelled_at?: string | null
           credit_ledger_id?: string | null
+          invited_by?: string | null
+          invite_expires_at?: string | null
         }
         Relationships: []
       }
@@ -728,6 +734,8 @@ export type Database = {
           booked_at: string
           cancelled_at: string | null
           credit_ledger_id: string | null
+          invited_by: string | null
+          invite_expires_at: string | null
         }
       }
       cancel_booking: {
@@ -742,6 +750,8 @@ export type Database = {
           booked_at: string
           cancelled_at: string | null
           credit_ledger_id: string | null
+          invited_by: string | null
+          invite_expires_at: string | null
         }
       }
       session_spots_taken: {
@@ -752,6 +762,71 @@ export type Database = {
           session_id: string
           spots_taken: number
         }[]
+      }
+      invite_buddy: {
+        Args: {
+          p_session_id: string
+          p_buddy_member_id: string
+        }
+        Returns: {
+          id: string
+          session_id: string
+          member_id: string
+          status: Database['public']['Enums']['booking_status']
+          booked_at: string
+          cancelled_at: string | null
+          credit_ledger_id: string | null
+          invited_by: string | null
+          invite_expires_at: string | null
+        }
+      }
+      accept_booking_invite: {
+        Args: {
+          p_booking_id: string
+        }
+        Returns: {
+          id: string
+          session_id: string
+          member_id: string
+          status: Database['public']['Enums']['booking_status']
+          booked_at: string
+          cancelled_at: string | null
+          credit_ledger_id: string | null
+          invited_by: string | null
+          invite_expires_at: string | null
+        }
+      }
+      decline_booking_invite: {
+        Args: {
+          p_booking_id: string
+        }
+        Returns: {
+          id: string
+          session_id: string
+          member_id: string
+          status: Database['public']['Enums']['booking_status']
+          booked_at: string
+          cancelled_at: string | null
+          credit_ledger_id: string | null
+          invited_by: string | null
+          invite_expires_at: string | null
+        }
+      }
+      withdraw_booking_invite: {
+        Args: {
+          p_booking_id: string
+        }
+        Returns: {
+          id: string
+          session_id: string
+          member_id: string
+          status: Database['public']['Enums']['booking_status']
+          booked_at: string
+          cancelled_at: string | null
+          credit_ledger_id: string | null
+          invited_by: string | null
+          invite_expires_at: string | null
+        }
       }
       join_waitlist: {
         Args: {
@@ -848,7 +923,7 @@ export type Database = {
       coach_access_level: 'full' | 'cover_and_kids_only'
       membership_status: 'active' | 'paused' | 'cancelled' | 'expired'
       session_status: 'scheduled' | 'cancelled' | 'completed'
-      booking_status: 'booked' | 'cancelled' | 'attended' | 'no_show' | 'excused'
+      booking_status: 'booked' | 'cancelled' | 'attended' | 'no_show' | 'excused' | 'invited'
       waitlist_status: 'waiting' | 'offered' | 'accepted' | 'expired' | 'declined'
       challenge_type: 'attendance' | 'habit' | 'event_prep' | 'team'
       event_type: 'gym' | 'member_posted'

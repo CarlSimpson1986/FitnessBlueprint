@@ -10,6 +10,7 @@ const STATUS_LABEL: Record<RosterEntry["status"], string> = {
   no_show: "No-show",
   excused: "Excused",
   cancelled: "Cancelled",
+  invited: "Invited (pending)",
 };
 
 const FEELING_LABEL: Record<"great" | "okay" | "rough", string> = {

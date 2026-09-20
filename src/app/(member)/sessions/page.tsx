@@ -2,6 +2,8 @@ import { requireProfile } from "@/lib/auth";
 import { formatSessionDate, formatSessionTime } from "@/lib/format";
 import { BookingButton } from "./BookingButton";
 import { WaitlistPanel } from "./WaitlistPanel";
+import { BuddyInvitePanel } from "./BuddyInvitePanel";
+import { InviteResponsePanel } from "./InviteResponsePanel";
 
 export default async function SessionsPage() {
   const { supabase, user } = await requireProfile();
@@ -40,28 +42,44 @@ export default async function SessionsPage() {
   const sessionRows = sessions ?? [];
   const sessionIds = sessionRows.map((s) => s.id);
 
-  const [{ data: myBookings }, { data: spotsTaken }, { data: myWaitlistEntries }] =
-    await Promise.all([
-      supabase
-        .from("bookings")
-        .select("id, session_id")
-        .eq("member_id", user.id)
-        .eq("status", "booked")
-        .in("session_id", sessionIds),
-      supabase.rpc("session_spots_taken", { p_session_ids: sessionIds }),
-      supabase
-        .from("waitlist_entries")
-        .select("id, session_id, status, buddy_member_id, offer_expires_at")
-        .eq("member_id", user.id)
-        .in("session_id", sessionIds)
-        .in("status", ["waiting", "offered"]),
-    ]);
+  const [
+    { data: myBookings },
+    { data: spotsTaken },
+    { data: myWaitlistEntries },
+    { data: sentInvites },
+  ] = await Promise.all([
+    supabase
+      .from("bookings")
+      .select("id, session_id, status, invite_expires_at, invited_by")
+      .eq("member_id", user.id)
+      .in("status", ["booked", "invited"])
+      .in("session_id", sessionIds),
+    supabase.rpc("session_spots_taken", { p_session_ids: sessionIds }),
+    supabase
+      .from("waitlist_entries")
+      .select("id, session_id, status, buddy_member_id, offer_expires_at")
+      .eq("member_id", user.id)
+      .in("session_id", sessionIds)
+      .in("status", ["waiting", "offered"]),
+    supabase
+      .from("bookings")
+      .select("id, session_id, member_id, status")
+      .eq("invited_by", user.id)
+      .eq("status", "invited")
+      .in("session_id", sessionIds),
+  ]);
+
+  const receivedInvites = (myBookings ?? []).filter(
+    (b) => b.status === "invited" && b.invite_expires_at && b.invite_expires_at > new Date().toISOString()
+  );
 
   const buddyIds = Array.from(
     new Set(
-      (myWaitlistEntries ?? [])
-        .map((e) => e.buddy_member_id)
-        .filter((id): id is string => id !== null)
+      [
+        ...(myWaitlistEntries ?? []).map((e) => e.buddy_member_id),
+        ...(sentInvites ?? []).map((i) => i.member_id),
+        ...receivedInvites.map((b) => b.invited_by),
+      ].filter((id): id is string => id !== null)
     )
   );
 
@@ -81,6 +99,22 @@ export default async function SessionsPage() {
       },
     ])
   );
+  const sentInviteBySession = new Map(
+    (sentInvites ?? []).map((i) => [
+      i.session_id,
+      { id: i.id, buddyName: buddyNameById.get(i.member_id) ?? "your buddy", status: "invited" as const },
+    ])
+  );
+  const receivedInviteBySession = new Map(
+    receivedInvites.map((b) => [
+      b.session_id,
+      {
+        bookingId: b.id,
+        expiresAt: b.invite_expires_at!,
+        inviterName: buddyNameById.get(b.invited_by!) ?? "Someone",
+      },
+    ])
+  );
 
   const planById = new Map((allPlans ?? []).map((p) => [p.id, p]));
   const activePlan = activeMembership ? planById.get(activeMembership.plan_id) : null;
@@ -91,7 +125,9 @@ export default async function SessionsPage() {
 
   const templateById = new Map((templates ?? []).map((t) => [t.id, t]));
   const coachById = new Map((coaches ?? []).map((c) => [c.id, c]));
-  const myBookingBySession = new Map((myBookings ?? []).map((b) => [b.session_id, b.id]));
+  const myBookingBySession = new Map(
+    (myBookings ?? []).filter((b) => b.status === "booked").map((b) => [b.session_id, b.id])
+  );
   const spotsBySession = new Map(
     (spotsTaken ?? []).map((s) => [s.session_id, Number(s.spots_taken)])
   );
@@ -134,6 +170,8 @@ export default async function SessionsPage() {
                   const template = templateById.get(session.template_id);
                   const coach = coachById.get(session.coach_id);
                   const bookingId = myBookingBySession.get(session.id) ?? null;
+                  const receivedInvite = receivedInviteBySession.get(session.id) ?? null;
+                  const sentInvite = sentInviteBySession.get(session.id) ?? null;
                   const taken = spotsBySession.get(session.id) ?? 0;
                   const isFull = taken >= session.capacity;
 
@@ -151,17 +189,24 @@ export default async function SessionsPage() {
                           booked
                         </p>
                       </div>
-                      {isFull && !bookingId ? (
+                      {receivedInvite ? (
+                        <InviteResponsePanel
+                          bookingId={receivedInvite.bookingId}
+                          inviterName={receivedInvite.inviterName}
+                          expiresAt={receivedInvite.expiresAt}
+                        />
+                      ) : bookingId ? (
+                        <div className="flex flex-col items-end">
+                          <BookingButton sessionId={session.id} bookingId={bookingId} isFull={isFull} />
+                          <BuddyInvitePanel sessionId={session.id} sentInvite={sentInvite} />
+                        </div>
+                      ) : isFull ? (
                         <WaitlistPanel
                           sessionId={session.id}
                           entry={waitlistEntryBySession.get(session.id) ?? null}
                         />
                       ) : (
-                        <BookingButton
-                          sessionId={session.id}
-                          bookingId={bookingId}
-                          isFull={isFull}
-                        />
+                        <BookingButton sessionId={session.id} bookingId={bookingId} isFull={isFull} />
                       )}
                     </li>
                   );

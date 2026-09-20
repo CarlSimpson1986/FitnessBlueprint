@@ -91,3 +91,69 @@ export async function acceptWaitlistOffer(entryId: string): Promise<ActionResult
 
   return {};
 }
+
+export async function inviteBuddy(sessionId: string, buddyEmail: string): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const trimmedEmail = buddyEmail.trim();
+  if (!trimmedEmail) {
+    return { error: "Enter your buddy's email." };
+  }
+
+  const { data, error: lookupError } = await supabase.rpc("lookup_member_by_email", {
+    p_email: trimmedEmail,
+  });
+
+  if (lookupError) {
+    return { error: lookupError.message };
+  }
+
+  const buddy = data?.[0];
+  if (!buddy) {
+    return { error: "No member found with that email." };
+  }
+
+  const { error } = await supabase.rpc("invite_buddy", {
+    p_session_id: sessionId,
+    p_buddy_member_id: buddy.id,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return {};
+}
+
+export async function acceptBookingInvite(bookingId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("accept_booking_invite", { p_booking_id: bookingId });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return {};
+}
+
+export async function declineBookingInvite(bookingId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("decline_booking_invite", { p_booking_id: bookingId });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return {};
+}
+
+export async function withdrawBookingInvite(bookingId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("withdraw_booking_invite", { p_booking_id: bookingId });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return {};
+}

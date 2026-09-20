@@ -144,6 +144,21 @@ spec lives in the shared Google Doc; this is status, not spec.
   day's plan early. Accepted for v1: plan text isn't sensitive, unlike
   the profile/feedback data where the same class of gap was closed
   properly (`0011`, `session_feedback`'s no-coach-read policy).
+- **Buddy booking** (non-waitlist): owner chose "invite-and-reserve" —
+  a member who's already booked can invite a buddy by email; it
+  reserves a real spot for 2 hours (counted everywhere a booked spot
+  is, including the displayed "X/Y booked") without spending the
+  buddy's credit, and the buddy accepts (spending their *own* credit,
+  same checks as a normal booking) or declines. Either outcome — or a
+  timeout — frees the spot and sweeps the waitlist, same as any other
+  freed spot. Reuses `bookings` rather than a new table (a pending
+  invite IS a reserved booking, just unconfirmed) via two new columns
+  and a new `'invited'` status. **Needs two migrations run separately,
+  in order**: `0013_booking_invited_status.sql` (just the new enum
+  value — Postgres won't allow a new enum value to be used in the same
+  transaction that adds it) must finish *before*
+  `0014_buddy_booking.sql` (the columns, functions, and RLS) — pasting
+  both into one SQL Editor query and running together will fail.
 
 ## Known gaps / not started
 
@@ -171,10 +186,6 @@ spec lives in the shared Google Doc; this is status, not spec.
   by hand via the hosted project's SQL Editor because the `supabase` CLI's
   browser-login token wasn't reaching either the sandboxed or interactive
   shell here. Worth revisiting so `supabase db push` actually works.
-- **Buddy *booking*** (nominating a buddy for a normal, non-waitlist
-  booking, not just the waitlist) — not started. Buddy *waitlist* now
-  ships (see "Done" above); this is the separate, smaller piece still
-  open.
 - **Owner/business dashboards** — not started: at-risk member alerts,
   session economics (fill rate/no-show/revenue per session or coach),
   trial-to-member conversion tracking for the 6-week funnel.
