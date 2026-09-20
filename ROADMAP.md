@@ -65,6 +65,15 @@ spec lives in the shared Google Doc; this is status, not spec.
   accept/decline) instead of by a scheduled job — a member only learns
   about an offer by opening the app. Frontend: `WaitlistPanel.tsx` on
   the timetable, next to `BookingButton.tsx`.
+- **Coach names on the member timetable** — fixed a latent bug found
+  while building the waitlist: `0002_rls_policies.sql` only let a
+  member read their own `profiles` row, so every session rendered
+  "Coach TBC". Migration `0011_coach_names_for_members.sql` adds
+  `list_coach_names()`, a narrow `security definer` RPC (same pattern
+  as `lookup_member_by_email`) returning just `id, full_name` for
+  coach/owner rows — deliberately not a plain RLS policy, since RLS is
+  row-level and would've let any member pull a coach's phone number and
+  emergency contact via a direct REST call.
 
 ## Known gaps / not started
 
@@ -87,21 +96,6 @@ spec lives in the shared Google Doc; this is status, not spec.
   from a curated exercise library is still a whole unbuilt v1 feature.
   This is why Progress has no "total lifted" stat; add it once that
   schema exists rather than bolting on a throwaway manual-entry table.
-- **Migrations `0009_habit_and_progress_tracking.sql` and
-  `0010_waitlist.sql` need manual application** — like every migration
-  so far, apply them via the hosted Supabase project's SQL Editor (see
-  the CLI gap below).
-- **Members likely can't see coach names on the timetable — a latent
-  bug found while building the waitlist (not caused by it).**
-  `src/app/(member)/sessions/page.tsx` selects `profiles` rows for
-  coaches/owner as the signed-in member, but `0002_rls_policies.sql`
-  only lets a member read their *own* profile row (`auth.uid() = id`);
-  there's no policy letting a member read a coach's row. RLS silently
-  filters rather than erroring, so this likely renders as "Coach TBC"
-  for every session, every member, right now. Needs a narrow RLS policy
-  (e.g. members can read `id, full_name` for rows where `role in
-  ('coach', 'owner')`) in its own migration — not fixed here since it's
-  unrelated to the waitlist and deserves its own PR.
 - **No local/CI Supabase.** This project has no `supabase start` (Docker)
   workflow verified working in this environment — migrations were applied
   by hand via the hosted project's SQL Editor because the `supabase` CLI's

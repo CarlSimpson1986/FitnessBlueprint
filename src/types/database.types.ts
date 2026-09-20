@@ -809,6 +809,13 @@ export type Database = {
           full_name: string
         }[]
       }
+      list_coach_names: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          full_name: string
+        }[]
+      }
       match_qa_cache: {
         Args: {
           query_embedding: number[]

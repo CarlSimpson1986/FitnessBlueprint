@@ -24,7 +24,7 @@ export default async function SessionsPage() {
       .order("session_date")
       .order("start_time"),
     supabase.from("session_templates").select("id, name"),
-    supabase.from("profiles").select("id, full_name").in("role", ["coach", "owner"]),
+    supabase.rpc("list_coach_names"),
     supabase
       .from("member_memberships")
       .select("plan_id")
