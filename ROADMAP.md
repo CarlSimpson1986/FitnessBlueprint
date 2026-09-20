@@ -128,6 +128,22 @@ spec lives in the shared Google Doc; this is status, not spec.
   **Not built**: the shareable end-of-programme summary card the spec
   also mentions — that's image/sharing generation, a distinct piece of
   work from the tracker itself.
+- **"What's On Today" session preview**: `session_plans` (schema + RLS
+  since `0001`/`0002`) had zero app code. `/admin/session-plans` lets a
+  coach paste one whole training block at once — a line with just a
+  date (`YYYY-MM-DD`) starts each day's section (`src/lib/session-
+  plans.ts` does the parsing) — matched against already-scheduled
+  sessions of the chosen type and upserted in one `block_id` batch.
+  `is_published` is set `true` immediately: the coach uploading the
+  block *is* the publish decision, per the owner's "auto-publish day by
+  day, not one-at-a-time entry" ask. The app only ever displays a plan
+  for a session happening **today** (homepage for members, always
+  visible to coaches/owner in `/admin/sessions`) — future days aren't
+  shown by the UI, but note this isn't enforced by RLS itself, so a
+  member hitting the REST API directly could technically read a future
+  day's plan early. Accepted for v1: plan text isn't sensitive, unlike
+  the profile/feedback data where the same class of gap was closed
+  properly (`0011`, `session_feedback`'s no-coach-read policy).
 
 ## Known gaps / not started
 
@@ -159,9 +175,6 @@ spec lives in the shared Google Doc; this is status, not spec.
   booking, not just the waitlist) — not started. Buddy *waitlist* now
   ships (see "Done" above); this is the separate, smaller piece still
   open.
-- **"What's On Today" session preview** — not started. Owner wants
-  bulk-upload of a whole training block's session plans that then
-  auto-publish day by day, not one-at-a-time entry.
 - **Owner/business dashboards** — not started: at-risk member alerts,
   session economics (fill rate/no-show/revenue per session or coach),
   trial-to-member conversion tracking for the 6-week funnel.

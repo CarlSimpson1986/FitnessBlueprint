@@ -119,6 +119,14 @@ export default async function HomePage() {
   const nextTemplate = nextSession ? templateById.get(nextSession.template_id) : undefined;
   const nextBookingId = nextSession ? bookingIdBySession.get(nextSession.id) ?? null : null;
 
+  const { data: todaysPlan } = nextSession && nextSession.session_date === today
+    ? await supabase
+        .from("session_plans")
+        .select("plan_text")
+        .eq("session_id", nextSession.id)
+        .maybeSingle()
+    : { data: null };
+
   const { data: existingCheckin } = nextSession
     ? await supabase
         .from("readiness_checkins")
@@ -149,6 +157,14 @@ export default async function HomePage() {
               </div>
               <BookingButton sessionId={nextSession.id} bookingId={nextBookingId} isFull={false} />
             </div>
+            {todaysPlan && (
+              <div className="border-t border-blueprint-line/60 mt-3 pt-3">
+                <p className="fb-eyebrow mb-1">Today&apos;s session</p>
+                <p className="text-xs text-blueprint-muted whitespace-pre-wrap">
+                  {todaysPlan.plan_text}
+                </p>
+              </div>
+            )}
             <ReadinessCheckin sessionId={nextSession.id} hasCheckedIn={!!existingCheckin} />
           </div>
         ) : (

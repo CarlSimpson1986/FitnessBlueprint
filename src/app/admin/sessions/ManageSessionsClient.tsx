@@ -15,6 +15,7 @@ type EnrichedSession = {
   templateName: string;
   coachName: string;
   spotsTaken: number;
+  planText: string | null;
 };
 
 export function ManageSessionsClient({

@@ -13,6 +13,7 @@ type EnrichedSession = {
   templateName: string;
   coachName: string;
   spotsTaken: number;
+  planText: string | null;
 };
 
 function buildDayRange(days: number) {
@@ -111,10 +112,24 @@ export function SessionsByDay({
                     <p className="text-xs text-blueprint-muted mt-1">
                       {session.coachName} · {session.spotsTaken}/{session.capacity} booked
                     </p>
+                    {session.planText && (
+                      <p className="text-xs text-blueprint-accent mt-1 line-clamp-1">
+                        Plan: {session.planText.split("\n")[0]}
+                      </p>
+                    )}
                   </button>
                   <CancelSessionButton sessionId={session.id} />
                 </div>
-                {isExpanded && <SessionRoster sessionId={session.id} />}
+                {isExpanded && (
+                  <>
+                    {session.planText && (
+                      <p className="px-4 pb-3 text-xs text-blueprint-muted whitespace-pre-wrap border-t border-blueprint-line/60 pt-3">
+                        {session.planText}
+                      </p>
+                    )}
+                    <SessionRoster sessionId={session.id} />
+                  </>
+                )}
               </li>
             );
           })}

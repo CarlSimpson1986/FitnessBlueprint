@@ -28,6 +28,18 @@ export default async function AdminPage() {
           </Link>
 
           <Link
+            href="/admin/session-plans"
+            className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
+          >
+            <p className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-2">
+              Session plans
+            </p>
+            <p className="text-blueprint-muted text-sm leading-relaxed">
+              Bulk-upload a training block, published day by day.
+            </p>
+          </Link>
+
+          <Link
             href="/admin/challenges"
             className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
           >

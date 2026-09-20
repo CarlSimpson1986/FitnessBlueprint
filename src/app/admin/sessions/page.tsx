@@ -37,12 +37,21 @@ export default async function ManageSessionsPage() {
     .in("session_id", sessionIds.length > 0 ? sessionIds : [""])
     .neq("status", "cancelled");
 
+  // Coaches/owner see every plan regardless of is_published (RLS:
+  // "members read published plans" only gates the member-facing view) —
+  // this is the "coaches see the same preview as a prompt" ask.
+  const { data: plans } = await supabase
+    .from("session_plans")
+    .select("session_id, plan_text")
+    .in("session_id", sessionIds.length > 0 ? sessionIds : [""]);
+
   const templateById = new Map((templates ?? []).map((t) => [t.id, t]));
   const coachById = new Map((coaches ?? []).map((c) => [c.id, c]));
   const spotsBySession = new Map<string, number>();
   for (const booking of activeBookings ?? []) {
     spotsBySession.set(booking.session_id, (spotsBySession.get(booking.session_id) ?? 0) + 1);
   }
+  const planTextBySession = new Map((plans ?? []).map((p) => [p.session_id, p.plan_text]));
 
   const enrichedSessions = sessionRows.map((session) => ({
     id: session.id,
@@ -52,6 +61,7 @@ export default async function ManageSessionsPage() {
     templateName: templateById.get(session.template_id)?.name ?? "Session",
     coachName: coachById.get(session.coach_id)?.full_name ?? "Coach TBC",
     spotsTaken: spotsBySession.get(session.id) ?? 0,
+    planText: planTextBySession.get(session.id) ?? null,
   }));
 
   return (
