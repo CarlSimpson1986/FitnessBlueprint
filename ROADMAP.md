@@ -74,6 +74,22 @@ spec lives in the shared Google Doc; this is status, not spec.
   coach/owner rows — deliberately not a plain RLS policy, since RLS is
   row-level and would've let any member pull a coach's phone number and
   emergency contact via a direct REST call.
+- **Cancellation window enforcement** — `cancel_booking()` previously
+  always refunded the credit with no time check. Migration
+  `0012_cancellation_window.sql` now forfeits the credit (no extra fee)
+  when cancelling within 3 hours of session start, per confirmed
+  policy, and still refunds outside that window. `session_date`/
+  `start_time` have no tz column and are treated as Europe/London
+  wall-clock time, interpreted via `at time zone 'Europe/London'` so
+  BST/GMT transitions resolve correctly. Note: a member currently gets
+  no UI signal about which outcome happened (refunded vs. forfeited) —
+  the cancel button just says "Cancel" either way; worth a small
+  follow-up if it generates confused members/support questions.
+- **Coach-initiated session cancellation is unaffected by the above,
+  correctly** — `src/app/admin/sessions/actions.ts`'s "cancel whole
+  session" path always refunds every booked member regardless of
+  timing, since that's the gym cancelling, not a member's late
+  cancellation. Noted here only so it isn't mistaken for a gap later.
 
 ## Known gaps / not started
 
@@ -101,12 +117,6 @@ spec lives in the shared Google Doc; this is status, not spec.
   by hand via the hosted project's SQL Editor because the `supabase` CLI's
   browser-login token wasn't reaching either the sandboxed or interactive
   shell here. Worth revisiting so `supabase db push` actually works.
-- **Cancellation window is not enforced — a real bug against the
-  confirmed policy.** `cancel_booking()` (`0005_booking_functions.sql`/
-  `0007_credit_deduction.sql`) always refunds the credit on cancel with
-  no time check at all. Confirmed policy: cancelling within 3 hours of
-  session start should forfeit the credit (no extra fee); only outside
-  that window should it refund. Needs a new migration.
 - **Buddy *booking*** (nominating a buddy for a normal, non-waitlist
   booking, not just the waitlist) — not started. Buddy *waitlist* now
   ships (see "Done" above); this is the separate, smaller piece still
