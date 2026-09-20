@@ -4,6 +4,7 @@ import { formatSessionDate, formatSessionTime } from "@/lib/format";
 import { BookingButton } from "./sessions/BookingButton";
 import { FeedbackList } from "./FeedbackList";
 import { EventsList, type EventItem } from "./EventsList";
+import { ReadinessCheckin } from "./ReadinessCheckin";
 
 const FEEDBACK_LOOKBACK_DAYS = 14;
 
@@ -118,6 +119,15 @@ export default async function HomePage() {
   const nextTemplate = nextSession ? templateById.get(nextSession.template_id) : undefined;
   const nextBookingId = nextSession ? bookingIdBySession.get(nextSession.id) ?? null : null;
 
+  const { data: existingCheckin } = nextSession
+    ? await supabase
+        .from("readiness_checkins")
+        .select("id")
+        .eq("member_id", user.id)
+        .eq("session_id", nextSession.id)
+        .maybeSingle()
+    : { data: null };
+
   return (
     <main className="min-h-screen px-5 py-8">
       <div className="max-w-2xl mx-auto">
@@ -139,6 +149,7 @@ export default async function HomePage() {
               </div>
               <BookingButton sessionId={nextSession.id} bookingId={nextBookingId} isFull={false} />
             </div>
+            <ReadinessCheckin sessionId={nextSession.id} hasCheckedIn={!!existingCheckin} />
           </div>
         ) : (
           <div className="fb-card mb-4">

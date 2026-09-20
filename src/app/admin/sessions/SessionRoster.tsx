@@ -12,6 +12,30 @@ const STATUS_LABEL: Record<RosterEntry["status"], string> = {
   cancelled: "Cancelled",
 };
 
+const FEELING_LABEL: Record<"great" | "okay" | "rough", string> = {
+  great: "Great",
+  okay: "Okay",
+  rough: "Rough",
+};
+
+function ReadinessNote({ readiness }: { readiness: NonNullable<RosterEntry["readiness"]> }) {
+  const parts = [FEELING_LABEL[readiness.feeling]];
+  if (readiness.sleepQuality) parts.push(`sleep: ${readiness.sleepQuality}`);
+  if (readiness.painArea) parts.push(`pain: ${readiness.painArea}`);
+
+  return (
+    <p
+      className={
+        readiness.feeling === "rough" || readiness.painArea
+          ? "text-[10px] text-red-400 mt-0.5"
+          : "text-[10px] text-blueprint-muted mt-0.5"
+      }
+    >
+      {parts.join(" · ")}
+    </p>
+  );
+}
+
 export function SessionRoster({ sessionId }: { sessionId: string }) {
   const router = useRouter();
   const [roster, setRoster] = useState<RosterEntry[] | null>(null);
@@ -71,7 +95,10 @@ export function SessionRoster({ sessionId }: { sessionId: string }) {
             key={entry.bookingId}
             className="flex items-center justify-between gap-3 border-t border-blueprint-line/60 pt-2 first:border-t-0 first:pt-0"
           >
-            <span className="text-sm text-blueprint-ink">{entry.memberName}</span>
+            <span>
+              <span className="text-sm text-blueprint-ink">{entry.memberName}</span>
+              {entry.readiness && <ReadinessNote readiness={entry.readiness} />}
+            </span>
 
             {entry.status === "booked" ? (
               <div className="flex gap-1.5">

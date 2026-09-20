@@ -100,6 +100,19 @@ spec lives in the shared Google Doc; this is status, not spec.
   `/admin/events` to post official gym events (date, location,
   registration link, paid flag). No dedicated bottom-nav tab —
   low-frequency content, same reasoning that kept feedback off the nav.
+- **Readiness check-in**: `readiness_checkins` (schema + RLS since
+  `0001`/`0002`) had zero app code. Members get a compact feeling/sleep/
+  pain-area check-in folded into the homepage's "Coming up" card for
+  their next booked session (shown once per session — unlike
+  `session_feedback`, this table *does* have a member-read policy, so
+  "already submitted" is a real query, not a localStorage guess).
+  Coaches/owner see it inline in the session roster (`/admin/sessions`)
+  next to each member's name, flagged in red if they reported feeling
+  "rough" or noted pain. No push notification — that's the actual
+  confirmed-spec version ("pre-session push notification 10-second
+  check-in") but push infra doesn't exist yet (Firebase env vars are
+  present but nothing reads them); a member currently only sees the
+  prompt by opening the app, same lazy pattern as waitlist offers.
 
 ## Known gaps / not started
 
@@ -138,9 +151,6 @@ spec lives in the shared Google Doc; this is status, not spec.
   Progress tab shipped above; this is the day-count/programme-phase
   framing tied to the onboarding funnel (`member_memberships`), plus a
   shareable end-of-programme summary card.
-- **Readiness check-in** — not started. Pre-session push notification
-  10-second check-in (feeling/pain/sleep), separate from the
-  post-session feedback that already ships.
 - **Owner/business dashboards** — not started: at-risk member alerts,
   session economics (fill rate/no-show/revenue per session or coach),
   trial-to-member conversion tracking for the 6-week funnel.

@@ -60,25 +60,40 @@ export async function createSessions(input: {
   return {};
 }
 
+export type Feeling = "great" | "okay" | "rough";
+export type SleepQuality = "good" | "average" | "poor";
+
 export type RosterEntry = {
   bookingId: string;
   memberName: string;
   status: "booked" | "cancelled" | "attended" | "no_show" | "excused";
+  readiness: {
+    feeling: Feeling;
+    sleepQuality: SleepQuality | null;
+    painArea: string | null;
+  } | null;
 };
 
 /**
  * Roster is read via the RLS-respecting client — "coaches and owner read
- * all bookings" and "coaches and owner read all profiles" (0002) already
- * cover this, so there's nothing to bypass here.
+ * all bookings", "coaches and owner read all profiles", and "coaches and
+ * owner read all checkins" (0002) already cover this, so there's nothing
+ * to bypass here.
  */
 export async function getSessionRoster(sessionId: string): Promise<{ roster?: RosterEntry[]; error?: string }> {
   const { supabase } = await requireCoachOrOwner();
 
-  const { data: bookings, error } = await supabase
-    .from("bookings")
-    .select("id, member_id, status")
-    .eq("session_id", sessionId)
-    .order("booked_at");
+  const [{ data: bookings, error }, { data: checkins }] = await Promise.all([
+    supabase
+      .from("bookings")
+      .select("id, member_id, status")
+      .eq("session_id", sessionId)
+      .order("booked_at"),
+    supabase
+      .from("readiness_checkins")
+      .select("member_id, feeling, sleep_quality, pain_area")
+      .eq("session_id", sessionId),
+  ]);
 
   if (error) {
     return { error: error.message };
@@ -95,12 +110,23 @@ export async function getSessionRoster(sessionId: string): Promise<{ roster?: Ro
   }
 
   const nameById = new Map((members ?? []).map((m) => [m.id, m.full_name]));
+  const checkinByMember = new Map((checkins ?? []).map((c) => [c.member_id, c]));
 
-  const roster = (bookings ?? []).map((booking) => ({
-    bookingId: booking.id,
-    memberName: nameById.get(booking.member_id) ?? "Unknown member",
-    status: booking.status,
-  }));
+  const roster = (bookings ?? []).map((booking) => {
+    const checkin = checkinByMember.get(booking.member_id);
+    return {
+      bookingId: booking.id,
+      memberName: nameById.get(booking.member_id) ?? "Unknown member",
+      status: booking.status,
+      readiness: checkin
+        ? {
+            feeling: checkin.feeling as Feeling,
+            sleepQuality: checkin.sleep_quality as SleepQuality | null,
+            painArea: checkin.pain_area,
+          }
+        : null,
+    };
+  });
 
   return { roster };
 }
