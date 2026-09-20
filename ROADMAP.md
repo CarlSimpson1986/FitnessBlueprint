@@ -113,6 +113,21 @@ spec lives in the shared Google Doc; this is status, not spec.
   check-in") but push infra doesn't exist yet (Firebase env vars are
   present but nothing reads them); a member currently only sees the
   prompt by opening the app, same lazy pattern as waitlist offers.
+- **6-week challenge tracker**: `challenges`/`challenge_participants`
+  (schema + RLS since `0001`/`0002`) had zero app code. Members see a
+  "Challenges" section on `/progress` — join an open challenge, or see
+  ones a coach has already added them to — with a live progress bar for
+  `attendance` and `habit` types, computed at read time from
+  `bookings`/`habit_logs` (same convention as the attendance streak in
+  `src/lib/progress.ts`), never a stored counter, since
+  `challenge_participants.progress_value` has no RLS update policy for
+  anyone but the service role. `event_prep` and `team` types have no
+  automatic data source (no exercise/set-logging schema, no team/group
+  table) — members just see "your coach is tracking this" instead of a
+  guessed-at bar. Coaches/owner get `/admin/challenges` to create them.
+  **Not built**: the shareable end-of-programme summary card the spec
+  also mentions — that's image/sharing generation, a distinct piece of
+  work from the tracker itself.
 
 ## Known gaps / not started
 
@@ -147,10 +162,6 @@ spec lives in the shared Google Doc; this is status, not spec.
 - **"What's On Today" session preview** — not started. Owner wants
   bulk-upload of a whole training block's session plans that then
   auto-publish day by day, not one-at-a-time entry.
-- **6-week challenge tracker** — not started. Distinct from the simpler
-  Progress tab shipped above; this is the day-count/programme-phase
-  framing tied to the onboarding funnel (`member_memberships`), plus a
-  shareable end-of-programme summary card.
 - **Owner/business dashboards** — not started: at-risk member alerts,
   session economics (fill rate/no-show/revenue per session or coach),
   trial-to-member conversion tracking for the 6-week funnel.

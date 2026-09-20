@@ -1,8 +1,10 @@
 import { requireProfile } from "@/lib/auth";
 import { toLocalDateKey } from "@/lib/format";
 import { computeWeekStreak } from "@/lib/progress";
+import { computeChallengeProgress } from "@/lib/challenges";
 import { HabitChecklist } from "./HabitChecklist";
 import { WeighInForm } from "./WeighInForm";
+import { ChallengesList, type ChallengeItem } from "./ChallengesList";
 
 export default async function ProgressPage() {
   const { supabase, user } = await requireProfile();
@@ -57,6 +59,52 @@ export default async function ProgressPage() {
     isCompleted: completedHabitIds.has(h.id),
   }));
 
+  const [
+    { data: allHabitLogs },
+    { data: challengeRows },
+    { data: myParticipantRows },
+    { data: allParticipantRows },
+  ] = await Promise.all([
+    supabase.from("habit_logs").select("log_date").eq("member_id", user.id),
+    supabase.from("challenges").select("*").gte("ends_at", today).order("starts_at"),
+    supabase.from("challenge_participants").select("challenge_id").eq("member_id", user.id),
+    supabase.from("challenge_participants").select("challenge_id"),
+  ]);
+
+  const habitLogDates = (allHabitLogs ?? []).map((l) => l.log_date);
+  const joinedChallengeIds = new Set((myParticipantRows ?? []).map((p) => p.challenge_id));
+
+  const participantCountByChallenge = new Map<string, number>();
+  for (const row of allParticipantRows ?? []) {
+    participantCountByChallenge.set(
+      row.challenge_id,
+      (participantCountByChallenge.get(row.challenge_id) ?? 0) + 1
+    );
+  }
+
+  const challenges: ChallengeItem[] = (challengeRows ?? []).map((c) => {
+    const isJoined = joinedChallengeIds.has(c.id);
+    return {
+      id: c.id,
+      title: c.title,
+      description: c.description,
+      type: c.type,
+      isOpen: c.is_open,
+      targetValue: c.target_value,
+      startsAt: c.starts_at,
+      endsAt: c.ends_at,
+      participantCount: participantCountByChallenge.get(c.id) ?? 0,
+      isJoined,
+      progress: isJoined
+        ? computeChallengeProgress(
+            c.type,
+            { startsAt: c.starts_at, endsAt: c.ends_at },
+            { attendedSessionDates: attendedDates, habitLogDates }
+          )
+        : null,
+    };
+  });
+
   return (
     <main className="min-h-screen px-5 py-8">
       <div className="max-w-2xl mx-auto">
@@ -86,6 +134,9 @@ export default async function ProgressPage() {
         </div>
 
         <HabitChecklist habits={habits} />
+
+        <p className="fb-eyebrow mb-2 mt-6">Challenges</p>
+        <ChallengesList challenges={challenges} />
       </div>
     </main>
   );
