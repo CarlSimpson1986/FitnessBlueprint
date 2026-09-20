@@ -169,6 +169,13 @@ spec lives in the shared Google Doc; this is status, not spec.
   Link, so there's no established metadata contract (e.g. how a Stripe
   session maps back to a `member_id`/`plan_id`) to build the handler against
   yet — that needs deciding before the TODOs can be filled in for real.
+  **Explicitly raised and deferred (2026-09-20)**: since first sale is
+  always an owner-sent payment link, not in-app self-serve, the question
+  is how a Stripe customer/subscription maps back to a `member_id` when
+  webhooks fire — options discussed were the owner setting
+  `client_reference_id`/metadata when creating the link vs. matching by
+  email. Owner chose not to decide this yet rather than guess — pick this
+  up by asking directly, don't re-derive an answer from this note.
 - **`coach_access_level` is not enforced anywhere.** The column and enum
   exist (`cover_and_kids_only` vs `full`), and the schema comment says
   Tommy is the only `cover_and_kids_only` coach — but no RLS policy or
@@ -188,7 +195,9 @@ spec lives in the shared Google Doc; this is status, not spec.
   shell here. Worth revisiting so `supabase db push` actually works.
 - **Owner/business dashboards** — not started: at-risk member alerts,
   session economics (fill rate/no-show/revenue per session or coach),
-  trial-to-member conversion tracking for the 6-week funnel.
+  trial-to-member conversion tracking for the 6-week funnel. Revenue/
+  fill-rate reporting specifically is blocked on Stripe billing above —
+  there's no payments log to report on until that's wired up.
 - **Merch** — deliberately trivial: just a link-out to the existing
   Squarespace shop, not a native shop. Owner confirmed volume doesn't
   justify more.
