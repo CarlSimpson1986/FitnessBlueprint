@@ -1,4 +1,4 @@
-// Hand-written to exactly match supabase/migrations/0001-0003.
+// Hand-written to exactly match supabase/migrations/0001-0021.
 // Docker wasn't available locally to run `supabase gen types` (which shells
 // out to a container for introspection), so this was built directly from
 // the migration SQL instead of the live database. If Docker becomes
@@ -696,24 +696,342 @@ export type Database = {
         }
         Relationships: []
       }
-      weigh_ins: {
+      body_metrics: {
         Row: {
           id: string
           member_id: string
-          weight_kg: number
+          weight_kg: number | null
+          waist_cm: number | null
+          body_fat_pct: number | null
           recorded_at: string
         }
         Insert: {
           id?: string
           member_id: string
-          weight_kg: number
+          weight_kg?: number | null
+          waist_cm?: number | null
+          body_fat_pct?: number | null
           recorded_at?: string
         }
         Update: {
           id?: string
           member_id?: string
-          weight_kg?: number
+          weight_kg?: number | null
+          waist_cm?: number | null
+          body_fat_pct?: number | null
           recorded_at?: string
+        }
+        Relationships: []
+      }
+      session_segments: {
+        Row: {
+          id: string
+          session_id: string
+          type: Database['public']['Enums']['segment_type']
+          label: string | null
+          default_rounds: number | null
+          sort_order: number
+        }
+        Insert: {
+          id?: string
+          session_id: string
+          type: Database['public']['Enums']['segment_type']
+          label?: string | null
+          default_rounds?: number | null
+          sort_order: number
+        }
+        Update: {
+          id?: string
+          session_id?: string
+          type?: Database['public']['Enums']['segment_type']
+          label?: string | null
+          default_rounds?: number | null
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      session_exercises: {
+        Row: {
+          id: string
+          segment_id: string
+          name: string
+          metric_type: Database['public']['Enums']['exercise_metric_type']
+          each_side: boolean
+          tempo: string | null
+          note: string | null
+          video_url: string | null
+          sort_order: number
+        }
+        Insert: {
+          id?: string
+          segment_id: string
+          name: string
+          metric_type: Database['public']['Enums']['exercise_metric_type']
+          each_side?: boolean
+          tempo?: string | null
+          note?: string | null
+          video_url?: string | null
+          sort_order: number
+        }
+        Update: {
+          id?: string
+          segment_id?: string
+          name?: string
+          metric_type?: Database['public']['Enums']['exercise_metric_type']
+          each_side?: boolean
+          tempo?: string | null
+          note?: string | null
+          video_url?: string | null
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      session_exercise_sets: {
+        Row: {
+          id: string
+          exercise_id: string
+          set_number: number
+          target: string | null
+          rest_seconds: number | null
+          sort_order: number
+        }
+        Insert: {
+          id?: string
+          exercise_id: string
+          set_number: number
+          target?: string | null
+          rest_seconds?: number | null
+          sort_order: number
+        }
+        Update: {
+          id?: string
+          exercise_id?: string
+          set_number?: number
+          target?: string | null
+          rest_seconds?: number | null
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      template_exercise_sets: {
+        Row: {
+          id: string
+          exercise_id: string
+          set_number: number
+          target: string | null
+          rest_seconds: number | null
+          sort_order: number
+        }
+        Insert: {
+          id?: string
+          exercise_id: string
+          set_number: number
+          target?: string | null
+          rest_seconds?: number | null
+          sort_order: number
+        }
+        Update: {
+          id?: string
+          exercise_id?: string
+          set_number?: number
+          target?: string | null
+          rest_seconds?: number | null
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      exercise_logs: {
+        Row: {
+          id: string
+          exercise_id: string
+          member_id: string
+          set_id: string
+          weight_kg: number | null
+          reps: number | null
+          time_seconds: number | null
+          distance_m: number | null
+          logged_at: string
+        }
+        Insert: {
+          id?: string
+          exercise_id: string
+          member_id: string
+          set_id: string
+          weight_kg?: number | null
+          reps?: number | null
+          time_seconds?: number | null
+          distance_m?: number | null
+          logged_at?: string
+        }
+        Update: {
+          id?: string
+          exercise_id?: string
+          member_id?: string
+          set_id?: string
+          weight_kg?: number | null
+          reps?: number | null
+          time_seconds?: number | null
+          distance_m?: number | null
+          logged_at?: string
+        }
+        Relationships: []
+      }
+      goals: {
+        Row: {
+          id: string
+          member_id: string
+          type: Database['public']['Enums']['goal_type']
+          metric: string
+          long_target: string
+          long_date: string | null
+          micro_target: string
+          checkin_date: string
+          barriers: string | null
+          habits: string[]
+          why: string | null
+          status: Database['public']['Enums']['goal_status']
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          member_id: string
+          type: Database['public']['Enums']['goal_type']
+          metric: string
+          long_target: string
+          long_date?: string | null
+          micro_target: string
+          checkin_date: string
+          barriers?: string | null
+          habits?: string[]
+          why?: string | null
+          status?: Database['public']['Enums']['goal_status']
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          member_id?: string
+          type?: Database['public']['Enums']['goal_type']
+          metric?: string
+          long_target?: string
+          long_date?: string | null
+          micro_target?: string
+          checkin_date?: string
+          barriers?: string | null
+          habits?: string[]
+          why?: string | null
+          status?: Database['public']['Enums']['goal_status']
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      workout_templates: {
+        Row: {
+          id: string
+          name: string
+          created_by: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          created_by: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          created_by?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      template_segments: {
+        Row: {
+          id: string
+          template_id: string
+          type: Database['public']['Enums']['segment_type']
+          label: string | null
+          default_rounds: number | null
+          sort_order: number
+        }
+        Insert: {
+          id?: string
+          template_id: string
+          type: Database['public']['Enums']['segment_type']
+          label?: string | null
+          default_rounds?: number | null
+          sort_order: number
+        }
+        Update: {
+          id?: string
+          template_id?: string
+          type?: Database['public']['Enums']['segment_type']
+          label?: string | null
+          default_rounds?: number | null
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      template_exercises: {
+        Row: {
+          id: string
+          segment_id: string
+          name: string
+          metric_type: Database['public']['Enums']['exercise_metric_type']
+          each_side: boolean
+          tempo: string | null
+          note: string | null
+          video_url: string | null
+          sort_order: number
+        }
+        Insert: {
+          id?: string
+          segment_id: string
+          name: string
+          metric_type: Database['public']['Enums']['exercise_metric_type']
+          each_side?: boolean
+          tempo?: string | null
+          note?: string | null
+          video_url?: string | null
+          sort_order: number
+        }
+        Update: {
+          id?: string
+          segment_id?: string
+          name?: string
+          metric_type?: Database['public']['Enums']['exercise_metric_type']
+          each_side?: boolean
+          tempo?: string | null
+          note?: string | null
+          video_url?: string | null
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      email_log: {
+        Row: {
+          id: string
+          recipient_id: string
+          email_type: Database['public']['Enums']['email_type']
+          reference_key: string
+          sent_at: string
+        }
+        Insert: {
+          id?: string
+          recipient_id: string
+          email_type: Database['public']['Enums']['email_type']
+          reference_key: string
+          sent_at?: string
+        }
+        Update: {
+          id?: string
+          recipient_id?: string
+          email_type?: Database['public']['Enums']['email_type']
+          reference_key?: string
+          sent_at?: string
         }
         Relationships: []
       }
@@ -905,6 +1223,22 @@ export type Database = {
           similarity: number
         }[]
       }
+      mark_self_attended: {
+        Args: {
+          p_session_id: string
+        }
+        Returns: {
+          id: string
+          session_id: string
+          member_id: string
+          status: Database['public']['Enums']['booking_status']
+          booked_at: string
+          cancelled_at: string | null
+          credit_ledger_id: string | null
+          invited_by: string | null
+          invite_expires_at: string | null
+        }
+      }
       match_knowledge_base: {
         Args: {
           query_embedding: number[]
@@ -927,6 +1261,11 @@ export type Database = {
       waitlist_status: 'waiting' | 'offered' | 'accepted' | 'expired' | 'declined'
       challenge_type: 'attendance' | 'habit' | 'event_prep' | 'team'
       event_type: 'gym' | 'member_posted'
+      segment_type: 'warmup' | 'straight' | 'circuit' | 'finisher' | 'cooldown'
+      exercise_metric_type: 'weight_kg' | 'weight_kg_and_reps' | 'reps_only' | 'time_seconds' | 'distance_m'
+      goal_type: 'lose_weight' | 'build_strength' | 'general_fitness' | 'event_prep'
+      goal_status: 'active' | 'completed' | 'abandoned'
+      email_type: 'sunday_checkin_reminder' | 'goal_checkin_due' | 'coach_quiet_member_alert'
     }
     CompositeTypes: {
       [_ in never]: never

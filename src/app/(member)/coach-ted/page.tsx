@@ -1,4 +1,5 @@
 import { requireProfile } from "@/lib/auth";
+import { HomeLink } from "@/components/HomeLink";
 import { TedChat } from "./TedChat";
 
 const HISTORY_LIMIT = 20;
@@ -20,7 +21,10 @@ export default async function CoachTedPage() {
 
   return (
     <main className="min-h-screen px-5 py-8">
-      <p className="fb-eyebrow mb-1">Fitness Blueprint</p>
+      <div className="flex items-start justify-between mb-1">
+        <p className="fb-eyebrow">Fitness Blueprint</p>
+        <HomeLink />
+      </div>
       <h1 className="text-2xl font-semibold text-blueprint-ink mb-6">Coach Ted</h1>
       <TedChat initialMessages={initialMessages} />
     </main>

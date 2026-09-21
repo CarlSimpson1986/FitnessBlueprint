@@ -2,26 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { formatSessionDate, formatSessionTime } from "@/lib/format";
+import { loadRatedSessions, markSessionRated } from "@/lib/rated-sessions";
 import { submitFeedback } from "./feedback-actions";
-
-const STORAGE_KEY = "fb-rated-sessions";
-
-function loadRatedSessions(): Set<string> {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    return new Set(raw ? (JSON.parse(raw) as string[]) : []);
-  } catch {
-    return new Set();
-  }
-}
-
-function saveRatedSessions(ids: Set<string>) {
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(ids)));
-  } catch {
-    // per-viewer convenience only — fine to lose this silently
-  }
-}
 
 type FeedbackItem = {
   sessionId: string;
@@ -42,10 +24,10 @@ export function FeedbackList({ items }: { items: FeedbackItem[] }) {
   }, []);
 
   function markRated(sessionId: string) {
+    markSessionRated(sessionId);
     setRatedIds((prev) => {
       const next = new Set(prev ?? []);
       next.add(sessionId);
-      saveRatedSessions(next);
       return next;
     });
   }

@@ -6,6 +6,69 @@ spec lives in the shared Google Doc; this is status, not spec.
 
 ## Done
 
+- **Member app v2 — workout logging, goals, body metrics, IA rework.**
+  Design pass done in Claude Desktop (build spec + session-template-spec +
+  click-through mockup), implemented in six phases:
+  - **Workout content model**: `sessions` → `session_segments` →
+    `session_exercises` → `session_exercise_sets` (0015, 0020) — a coach
+    builds a workout from scratch per session (no template library),
+    warm-up/straight segments render sequentially for the member,
+    `circuit` segments render all exercises open together. Each exercise
+    is a list of individual sets (target/rest per set, added one at a
+    time — an Everfit-style richer model than the original spec's single
+    rounds count, revised mid-build after seeing it live), plus
+    `each_side`/`tempo`/`note`.
+  - **Reusable workout templates + program calendar** (0019): coaches
+    build a named template once (`/admin/workout-templates`) and assign
+    it onto scheduled sessions from a Mon–Sun, 1/2/4/6-week calendar
+    (`/admin/program-calendar`) — copy-on-assign into the session's own
+    content, not a live reference, so editing a template later doesn't
+    retroactively change a session that already happened.
+  - **Member live-logging**: "Start session" (`/sessions/[id]/live`) logs
+    each set as the member goes (upsert on blur, resumes correctly across
+    reloads); "Finish workout" self-marks attendance via the new
+    `mark_self_attended` RPC (0018, security-definer, scoped to the
+    caller's own booking, only once the session has started), shows a
+    fun total-weight-lifted stat, and reuses the existing
+    `submitFeedback` rating flow.
+  - **Body metrics** widened from weight-only to weight/waist/body fat %
+    (`body_metrics`, renamed from `weigh_ins`, 0017), each optional per
+    entry, with its own logging screen (`/progress/log-metrics`).
+  - **Progress tab overhaul**: tabbed body-metrics trend chart, 6-week
+    total-lifted bar chart, 14-day habit-streak grid, personal records —
+    all computed read-time from `exercise_logs`/`body_metrics` (no stored
+    counters, same convention as the existing attendance-streak code).
+  - **Goals**: a scripted goal-setting wizard (`/goals`) branded as Coach
+    Ted but *not* built on the Gemini chat pipeline (that pipeline is
+    single-turn/cache-first, wrong for structured data) — goal type,
+    metric, long-term target, 6-week micro-target with a sanity-check
+    (warns if the implied weekly rate is unsafe, using the member's real
+    logged baseline), barriers, habits (from the real
+    `habit_definitions`), optional why. "6-week check-in" re-runs a
+    shorter version. Onboarding banner on Home (goals + starting metrics)
+    and a goal-check-in-due banner, both computed from row existence, no
+    new profile columns.
+  - **Navigation/IA**: bottom nav reordered (My bookings/Coach Ted/
+    Progress/Profile), a small Home icon added to every non-Home screen's
+    header, Bookings split into "My bookings"/"Schedule" tabs, Profile
+    rebuilt as a trimmed menu (Goals/Account settings/Purchases & credits/
+    Log out — **Log out didn't exist anywhere in the app before this**,
+    added as part of the rebuild), new view-only Purchases & credits
+    screen.
+  - **Coach subdomain**: `coach.fitnessblueprint.co.uk` rewrites
+    transparently to `/admin/*` via `src/proxy.ts` (this Next.js version
+    renamed `middleware.ts` → `proxy.ts` — see the file's own comment).
+    Same Vercel project/env vars/database; RLS remains the actual
+    security boundary, this is routing/branding only.
+  - **Two real pre-existing bugs found and fixed along the way**, neither
+    caused by this work: `createSessions` had a timezone bug rolling
+    scheduled dates back a day (`toISOString()` vs `toLocalDateKey`), and
+    migrations `0011` (coach-name lookup) and `0013`/`0014` (buddy
+    booking columns) had silently never been applied to the live
+    database — the member timetable's "Coach TBC" bug and a completely
+    empty "My bookings" list were both live in production. All four are
+    now applied and verified.
+
 - **Auth**: magic-link sign-in, onboarding (name/phone/emergency
   contact), owner-issued password fallback with forced first-login
   password change.
@@ -183,11 +246,6 @@ spec lives in the shared Google Doc; this is status, not spec.
   can see or do. Right now Tommy has identical access to a full coach.
   `0001_init_core_schema.sql` even flags this in a comment on the
   `sessions` table (`valid_coach` constraint is a no-op placeholder).
-- **No exercise/set logging.** There's no schema for coaches or members
-  to log individual lifts (exercise, weight, reps) — session planning
-  from a curated exercise library is still a whole unbuilt v1 feature.
-  This is why Progress has no "total lifted" stat; add it once that
-  schema exists rather than bolting on a throwaway manual-entry table.
 - **No local/CI Supabase.** This project has no `supabase start` (Docker)
   workflow verified working in this environment — migrations were applied
   by hand via the hosted project's SQL Editor because the `supabase` CLI's
@@ -206,3 +264,9 @@ spec lives in the shared Google Doc; this is status, not spec.
 
 - Free-tier Supabase project auto-pauses after ~1 week of no API
   traffic (data isn't lost, just needs restoring from the dashboard).
+- Migrations `0011` and `0013`/`0014` had never been applied to the live
+  database despite being on disk and referenced as done elsewhere in this
+  file — discovered only because live testing hit the resulting errors
+  (silently-empty query results, not crashes, so easy to miss). Worth a
+  periodic sanity check that every file in `supabase/migrations/` has
+  actually been run against the hosted project, not just committed.

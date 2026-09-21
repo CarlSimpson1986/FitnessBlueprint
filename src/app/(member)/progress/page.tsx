@@ -1,9 +1,19 @@
 import { requireProfile } from "@/lib/auth";
+import { HomeLink } from "@/components/HomeLink";
 import { toLocalDateKey } from "@/lib/format";
-import { computeWeekStreak } from "@/lib/progress";
+import {
+  computeHabitStreakGrid,
+  computePersonalRecords,
+  computeWeekStreak,
+  computeWeeklyTotalLifted,
+  type LoggedSet,
+} from "@/lib/progress";
 import { computeChallengeProgress } from "@/lib/challenges";
 import { HabitChecklist } from "./HabitChecklist";
-import { WeighInForm } from "./WeighInForm";
+import { HabitStreakGrid } from "./HabitStreakGrid";
+import { BodyMetricsCard, type MetricPoint } from "./BodyMetricsCard";
+import { TotalLiftedChart } from "./TotalLiftedChart";
+import { PersonalRecords } from "./PersonalRecords";
 import { ChallengesList, type ChallengeItem } from "./ChallengesList";
 
 export default async function ProgressPage() {
@@ -12,9 +22,10 @@ export default async function ProgressPage() {
 
   const [
     { data: attendedBookings },
-    { data: weighIns },
+    { data: bodyMetricRows },
     { data: habitDefinitions },
     { data: todaysLogs },
+    { data: exerciseLogRows },
   ] = await Promise.all([
     supabase
       .from("bookings")
@@ -22,8 +33,8 @@ export default async function ProgressPage() {
       .eq("member_id", user.id)
       .eq("status", "attended"),
     supabase
-      .from("weigh_ins")
-      .select("weight_kg, recorded_at")
+      .from("body_metrics")
+      .select("weight_kg, waist_cm, body_fat_pct, recorded_at")
       .eq("member_id", user.id)
       .order("recorded_at", { ascending: true }),
     supabase
@@ -36,6 +47,10 @@ export default async function ProgressPage() {
       .select("habit_id")
       .eq("member_id", user.id)
       .eq("log_date", today),
+    supabase
+      .from("exercise_logs")
+      .select("exercise_id, weight_kg, reps, time_seconds, distance_m")
+      .eq("member_id", user.id),
   ]);
 
   const attendedSessionIds = (attendedBookings ?? []).map((b) => b.session_id);
@@ -46,11 +61,18 @@ export default async function ProgressPage() {
   const attendedDates = (attendedSessions ?? []).map((s) => s.session_date);
   const streak = computeWeekStreak(attendedDates);
 
-  const weighInRows = weighIns ?? [];
+  const weightSeries: MetricPoint[] = (bodyMetricRows ?? [])
+    .filter((r) => r.weight_kg !== null)
+    .map((r) => ({ date: toLocalDateKey(new Date(r.recorded_at)), value: r.weight_kg! }));
+  const waistSeries: MetricPoint[] = (bodyMetricRows ?? [])
+    .filter((r) => r.waist_cm !== null)
+    .map((r) => ({ date: toLocalDateKey(new Date(r.recorded_at)), value: r.waist_cm! }));
+  const bodyFatSeries: MetricPoint[] = (bodyMetricRows ?? [])
+    .filter((r) => r.body_fat_pct !== null)
+    .map((r) => ({ date: toLocalDateKey(new Date(r.recorded_at)), value: r.body_fat_pct! }));
+
   const weightDelta =
-    weighInRows.length >= 2
-      ? weighInRows[weighInRows.length - 1]!.weight_kg - weighInRows[0]!.weight_kg
-      : null;
+    weightSeries.length >= 2 ? weightSeries[weightSeries.length - 1]!.value - weightSeries[0]!.value : null;
 
   const completedHabitIds = new Set((todaysLogs ?? []).map((l) => l.habit_id));
   const habits = (habitDefinitions ?? []).map((h) => ({
@@ -58,6 +80,52 @@ export default async function ProgressPage() {
     name: h.name,
     isCompleted: completedHabitIds.has(h.id),
   }));
+
+  // Total lifted / personal records need each log's session date and its
+  // exercise's name + metric type — exercise_logs only has exercise_id, so
+  // this is a manual 3-hop join (exercise -> segment -> session), same
+  // "no data-layer abstraction, join in JS" convention as the rest of this
+  // codebase's Server Components.
+  const exerciseIds = [...new Set((exerciseLogRows ?? []).map((l) => l.exercise_id))];
+  const { data: exerciseRows } = exerciseIds.length
+    ? await supabase.from("session_exercises").select("id, name, metric_type, segment_id").in("id", exerciseIds)
+    : { data: [] };
+
+  const segmentIds = [...new Set((exerciseRows ?? []).map((e) => e.segment_id))];
+  const { data: segmentRows } = segmentIds.length
+    ? await supabase.from("session_segments").select("id, session_id").in("id", segmentIds)
+    : { data: [] };
+
+  const sessionIds = [...new Set((segmentRows ?? []).map((s) => s.session_id))];
+  const { data: sessionRows } = sessionIds.length
+    ? await supabase.from("sessions").select("id, session_date").in("id", sessionIds)
+    : { data: [] };
+
+  const sessionDateBySession = new Map((sessionRows ?? []).map((s) => [s.id, s.session_date]));
+  const sessionIdBySegment = new Map((segmentRows ?? []).map((s) => [s.id, s.session_id]));
+  const exerciseById = new Map((exerciseRows ?? []).map((e) => [e.id, e]));
+
+  const loggedSets: LoggedSet[] = [];
+  for (const log of exerciseLogRows ?? []) {
+    const exercise = exerciseById.get(log.exercise_id);
+    if (!exercise) continue;
+    const sessionId = sessionIdBySegment.get(exercise.segment_id);
+    const sessionDate = sessionId ? sessionDateBySession.get(sessionId) : undefined;
+    if (!sessionDate) continue;
+
+    loggedSets.push({
+      sessionDate,
+      exerciseName: exercise.name,
+      metricType: exercise.metric_type,
+      weightKg: log.weight_kg,
+      reps: log.reps,
+      timeSeconds: log.time_seconds,
+      distanceM: log.distance_m,
+    });
+  }
+
+  const weeklyTotals = computeWeeklyTotalLifted(loggedSets, 6);
+  const personalRecords = computePersonalRecords(loggedSets);
 
   const [
     { data: allHabitLogs },
@@ -72,6 +140,7 @@ export default async function ProgressPage() {
   ]);
 
   const habitLogDates = (allHabitLogs ?? []).map((l) => l.log_date);
+  const habitStreakGrid = computeHabitStreakGrid(habitLogDates, 14);
   const joinedChallengeIds = new Set((myParticipantRows ?? []).map((p) => p.challenge_id));
 
   const participantCountByChallenge = new Map<string, number>();
@@ -108,7 +177,10 @@ export default async function ProgressPage() {
   return (
     <main className="min-h-screen px-5 py-8">
       <div className="max-w-2xl mx-auto">
-        <p className="fb-eyebrow mb-1">Fitness Blueprint</p>
+        <div className="flex items-start justify-between mb-1">
+          <p className="fb-eyebrow">Fitness Blueprint</p>
+          <HomeLink />
+        </div>
         <h1 className="text-2xl font-semibold text-blueprint-ink mb-6">Progress</h1>
 
         <div className="grid grid-cols-2 gap-3 mb-4">
@@ -128,9 +200,11 @@ export default async function ProgressPage() {
           </div>
         </div>
 
-        <div className="fb-card mb-4">
-          <p className="text-blueprint-ink font-medium text-sm mb-3">Log your weight</p>
-          <WeighInForm />
+        <div className="space-y-4 mb-4">
+          <BodyMetricsCard weight={weightSeries} waist={waistSeries} bodyFat={bodyFatSeries} />
+          <TotalLiftedChart weeks={weeklyTotals} />
+          <HabitStreakGrid days={habitStreakGrid} habitCount={habits.length} />
+          <PersonalRecords records={personalRecords} />
         </div>
 
         <HabitChecklist habits={habits} />

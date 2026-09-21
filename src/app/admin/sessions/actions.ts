@@ -2,6 +2,7 @@
 
 import { requireCoachOrOwner } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { toLocalDateKey } from "@/lib/format";
 
 export type ActionResult = { error?: string };
 
@@ -40,7 +41,12 @@ export async function createSessions(input: {
     return {
       template_id: input.templateId,
       coach_id: input.coachId,
-      session_date: date.toISOString().slice(0, 10),
+      // toLocalDateKey, not toISOString().slice(0, 10) — the latter converts
+      // to UTC, which rolls the date back a day whenever the server runs in
+      // a positive UTC-offset zone (e.g. BST) since local midnight is the
+      // previous day in UTC. See src/lib/format.ts's toLocalDateKey comment
+      // for the same footgun on the client side.
+      session_date: toLocalDateKey(date),
       start_time: input.startTime,
       duration_minutes: template.default_duration_minutes,
       capacity,

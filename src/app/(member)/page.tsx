@@ -136,11 +136,77 @@ export default async function HomePage() {
         .maybeSingle()
     : { data: null };
 
+  // Onboarding checklist + goal check-in banner: computed at read time from
+  // whether rows exist, no stored "onboarding done" flag on profiles —
+  // same convention as everywhere else in this codebase.
+  const [{ data: anyGoalRow }, { data: anyBodyMetricRow }, { data: activeGoalRow }] = await Promise.all([
+    supabase.from("goals").select("id").eq("member_id", user.id).limit(1).maybeSingle(),
+    supabase.from("body_metrics").select("id").eq("member_id", user.id).limit(1).maybeSingle(),
+    supabase
+      .from("goals")
+      .select("checkin_date")
+      .eq("member_id", user.id)
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+
+  const hasSetGoals = !!anyGoalRow;
+  const hasLoggedMetrics = !!anyBodyMetricRow;
+  const showOnboarding = !hasSetGoals || !hasLoggedMetrics;
+  const checkinDue = activeGoalRow ? new Date(`${activeGoalRow.checkin_date}T00:00:00`) <= new Date() : false;
+
   return (
     <main className="min-h-screen px-5 py-8">
       <div className="max-w-2xl mx-auto">
         <p className="fb-eyebrow mb-1">Fitness Blueprint</p>
         <h1 className="text-2xl font-semibold text-blueprint-ink mb-6">Hey {firstName}</h1>
+
+        {showOnboarding && (
+          <div className="fb-card-accent mb-4">
+            <p className="fb-eyebrow mb-2">Get set up</p>
+            <p className="text-blueprint-ink font-medium mb-3">Welcome to Fitness Blueprint</p>
+            <div className="space-y-0.5">
+              <Link
+                href="/goals"
+                className="flex items-center justify-between py-2 border-b border-blueprint-line/60"
+              >
+                <span className="flex items-center gap-2 text-sm text-blueprint-ink">
+                  <span
+                    className="inline-block w-4 h-4 rounded-full border"
+                    style={{
+                      borderColor: hasSetGoals ? "var(--fb-accent)" : "var(--fb-line)",
+                      backgroundColor: hasSetGoals ? "var(--fb-accent)" : "transparent",
+                    }}
+                  />
+                  Set your goals with Coach Ted
+                </span>
+                <span className="text-blueprint-muted text-xs">›</span>
+              </Link>
+              <Link href="/progress/log-metrics" className="flex items-center justify-between py-2">
+                <span className="flex items-center gap-2 text-sm text-blueprint-ink">
+                  <span
+                    className="inline-block w-4 h-4 rounded-full border"
+                    style={{
+                      borderColor: hasLoggedMetrics ? "var(--fb-accent)" : "var(--fb-line)",
+                      backgroundColor: hasLoggedMetrics ? "var(--fb-accent)" : "transparent",
+                    }}
+                  />
+                  Log your starting body metrics
+                </span>
+                <span className="text-blueprint-muted text-xs">›</span>
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {checkinDue && (
+          <Link href="/goals" className="fb-card-accent mb-4 flex items-center justify-between gap-3">
+            <p className="text-sm text-blueprint-ink">Your 6-week goal check-in is due.</p>
+            <span className="text-xs text-blueprint-accent whitespace-nowrap">Check in →</span>
+          </Link>
+        )}
 
         {nextSession ? (
           <div className="fb-card-accent mb-4">
@@ -166,6 +232,12 @@ export default async function HomePage() {
               </div>
             )}
             <ReadinessCheckin sessionId={nextSession.id} hasCheckedIn={!!existingCheckin} />
+            <Link
+              href={`/sessions/${nextSession.id}/live`}
+              className="fb-btn-primary block text-center mt-3"
+            >
+              Start session
+            </Link>
           </div>
         ) : (
           <div className="fb-card mb-4">

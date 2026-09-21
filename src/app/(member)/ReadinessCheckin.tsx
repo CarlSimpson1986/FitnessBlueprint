@@ -4,16 +4,15 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { submitReadinessCheckin } from "./readiness-actions";
 
+// Labels relabelled to match the build-spec's energy-scale wording; the
+// underlying DB values (great/okay/rough) are unchanged — SessionRoster.tsx's
+// red-flagging on "rough" and the readiness_checkins check constraint both
+// stay as-is. sleep_quality still exists in the schema (nullable) but the
+// new check-in UI dropped that field, so it's always submitted as null.
 const FEELINGS = [
-  { value: "great", label: "Great" },
-  { value: "okay", label: "Okay" },
-  { value: "rough", label: "Rough" },
-] as const;
-
-const SLEEP_QUALITIES = [
-  { value: "good", label: "Good" },
-  { value: "average", label: "Average" },
-  { value: "poor", label: "Poor" },
+  { value: "rough", label: "Low energy" },
+  { value: "okay", label: "Normal" },
+  { value: "great", label: "Feeling strong" },
 ] as const;
 
 function PillPicker<T extends string>({
@@ -55,9 +54,6 @@ export function ReadinessCheckin({
   const router = useRouter();
   const [done, setDone] = useState(hasCheckedIn);
   const [feeling, setFeeling] = useState<(typeof FEELINGS)[number]["value"] | null>(null);
-  const [sleepQuality, setSleepQuality] = useState<(typeof SLEEP_QUALITIES)[number]["value"] | null>(
-    null
-  );
   const [painArea, setPainArea] = useState("");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -74,7 +70,7 @@ export function ReadinessCheckin({
       const result = await submitReadinessCheckin({
         sessionId,
         feeling: feeling!,
-        sleepQuality,
+        sleepQuality: null,
         painArea,
       });
 
@@ -90,9 +86,8 @@ export function ReadinessCheckin({
 
   return (
     <div className="border-t border-blueprint-line/60 mt-3 pt-3 space-y-2">
-      <p className="text-xs text-blueprint-muted">Quick check-in before you train</p>
+      <p className="text-xs text-blueprint-muted">How are you feeling</p>
       <PillPicker options={FEELINGS} value={feeling} onChange={setFeeling} />
-      <PillPicker options={SLEEP_QUALITIES} value={sleepQuality} onChange={setSleepQuality} />
       <input
         type="text"
         value={painArea}

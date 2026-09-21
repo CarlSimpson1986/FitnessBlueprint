@@ -40,6 +40,30 @@ export default async function AdminPage() {
           </Link>
 
           <Link
+            href="/admin/workout-templates"
+            className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
+          >
+            <p className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-2">
+              Workout templates
+            </p>
+            <p className="text-blueprint-muted text-sm leading-relaxed">
+              Build a workout once, reuse it across sessions.
+            </p>
+          </Link>
+
+          <Link
+            href="/admin/program-calendar"
+            className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
+          >
+            <p className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-2">
+              Program calendar
+            </p>
+            <p className="text-blueprint-muted text-sm leading-relaxed">
+              See a training block&apos;s shape across the weeks.
+            </p>
+          </Link>
+
+          <Link
             href="/admin/challenges"
             className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
           >
@@ -87,6 +111,34 @@ export default async function AdminPage() {
               </p>
               <p className="text-blueprint-muted text-sm leading-relaxed">
                 Member session ratings — private to you.
+              </p>
+            </Link>
+          )}
+
+          {profile.role === "owner" && (
+            <Link
+              href="/owner/conversions"
+              className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
+            >
+              <p className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-2">
+                6-week conversions
+              </p>
+              <p className="text-blueprint-muted text-sm leading-relaxed">
+                Programme members who haven&apos;t converted yet.
+              </p>
+            </Link>
+          )}
+
+          {profile.role === "owner" && (
+            <Link
+              href="/owner/income"
+              className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
+            >
+              <p className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-2">
+                Income
+              </p>
+              <p className="text-blueprint-muted text-sm leading-relaxed">
+                Stripe + GoCardless totals, read-only.
               </p>
             </Link>
           )}

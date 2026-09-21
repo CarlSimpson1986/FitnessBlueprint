@@ -1,9 +1,13 @@
+import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
-import { formatSessionDate, formatSessionTime } from "@/lib/format";
+import { HomeLink } from "@/components/HomeLink";
+import { formatSessionDate, formatSessionTime, toLocalDateKey } from "@/lib/format";
+import { ReadinessCheckin } from "../ReadinessCheckin";
 import { BookingButton } from "./BookingButton";
 import { WaitlistPanel } from "./WaitlistPanel";
 import { BuddyInvitePanel } from "./BuddyInvitePanel";
 import { InviteResponsePanel } from "./InviteResponsePanel";
+import { BookingsTabs } from "./BookingsTabs";
 
 export default async function SessionsPage() {
   const { supabase, user } = await requireProfile();
@@ -47,6 +51,7 @@ export default async function SessionsPage() {
     { data: spotsTaken },
     { data: myWaitlistEntries },
     { data: sentInvites },
+    { data: myReadiness },
   ] = await Promise.all([
     supabase
       .from("bookings")
@@ -67,6 +72,7 @@ export default async function SessionsPage() {
       .eq("invited_by", user.id)
       .eq("status", "invited")
       .in("session_id", sessionIds),
+    supabase.from("readiness_checkins").select("session_id").eq("member_id", user.id).in("session_id", sessionIds),
   ]);
 
   const receivedInvites = (myBookings ?? []).filter(
@@ -131,6 +137,7 @@ export default async function SessionsPage() {
   const spotsBySession = new Map(
     (spotsTaken ?? []).map((s) => [s.session_id, Number(s.spots_taken)])
   );
+  const checkedInSessionIds = new Set((myReadiness ?? []).map((r) => r.session_id));
 
   const sessionsByDate = new Map<string, typeof sessionRows>();
   for (const session of sessionRows) {
@@ -139,11 +146,121 @@ export default async function SessionsPage() {
     sessionsByDate.set(session.session_date, list);
   }
 
+  const todayKey = toLocalDateKey(new Date());
+
+  const myBookingsContent = (
+    <div className="space-y-2">
+      {myBookingBySession.size === 0 ? (
+        <p className="text-blueprint-muted text-sm">
+          Nothing booked yet — switch to Schedule to grab a session.
+        </p>
+      ) : (
+        sessionRows
+          .filter((session) => myBookingBySession.has(session.id))
+          .map((session) => {
+            const template = templateById.get(session.template_id);
+            const coach = coachById.get(session.coach_id);
+            const bookingId = myBookingBySession.get(session.id)!;
+            const taken = spotsBySession.get(session.id) ?? 0;
+
+            return (
+              <div key={session.id} className="fb-card">
+                <div className="flex items-center justify-between gap-4 mb-1">
+                  <p className="text-blueprint-ink font-medium">{template?.name ?? "Session"}</p>
+                  {session.session_date === todayKey && (
+                    <span className="text-[10px] font-mono uppercase tracking-wide text-blueprint-accent bg-blueprint-accent/15 rounded-full px-2 py-0.5">
+                      Today
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-blueprint-muted mb-3">
+                  {formatSessionDate(session.session_date)} · {formatSessionTime(session.start_time)} ·{" "}
+                  {coach ? coach.full_name : "Coach TBC"} · {taken}/{session.capacity} spots
+                </p>
+                <div className="flex items-center gap-2 mb-1">
+                  <Link
+                    href={`/sessions/${session.id}/live`}
+                    className="fb-btn-secondary flex-1 text-center"
+                  >
+                    Start session
+                  </Link>
+                  <BookingButton sessionId={session.id} bookingId={bookingId} isFull={false} />
+                </div>
+                <ReadinessCheckin sessionId={session.id} hasCheckedIn={checkedInSessionIds.has(session.id)} />
+              </div>
+            );
+          })
+      )}
+    </div>
+  );
+
+  const scheduleContent = (
+    <div>
+      {sessionsByDate.size === 0 && (
+        <p className="text-blueprint-muted text-sm">No upcoming sessions scheduled yet.</p>
+      )}
+
+      <div className="space-y-8">
+        {Array.from(sessionsByDate.entries()).map(([date, daySessions]) => (
+          <section key={date}>
+            <p className="fb-eyebrow mb-2">{formatSessionDate(date)}</p>
+            <ul className="space-y-2">
+              {daySessions.map((session) => {
+                const template = templateById.get(session.template_id);
+                const coach = coachById.get(session.coach_id);
+                const bookingId = myBookingBySession.get(session.id) ?? null;
+                const receivedInvite = receivedInviteBySession.get(session.id) ?? null;
+                const sentInvite = sentInviteBySession.get(session.id) ?? null;
+                const taken = spotsBySession.get(session.id) ?? 0;
+                const isFull = taken >= session.capacity;
+
+                return (
+                  <li key={session.id} className="fb-card flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-blueprint-ink font-medium">
+                        {formatSessionTime(session.start_time)} — {template?.name ?? "Session"}
+                      </p>
+                      <p className="text-xs text-blueprint-muted mt-1">
+                        {coach ? coach.full_name : "Coach TBC"} · {taken}/{session.capacity} booked
+                      </p>
+                    </div>
+                    {receivedInvite ? (
+                      <InviteResponsePanel
+                        bookingId={receivedInvite.bookingId}
+                        inviterName={receivedInvite.inviterName}
+                        expiresAt={receivedInvite.expiresAt}
+                      />
+                    ) : bookingId ? (
+                      <div className="flex flex-col items-end">
+                        <BookingButton sessionId={session.id} bookingId={bookingId} isFull={isFull} />
+                        <BuddyInvitePanel sessionId={session.id} sentInvite={sentInvite} />
+                      </div>
+                    ) : isFull ? (
+                      <WaitlistPanel
+                        sessionId={session.id}
+                        entry={waitlistEntryBySession.get(session.id) ?? null}
+                      />
+                    ) : (
+                      <BookingButton sessionId={session.id} bookingId={bookingId} isFull={isFull} />
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <main className="min-h-screen px-5 py-8">
       <div className="max-w-2xl mx-auto">
-        <p className="fb-eyebrow mb-1">Fitness Blueprint</p>
-        <h1 className="text-2xl font-semibold text-blueprint-ink mb-2">Timetable</h1>
+        <div className="flex items-start justify-between mb-1">
+          <p className="fb-eyebrow">Fitness Blueprint</p>
+          <HomeLink />
+        </div>
+        <h1 className="text-2xl font-semibold text-blueprint-ink mb-2">Bookings</h1>
 
         {!activeMembership ? (
           <p className="text-sm text-red-400 mb-6 border-l-2 border-red-400 pl-3">
@@ -157,64 +274,7 @@ export default async function SessionsPage() {
           </p>
         )}
 
-        {sessionsByDate.size === 0 && (
-          <p className="text-blueprint-muted text-sm">No upcoming sessions scheduled yet.</p>
-        )}
-
-        <div className="space-y-8">
-          {Array.from(sessionsByDate.entries()).map(([date, daySessions]) => (
-            <section key={date}>
-              <p className="fb-eyebrow mb-2">{formatSessionDate(date)}</p>
-              <ul className="space-y-2">
-                {daySessions.map((session) => {
-                  const template = templateById.get(session.template_id);
-                  const coach = coachById.get(session.coach_id);
-                  const bookingId = myBookingBySession.get(session.id) ?? null;
-                  const receivedInvite = receivedInviteBySession.get(session.id) ?? null;
-                  const sentInvite = sentInviteBySession.get(session.id) ?? null;
-                  const taken = spotsBySession.get(session.id) ?? 0;
-                  const isFull = taken >= session.capacity;
-
-                  return (
-                    <li
-                      key={session.id}
-                      className="fb-card flex items-center justify-between gap-4"
-                    >
-                      <div>
-                        <p className="text-blueprint-ink font-medium">
-                          {formatSessionTime(session.start_time)} — {template?.name ?? "Session"}
-                        </p>
-                        <p className="text-xs text-blueprint-muted mt-1">
-                          {coach ? coach.full_name : "Coach TBC"} · {taken}/{session.capacity}{" "}
-                          booked
-                        </p>
-                      </div>
-                      {receivedInvite ? (
-                        <InviteResponsePanel
-                          bookingId={receivedInvite.bookingId}
-                          inviterName={receivedInvite.inviterName}
-                          expiresAt={receivedInvite.expiresAt}
-                        />
-                      ) : bookingId ? (
-                        <div className="flex flex-col items-end">
-                          <BookingButton sessionId={session.id} bookingId={bookingId} isFull={isFull} />
-                          <BuddyInvitePanel sessionId={session.id} sentInvite={sentInvite} />
-                        </div>
-                      ) : isFull ? (
-                        <WaitlistPanel
-                          sessionId={session.id}
-                          entry={waitlistEntryBySession.get(session.id) ?? null}
-                        />
-                      ) : (
-                        <BookingButton sessionId={session.id} bookingId={bookingId} isFull={isFull} />
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          ))}
-        </div>
+        <BookingsTabs myBookings={myBookingsContent} schedule={scheduleContent} />
       </div>
     </main>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { formatSessionTime, toLocalDateKey } from "@/lib/format";
 import { CancelSessionButton } from "./CancelSessionButton";
 import { SessionRoster } from "./SessionRoster";
@@ -127,6 +128,14 @@ export function SessionsByDay({
                         {session.planText}
                       </p>
                     )}
+                    <div className="px-4 pb-3 border-t border-blueprint-line/60 pt-3">
+                      <Link
+                        href={`/admin/sessions/${session.id}/workout`}
+                        className="text-[10px] font-mono uppercase tracking-wide text-blueprint-accent hover:opacity-80"
+                      >
+                        Build workout →
+                      </Link>
+                    </div>
                     <SessionRoster sessionId={session.id} />
                   </>
                 )}
