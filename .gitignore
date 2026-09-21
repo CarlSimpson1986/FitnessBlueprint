@@ -40,3 +40,6 @@ npm-debug.log*
 # generated types (regenerate with npm run db:types)
 # keep this tracked so the team shares one source of truth — comment out to ignore instead
 *.tsbuildinfo
+
+.vercel
+.env*
