@@ -24,9 +24,12 @@ const serverOnlySchema = z.object({
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   GOCARDLESS_ACCESS_TOKEN: z.string().optional(),
   GOCARDLESS_WEBHOOK_SECRET: z.string().optional(),
+  GOCARDLESS_ENVIRONMENT: z.enum(["sandbox", "live"]).optional(),
   GEMINI_API_KEY: z.string().optional(),
   PUBMED_API_KEY: z.string().optional(),
   BREVO_API_KEY: z.string().optional(),
+  BREVO_SENDER_EMAIL: z.string().optional(),
+  CRON_SECRET: z.string().optional(),
 });
 
 function parsePublicEnv() {
@@ -66,9 +69,12 @@ function parseServerEnv() {
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
     GOCARDLESS_ACCESS_TOKEN: process.env.GOCARDLESS_ACCESS_TOKEN,
     GOCARDLESS_WEBHOOK_SECRET: process.env.GOCARDLESS_WEBHOOK_SECRET,
+    GOCARDLESS_ENVIRONMENT: process.env.GOCARDLESS_ENVIRONMENT,
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
     PUBMED_API_KEY: process.env.PUBMED_API_KEY,
     BREVO_API_KEY: process.env.BREVO_API_KEY,
+    BREVO_SENDER_EMAIL: process.env.BREVO_SENDER_EMAIL,
+    CRON_SECRET: process.env.CRON_SECRET,
   });
 
   if (!parsed.success) {
