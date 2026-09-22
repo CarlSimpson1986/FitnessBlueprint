@@ -6,6 +6,7 @@ import { BookingButton } from "./sessions/BookingButton";
 import { FeedbackList } from "./FeedbackList";
 import { EventsList, type EventItem } from "./EventsList";
 import { ReadinessCheckin } from "./ReadinessCheckin";
+import { TedWalkaround } from "@/components/TedWalkaround";
 
 const FEEDBACK_LOOKBACK_DAYS = 14;
 
@@ -159,6 +160,7 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen px-5 py-8">
+      {!profile.has_seen_ted_tour && <TedWalkaround />}
       <div className="max-w-2xl mx-auto">
         <p className="fb-eyebrow mb-1">Fitness Blueprint</p>
         <h1 className="text-2xl font-semibold text-blueprint-ink mb-6">Hey {firstName}</h1>

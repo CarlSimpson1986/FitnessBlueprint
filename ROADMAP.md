@@ -347,6 +347,22 @@ spec lives in the shared Google Doc; this is status, not spec.
   "Pending manual action" note below; this was discovered mid-build to
   be missing from production entirely, not just local dev.
 
+- **Ted walk-around**: a one-time guided intro shown the first time a
+  member lands on the homepage — a short modal, branded as Coach Ted,
+  stepping through the four bottom-nav tabs (My bookings/Coach Ted/
+  Progress/Profile). New `profiles.has_seen_ted_tour` boolean (`0022`)
+  since this genuinely can't be derived from existing data (a member
+  with zero bookings/goals could still have already dismissed it) —
+  everything else in this schema uses read-time row-existence instead
+  of a stored flag, this is the exception because there's no existing
+  row to check. `src/components/TedWalkaround.tsx` (client, dismiss on
+  last step or Skip) + `src/app/(member)/ted-tour-actions.ts`
+  (`markTedTourSeen`, fire-and-forget from the client — if it fails the
+  member just sees the tour again next login, harmless). Degrades
+  safely if migration `0022` isn't applied yet: `has_seen_ted_tour`
+  reads as `undefined` (falsy) so the tour just always shows, same
+  "ignore the Supabase gap" pattern as elsewhere in this app.
+
 ## Known gaps / not started
 
 - **Stripe billing is not wired up.** `src/app/api/webhooks/stripe/route.ts`

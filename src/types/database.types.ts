@@ -28,6 +28,7 @@ export type Database = {
           phone: string | null
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
+          has_seen_ted_tour: boolean
           created_at: string
           updated_at: string
         }
@@ -40,6 +41,7 @@ export type Database = {
           phone?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
+          has_seen_ted_tour?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -52,6 +54,7 @@ export type Database = {
           phone?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
+          has_seen_ted_tour?: boolean
           created_at?: string
           updated_at?: string
         }
