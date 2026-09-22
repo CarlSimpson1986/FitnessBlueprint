@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { formatSessionDate, formatSessionTime } from "@/lib/format";
 import { BookingButton } from "./sessions/BookingButton";
@@ -10,6 +11,13 @@ const FEEDBACK_LOOKBACK_DAYS = 14;
 
 export default async function HomePage() {
   const { supabase, user, profile } = await requireProfile();
+
+  // Coaches/owner have no bookings of their own to see here — this page
+  // is the member "book a session" home. Send staff straight to /admin
+  // instead of showing them a client's homepage.
+  if (profile.role !== "member") {
+    redirect("/admin");
+  }
 
   const today = new Date().toISOString().slice(0, 10);
 
