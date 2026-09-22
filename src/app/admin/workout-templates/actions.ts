@@ -125,6 +125,51 @@ export async function saveWorkoutTemplate(
   return { templateId: id };
 }
 
+/**
+ * Finds already-scheduled sessions of a given class type
+ * (session_templates — FNL/KIDS/GC, NOT workout_templates) whose date
+ * falls in the Mon-Sun week starting weekStartDate, and assigns the
+ * given workout template onto each — a small loop over the existing
+ * assignTemplateToSession, not a new bulk-assign primitive. Used by
+ * "Autofinish with AI" once a generated week is approved.
+ */
+export async function assignTemplateToSessionsInWeek(
+  workoutTemplateId: string,
+  classTypeId: string,
+  weekStartDate: string
+): Promise<ActionResult & { assignedCount?: number }> {
+  const { supabase } = await requireCoachOrOwner();
+
+  const weekStart = new Date(`${weekStartDate}T00:00:00`);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+
+  const { data: sessions, error } = await supabase
+    .from("sessions")
+    .select("id")
+    .eq("template_id", classTypeId)
+    .eq("status", "scheduled")
+    .gte("session_date", weekStart.toISOString().slice(0, 10))
+    .lte("session_date", weekEnd.toISOString().slice(0, 10));
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  if (!sessions || sessions.length === 0) {
+    return { error: "No scheduled sessions of that class in that week — nothing to assign." };
+  }
+
+  for (const session of sessions) {
+    const result = await assignTemplateToSession(workoutTemplateId, session.id);
+    if (result.error) {
+      return { error: result.error };
+    }
+  }
+
+  return { assignedCount: sessions.length };
+}
+
 export async function deleteWorkoutTemplate(templateId: string): Promise<ActionResult> {
   const { supabase } = await requireCoachOrOwner();
 

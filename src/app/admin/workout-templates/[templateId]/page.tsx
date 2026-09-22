@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireCoachOrOwner } from "@/lib/auth";
 import type { SegmentDraft } from "@/lib/workout-content";
 import { TemplateEditor } from "../TemplateEditor";
+import { AutofinishPanel } from "../AutofinishPanel";
 
 export default async function EditWorkoutTemplatePage({
   params,
@@ -21,6 +22,12 @@ export default async function EditWorkoutTemplatePage({
   if (!template) {
     notFound();
   }
+
+  const { data: activeClasses } = await supabase
+    .from("session_templates")
+    .select("id, name")
+    .eq("is_active", true)
+    .order("name");
 
   const { data: segments } = await supabase
     .from("template_segments")
@@ -90,6 +97,8 @@ export default async function EditWorkoutTemplatePage({
         <h1 className="text-2xl font-semibold text-blueprint-ink mb-8">{template.name}</h1>
 
         <TemplateEditor templateId={template.id} initialName={template.name} initialSegments={initialSegments} />
+
+        <AutofinishPanel templateId={template.id} templateName={template.name} classes={activeClasses ?? []} />
       </div>
     </main>
   );

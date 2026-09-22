@@ -322,9 +322,30 @@ spec lives in the shared Google Doc; this is status, not spec.
   and the workout-template editor — one component, both call sites
   fixed at once. Pure presentation-layer change, save flow/data shape
   untouched.
-  Stage 3 (AI-assisted multi-week progression, "Autofinish") is
-  planned but not yet built — see the plan file from that session if
-  picking this back up.
+- **"Autofinish with AI"** (Stage 3, same plan): on a `workout_template`
+  editor page, a coach can generate the rest of a block's weeks from
+  week 1 (the template's current content) plus a plain-language
+  progression instruction (e.g. "add a 4th set each week, don't touch
+  week 4 — that's a deload"). Reuses Gemini (`src/lib/progression-ai/
+  gemini.ts`, a sibling to Coach Ted's pipeline, not a reuse of
+  `generateTedAnswer` — that one's system prompt is Ted-specific), with
+  JSON-mode output so the result is structured data, not free text to
+  parse. **Never a member-specific weight** — this is a group class, so
+  the AI is instructed to only vary structural fields (sets, rest,
+  exercise choice, and the free-text `target` string itself, e.g. "70%
+  1RM x5" → "72.5% 1RM x5"), matching the confirmed decision that
+  individual weight suggestions are a separate, out-of-scope feature.
+  **Nothing is written to the database until the coach approves** each
+  generated week — the generation action returns plain data to the
+  browser, the coach reviews/edits it in the same `SegmentExerciseEditor`
+  used everywhere else, and only clicking "Approve & assign" per week
+  calls the existing, already-RLS-safe `saveWorkoutTemplate` +
+  a new `assignTemplateToSessionsInWeek` (a small loop over the
+  existing `assignTemplateToSession`, matching a class type + Mon-Sun
+  week to already-scheduled sessions — no new bulk-assign primitive).
+  **Needs `GEMINI_API_KEY` on Vercel to actually run** — see the
+  "Pending manual action" note below; this was discovered mid-build to
+  be missing from production entirely, not just local dev.
 
 ## Known gaps / not started
 
@@ -369,6 +390,15 @@ spec lives in the shared Google Doc; this is status, not spec.
   justify more.
 
 ## Pending manual action
+
+- **`GEMINI_API_KEY` is not set on Vercel production at all** (confirmed
+  via `vercel env ls production` — not present under any name), not
+  just missing locally as previously noted below. This means Coach Ted
+  has likely been failing for real members since it shipped, and blocks
+  the new "Autofinish with AI" feature (above) from running at all. Get
+  a free key at aistudio.google.com (no card required) and add it to
+  Vercel — no billing needed to get started, only if usage later hits
+  free-tier rate limits.
 
 - **Migration `0021_email_reminders.sql`** (email reminder log table) is
   written and committed but its hosted-DB status is unconfirmed as of
