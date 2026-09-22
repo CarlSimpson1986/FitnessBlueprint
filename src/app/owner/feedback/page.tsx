@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireOwner } from "@/lib/auth";
 import { formatSessionDate, formatSessionTime } from "@/lib/format";
 
@@ -38,6 +39,12 @@ export default async function OwnerFeedbackPage() {
   return (
     <main className="min-h-screen px-6 py-16">
       <div className="max-w-2xl mx-auto">
+        <Link
+          href="/admin"
+          className="inline-block font-mono text-xs tracking-wide text-blueprint-muted hover:text-blueprint-accent transition mb-6"
+        >
+          ← Admin
+        </Link>
         <p className="fb-eyebrow mb-1">
           Owner
         </p>
