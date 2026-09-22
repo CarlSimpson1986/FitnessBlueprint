@@ -224,6 +224,8 @@ export default async function ProgramCalendarPage({
               dayKeys={dayKeys}
               cardsByDate={Object.fromEntries(cardsByDate)}
               templates={templates ?? []}
+              classes={activeClasses}
+              coaches={allCoaches ?? []}
             />
           </div>
         </div>
