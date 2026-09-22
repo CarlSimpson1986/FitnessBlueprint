@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
+import { MemberWorkoutPreview } from "@/components/MemberWorkoutPreview";
 import {
   draftsToInput,
   newExerciseDraft,
@@ -45,10 +46,12 @@ export function SegmentExerciseEditor({
   initialSegments,
   onSave,
   saveLabel = "Save workout",
+  previewTitle,
 }: {
   initialSegments: SegmentDraft[];
   onSave: (segments: SegmentInput[]) => Promise<{ error?: string }>;
   saveLabel?: string;
+  previewTitle?: string;
 }) {
   const [segments, setSegments] = useState<SegmentDraft[]>(
     initialSegments.length > 0 ? initialSegments : [newSegmentDraft()]
@@ -56,9 +59,14 @@ export function SegmentExerciseEditor({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   // Collapsed by default (existing content), expanded on click or right
   // after adding — tracked by exercise key so it survives reorders.
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
+  // "+ Add segment" appends to the end of a list that can already be long
+  // — with no scroll, a new segment landing below the fold looked like the
+  // button did nothing. Scrolled into view the moment its DOM node mounts.
+  const justAddedSegmentKey = useRef<string | null>(null);
 
   function toggleExpanded(key: string) {
     setExpandedKeys((prev) => {
@@ -179,19 +187,39 @@ export function SegmentExerciseEditor({
   }
 
   return (
-    <div className="space-y-5">
-      <button
-        type="button"
-        onClick={() => setSegments((prev) => [...prev, newSegmentDraft()])}
-        className="fb-btn-secondary"
-      >
-        + Add segment
-      </button>
+    <div className="flex gap-6 items-start">
+      <div className="space-y-5 flex-1 min-w-0">
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => {
+            const fresh = newSegmentDraft();
+            justAddedSegmentKey.current = fresh.key;
+            setSegments((prev) => [...prev, fresh]);
+          }}
+          className="fb-btn-secondary"
+        >
+          + Add segment
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowPreview((v) => !v)}
+          className="text-xs font-mono uppercase tracking-wide text-blueprint-muted hover:text-blueprint-accent border border-blueprint-line rounded px-3 py-1.5"
+        >
+          {showPreview ? "Hide" : "Preview as member"}
+        </button>
+      </div>
 
       <div className="space-y-5 max-w-2xl">
         {segments.map((segment, segIndex) => (
           <div
             key={segment.key}
+            ref={(el) => {
+              if (el && justAddedSegmentKey.current === segment.key) {
+                el.scrollIntoView({ behavior: "smooth", block: "center" });
+                justAddedSegmentKey.current = null;
+              }
+            }}
             className="rounded overflow-hidden border border-blueprint-line"
             style={{ borderTop: `3px solid ${SEGMENT_TYPE_ACCENT[segment.type]}` }}
           >
@@ -401,6 +429,9 @@ export function SegmentExerciseEditor({
         {error && <p className="text-sm text-red-400">{error}</p>}
         {saved && !error && <p className="text-sm text-blueprint-accent">Saved.</p>}
       </div>
+      </div>
+
+      {showPreview && <MemberWorkoutPreview title={previewTitle ?? ""} segments={segments} />}
     </div>
   );
 }

@@ -10,9 +10,11 @@ export type { SegmentDraft };
 export function WorkoutBuilder({
   sessionId,
   initialSegments,
+  previewTitle,
 }: {
   sessionId: string;
   initialSegments: SegmentDraft[];
+  previewTitle?: string;
 }) {
   const router = useRouter();
 
@@ -24,5 +26,12 @@ export function WorkoutBuilder({
     return result;
   }
 
-  return <SegmentExerciseEditor initialSegments={initialSegments} onSave={handleSave} saveLabel="Save workout" />;
+  return (
+    <SegmentExerciseEditor
+      initialSegments={initialSegments}
+      onSave={handleSave}
+      saveLabel="Save workout"
+      previewTitle={previewTitle}
+    />
+  );
 }

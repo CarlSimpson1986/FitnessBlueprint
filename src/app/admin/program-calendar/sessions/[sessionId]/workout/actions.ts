@@ -97,3 +97,86 @@ export async function saveSessionWorkout(sessionId: string, segments: SegmentInp
 
   return {};
 }
+
+/**
+ * Copies sourceSessionId's current workout onto targetSessionId — a
+ * real, independent copy (delegates to saveSessionWorkout's existing
+ * full-replace insert, same as assigning a workout_template does), not
+ * a live reference. Editing the target afterward via the normal
+ * builder never touches the source. Lets a coach reuse "Tuesday's
+ * session" on a different date without saving it as a named template
+ * first.
+ */
+export async function copySessionWorkout(sourceSessionId: string, targetSessionId: string): Promise<ActionResult> {
+  const { supabase } = await requireCoachOrOwner();
+
+  const { data: segments, error: segmentsError } = await supabase
+    .from("session_segments")
+    .select("id, type, label, default_rounds, sort_order")
+    .eq("session_id", sourceSessionId)
+    .order("sort_order");
+
+  if (segmentsError) {
+    return { error: segmentsError.message };
+  }
+
+  const segmentRows = segments ?? [];
+  if (segmentRows.length === 0) {
+    return { error: "That session has no workout content yet." };
+  }
+
+  const { data: exercises, error: exercisesError } = await supabase
+    .from("session_exercises")
+    .select("id, segment_id, name, metric_type, each_side, tempo, note, video_url, sort_order")
+    .in("segment_id", segmentRows.map((s) => s.id))
+    .order("sort_order");
+
+  if (exercisesError) {
+    return { error: exercisesError.message };
+  }
+
+  const exerciseRows = exercises ?? [];
+  const { data: sets, error: setsError } = await supabase
+    .from("session_exercise_sets")
+    .select("exercise_id, target, rest_seconds, sort_order")
+    .in("exercise_id", exerciseRows.map((e) => e.id))
+    .order("sort_order");
+
+  if (setsError) {
+    return { error: setsError.message };
+  }
+
+  const setsByExercise = new Map<string, typeof sets>();
+  for (const set of sets ?? []) {
+    const list = setsByExercise.get(set.exercise_id) ?? [];
+    list.push(set);
+    setsByExercise.set(set.exercise_id, list);
+  }
+
+  const exercisesBySegment = new Map<string, typeof exerciseRows>();
+  for (const exercise of exerciseRows) {
+    const list = exercisesBySegment.get(exercise.segment_id) ?? [];
+    list.push(exercise);
+    exercisesBySegment.set(exercise.segment_id, list);
+  }
+
+  const segmentInputs: SegmentInput[] = segmentRows.map((segment) => ({
+    type: segment.type,
+    label: segment.label,
+    defaultRounds: segment.default_rounds,
+    exercises: (exercisesBySegment.get(segment.id) ?? []).map((exercise) => ({
+      name: exercise.name,
+      metricType: exercise.metric_type,
+      eachSide: exercise.each_side,
+      tempo: exercise.tempo,
+      note: exercise.note,
+      videoUrl: exercise.video_url,
+      sets: (setsByExercise.get(exercise.id) ?? []).map((set) => ({
+        target: set.target,
+        restSeconds: set.rest_seconds,
+      })),
+    })),
+  }));
+
+  return saveSessionWorkout(targetSessionId, segmentInputs);
+}

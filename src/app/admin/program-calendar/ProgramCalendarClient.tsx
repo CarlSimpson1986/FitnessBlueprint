@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { assignTemplateToSession } from "../workout-templates/actions";
+import { copySessionWorkout } from "./sessions/[sessionId]/workout/actions";
 import { CancelSessionButton } from "./CancelSessionButton";
 import { createSessions } from "./schedule-actions";
 
@@ -141,6 +142,109 @@ function QuickAddModal({
   );
 }
 
+type CopySource = { sessionId: string; label: string; dateKey: string };
+
+function addDaysToKey(dateKey: string, days: number) {
+  const d = new Date(`${dateKey}T00:00:00`);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function CopyWorkoutModal({
+  source,
+  cardsByDate,
+  onClose,
+}: {
+  source: CopySource;
+  cardsByDate: Record<string, DayCard[]>;
+  onClose: () => void;
+}) {
+  const router = useRouter();
+  const [targetDate, setTargetDate] = useState(() => addDaysToKey(source.dateKey, 7));
+  const [targetSessionId, setTargetSessionId] = useState("");
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  const candidates = (cardsByDate[targetDate] ?? []).filter((c) => c.sessionId !== source.sessionId);
+
+  function handleDateChange(value: string) {
+    setTargetDate(value);
+    setTargetSessionId("");
+    setDone(false);
+  }
+
+  function handleConfirm() {
+    if (!targetSessionId) return;
+    setError(null);
+    startTransition(async () => {
+      const result = await copySessionWorkout(source.sessionId, targetSessionId);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      setDone(true);
+      startTransition(() => {
+        router.refresh();
+      });
+    });
+  }
+
+  const inputClass =
+    "w-full bg-blueprint-bg border border-blueprint-line rounded px-3 py-2 text-sm text-blueprint-ink focus:outline-none focus:border-blueprint-accent";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-5" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="max-w-sm w-full bg-blueprint-bg-raised border border-blueprint-line rounded-lg p-5 space-y-3"
+      >
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-sm font-semibold text-blueprint-ink">Copy {source.label} to…</p>
+          <button type="button" onClick={onClose} className="text-blueprint-muted hover:text-blueprint-ink text-sm">
+            ✕
+          </button>
+        </div>
+        <p className="text-xs text-blueprint-muted">
+          Pastes a real, independent copy — tweak it afterward without touching the original.
+        </p>
+
+        <input type="date" value={targetDate} onChange={(e) => handleDateChange(e.target.value)} className={inputClass} />
+
+        {candidates.length === 0 ? (
+          <p className="text-xs text-blueprint-muted">
+            No sessions scheduled that day yet — schedule one first (the sidebar or the calendar&apos;s + Add), then
+            come back and copy to it.
+          </p>
+        ) : (
+          <>
+            <select value={targetSessionId} onChange={(e) => setTargetSessionId(e.target.value)} className={inputClass}>
+              <option value="">Paste onto…</option>
+              {candidates.map((c) => (
+                <option key={c.sessionId} value={c.sessionId}>
+                  {c.time} — {c.className} · {c.coachName}
+                </option>
+              ))}
+            </select>
+
+            {error && <p className="text-xs text-red-400">{error}</p>}
+            {done && !error && <p className="text-xs text-blueprint-accent">Copied.</p>}
+
+            <button
+              type="button"
+              onClick={handleConfirm}
+              disabled={!targetSessionId || isPending}
+              className="fb-btn-primary w-full disabled:opacity-50"
+            >
+              {isPending ? "Copying…" : "Paste workout here"}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 const WEEKDAY_LABELS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 
 function formatDayNumber(dateKey: string) {
@@ -155,10 +259,14 @@ function isFirstOfMonth(dateKey: string, index: number, dayKeys: string[]) {
 
 function SessionCard({
   card,
+  dateKey,
   templates,
+  onCopy,
 }: {
   card: DayCard;
+  dateKey: string;
   templates: { id: string; name: string }[];
+  onCopy: (source: CopySource) => void;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -227,6 +335,17 @@ function SessionCard({
             </button>
           </div>
           {error && <p className="text-[10px] text-red-400">{error}</p>}
+          {card.segmentCount > 0 && (
+            <button
+              type="button"
+              onClick={() =>
+                onCopy({ sessionId: card.sessionId, label: `${card.time} — ${card.className}`, dateKey })
+              }
+              className="block text-[10px] font-mono uppercase tracking-wide text-blueprint-muted hover:text-blueprint-accent"
+            >
+              Copy to…
+            </button>
+          )}
           <CancelSessionButton sessionId={card.sessionId} />
         </div>
       )}
@@ -248,6 +367,7 @@ export function ProgramCalendarClient({
   coaches: CoachOption[];
 }) {
   const [addingDate, setAddingDate] = useState<string | null>(null);
+  const [copySource, setCopySource] = useState<CopySource | null>(null);
   const weeks: string[][] = [];
   for (let i = 0; i < dayKeys.length; i += 7) {
     weeks.push(dayKeys.slice(i, i + 7));
@@ -289,7 +409,13 @@ export function ProgramCalendarClient({
                     : formatDayNumber(dateKey)}
                 </p>
                 {cards.map((card) => (
-                  <SessionCard key={card.sessionId} card={card} templates={templates} />
+                  <SessionCard
+                    key={card.sessionId}
+                    card={card}
+                    dateKey={dateKey}
+                    templates={templates}
+                    onCopy={setCopySource}
+                  />
                 ))}
                 <button
                   type="button"
@@ -310,6 +436,14 @@ export function ProgramCalendarClient({
           classes={classes}
           coaches={coaches}
           onClose={() => setAddingDate(null)}
+        />
+      )}
+
+      {copySource && (
+        <CopyWorkoutModal
+          source={copySource}
+          cardsByDate={cardsByDate}
+          onClose={() => setCopySource(null)}
         />
       )}
     </div>

@@ -400,6 +400,32 @@ spec lives in the shared Google Doc; this is status, not spec.
   with the exact same Mon-Sun boundary as the server-side check so
   what a member sees always matches what actually blocks them.
 
+- **Copy a session's workout to another session**: on the Program
+  Calendar, an expanded session card with content gets a "Copy to…"
+  button — pick a target date (defaults to +7 days, i.e. "next
+  Tuesday") and which session on that day (multiple classes on the
+  same day are handled — you pick which one), and it pastes a real,
+  independent copy (`copySessionWorkout`, delegates to the existing
+  `saveSessionWorkout`) that can be tweaked afterward without touching
+  the original. **Known limitation**: the target-day session list only
+  shows sessions already loaded into the calendar's current date-range
+  view — if you're viewing "1 week" and copy to something 7+ days out,
+  it may wrongly say "no sessions that day" even though one exists;
+  switch to a wider week range (4/6 weeks) first if that happens.
+- **"Preview as member"** on the workout builder (session and template,
+  same shared editor): toggles a phone-framed, read-only panel showing
+  how the current in-progress content would look to a member — reads
+  straight from the in-editor draft state, not a save-then-fetch round
+  trip, so it updates live as you build, including unsaved changes.
+  `src/components/MemberWorkoutPreview.tsx` — deliberately not a reuse
+  of the real `LiveLogging` component (that one has real inputs wired
+  to real logging actions, wrong for previewing possibly-unsaved
+  content); mirrors its visual structure only.
+- **Fixed**: "+ Add segment" appeared to do nothing when the segment
+  list was already long — it was adding to the end with no scroll, so
+  a new segment below the fold looked like a no-op. Now scrolls the
+  new segment into view the moment it renders.
+
 ## Known gaps / not started
 
 - **Stripe billing is not wired up.** `src/app/api/webhooks/stripe/route.ts`

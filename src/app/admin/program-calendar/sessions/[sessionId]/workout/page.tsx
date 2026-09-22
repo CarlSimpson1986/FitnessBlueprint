@@ -105,7 +105,11 @@ export default async function SessionWorkoutPage({
           . This becomes the Coming up card and live-logging screen members see.
         </p>
 
-        <WorkoutBuilder sessionId={sessionId} initialSegments={initialSegments} />
+        <WorkoutBuilder
+          sessionId={sessionId}
+          initialSegments={initialSegments}
+          previewTitle={template?.name ?? "Session"}
+        />
       </div>
     </main>
   );

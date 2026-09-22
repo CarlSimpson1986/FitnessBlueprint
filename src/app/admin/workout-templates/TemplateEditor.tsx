@@ -50,7 +50,12 @@ export function TemplateEditor({
         {nameError && <p className="text-xs text-red-400 mt-1">{nameError}</p>}
       </div>
 
-      <SegmentExerciseEditor initialSegments={initialSegments} onSave={handleSave} saveLabel="Save template" />
+      <SegmentExerciseEditor
+        initialSegments={initialSegments}
+        onSave={handleSave}
+        saveLabel="Save template"
+        previewTitle={name}
+      />
     </div>
   );
 }
