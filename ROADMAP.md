@@ -4,6 +4,38 @@ Living record of what's built, what's known-broken, and what's next.
 Update this file as work lands — don't let it drift. Full product
 spec lives in the shared Google Doc; this is status, not spec.
 
+## Pick up here next session (as of 2026-09-22, end of day)
+
+Everything below is **committed, pushed, and deployed to production**
+(`https://fitnessblueprints.vercel.app`) as of the last commit,
+`03ca24c`. Nothing is sitting uncommitted.
+
+**Confirmed done today** (owner ran these themselves): migration
+`0022` (Ted walk-around), migration `0023` (weekly booking limit),
+`GEMINI_API_KEY` added to Vercel + redeployed.
+
+**Still open, pick up here:**
+- **Coach Ted end-to-end verification** — deliberately deferred by the
+  owner ("do Ted another day"). Plan: owner sends Coach Ted one real
+  question in the app, then check Vercel's function logs for that
+  request to confirm the Gemini call actually succeeded server-side
+  (more reliable than eyeballing the UI).
+- **Admin feature testing was mid-pass, not finished.** The owner was
+  working through Program Calendar/Today/workout-builder when several
+  rounds of feedback turned into same-session fixes (quick-add-a-day,
+  coach-scoped Today, weekly booking limit, copy-workout-to-another-
+  session, "Preview as member", the "+ Add segment" scroll fix) — none
+  of *those* newest fixes have been manually re-tested yet. Resume
+  testing there next.
+- **Unresolved: does the workout builder need a per-exercise save**, or
+  was "there is no save button" just the single whole-workout Save
+  button being further down the page than expected (confirmed it's
+  still there, unchanged, one save for the whole thing)? Owner didn't
+  answer before moving on — ask directly rather than re-guess.
+- **PubMed key**: skipped by owner's choice — not needed, PubMed search
+  already works unauthenticated (just a lower rate limit). No open
+  action.
+
 ## Done
 
 - **Member app v2 — workout logging, goals, body metrics, IA rework.**
