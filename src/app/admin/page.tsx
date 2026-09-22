@@ -142,6 +142,20 @@ export default async function AdminPage() {
               </p>
             </Link>
           )}
+
+          {profile.role === "owner" && (
+            <Link
+              href="/owner/session-economics"
+              className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
+            >
+              <p className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-2">
+                Session economics
+              </p>
+              <p className="text-blueprint-muted text-sm leading-relaxed">
+                Fill rate and no-show rate, per coach.
+              </p>
+            </Link>
+          )}
         </div>
       </div>
     </main>
