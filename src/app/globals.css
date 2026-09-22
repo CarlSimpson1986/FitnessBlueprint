@@ -17,6 +17,15 @@
   --fb-muted: #a8a8a8;
   --fb-dim: #6a6a6a;
 
+  /* Chart-only categorical series (donuts/pies) — fixed order, validated
+     against the dark card surface (#141414) with the dataviz skill's
+     validator: lightness band, CVD separation, and contrast all pass.
+     Never reassign these per-chart; a 4th series would need a new slot
+     re-validated the same way, not a reused/cycled hue. */
+  --fb-series-1: #3987e5; /* blue */
+  --fb-series-2: #d95926; /* orange */
+  --fb-series-3: #199e70; /* aqua */
+
   --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, monospace;
   --font-display: var(--font-body);

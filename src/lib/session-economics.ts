@@ -38,7 +38,9 @@ export type SessionEconomicsResult = {
     totalFilled: number;
     fillRate: number;
     attendanceMarked: number;
+    attendedCount: number;
     noShowCount: number;
+    excusedCount: number;
     noShowRate: number | null;
   };
   unmarkedSessionCount: number;
@@ -74,7 +76,17 @@ export async function fetchSessionEconomics(
   if (sessionIds.length === 0) {
     return {
       byCoach: [],
-      overall: { sessionCount: 0, totalCapacity: 0, totalFilled: 0, fillRate: 0, attendanceMarked: 0, noShowCount: 0, noShowRate: null },
+      overall: {
+        sessionCount: 0,
+        totalCapacity: 0,
+        totalFilled: 0,
+        fillRate: 0,
+        attendanceMarked: 0,
+        attendedCount: 0,
+        noShowCount: 0,
+        excusedCount: 0,
+        noShowRate: null,
+      },
       unmarkedSessionCount: 0,
       worstFill: [],
     };
@@ -114,20 +126,26 @@ export async function fetchSessionEconomics(
   let overallCapacity = 0;
   let overallFilled = 0;
   let overallMarked = 0;
+  let overallAttended = 0;
   let overallNoShow = 0;
+  let overallExcused = 0;
 
   for (const session of sessionRows) {
     const sessionBookings = bookingsBySession.get(session.id) ?? [];
     const filled = sessionBookings.filter((b) => OCCUPIED_STATUSES.has(b.status)).length;
     const marked = sessionBookings.filter((b) => MARKED_STATUSES.has(b.status)).length;
+    const attended = sessionBookings.filter((b) => b.status === "attended").length;
     const noShow = sessionBookings.filter((b) => b.status === "no_show").length;
+    const excused = sessionBookings.filter((b) => b.status === "excused").length;
 
     if (marked === 0 && filled > 0) unmarkedSessionCount += 1;
 
     overallCapacity += session.capacity;
     overallFilled += filled;
     overallMarked += marked;
+    overallAttended += attended;
     overallNoShow += noShow;
+    overallExcused += excused;
 
     const coachName = coachNameById.get(session.coach_id) ?? "Unknown coach";
     const accum = byCoachAccum.get(session.coach_id) ?? {
@@ -180,7 +198,9 @@ export async function fetchSessionEconomics(
       totalFilled: overallFilled,
       fillRate: overallCapacity > 0 ? overallFilled / overallCapacity : 0,
       attendanceMarked: overallMarked,
+      attendedCount: overallAttended,
       noShowCount: overallNoShow,
+      excusedCount: overallExcused,
       noShowRate: overallMarked > 0 ? overallNoShow / overallMarked : null,
     },
     unmarkedSessionCount,

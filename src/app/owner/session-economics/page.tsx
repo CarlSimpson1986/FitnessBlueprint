@@ -1,17 +1,9 @@
 import Link from "next/link";
 import { requireOwner } from "@/lib/auth";
 import { fetchSessionEconomics } from "@/lib/session-economics";
-
-type Period = "this_month" | "last_month";
-
-function periodRange(period: Period): { start: Date; end: Date; label: string } {
-  const now = new Date();
-  const monthOffset = period === "last_month" ? -1 : 0;
-  const start = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
-  const end = new Date(now.getFullYear(), now.getMonth() + monthOffset + 1, 1);
-  const label = start.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
-  return { start, end, label };
-}
+import { resolvePeriod } from "@/lib/period";
+import { PeriodPicker } from "@/components/PeriodPicker";
+import { DonutChart } from "@/components/DonutChart";
 
 function pct(rate: number | null) {
   return rate === null ? "—" : `${Math.round(rate * 100)}%`;
@@ -20,12 +12,11 @@ function pct(rate: number | null) {
 export default async function SessionEconomicsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ period?: string }>;
+  searchParams: Promise<{ unit?: string; value?: string }>;
 }) {
   await requireOwner();
   const params = await searchParams;
-  const period: Period = params.period === "last_month" ? "last_month" : "this_month";
-  const { start, end, label } = periodRange(period);
+  const { start, end, label, unit, value } = resolvePeriod(params);
 
   const { byCoach, overall, unmarkedSessionCount, worstFill } = await fetchSessionEconomics(start, end);
 
@@ -45,31 +36,8 @@ export default async function SessionEconomicsPage({
           Private to you.
         </p>
 
-        <div className="flex gap-2 mb-8">
-          <Link
-            href="/owner/session-economics?period=this_month"
-            className={
-              "text-xs font-mono uppercase tracking-wide rounded px-3 py-1.5 border " +
-              (period === "this_month"
-                ? "bg-blueprint-accent text-blueprint-bg border-blueprint-accent"
-                : "border-blueprint-line text-blueprint-muted hover:text-blueprint-ink")
-            }
-          >
-            This month
-          </Link>
-          <Link
-            href="/owner/session-economics?period=last_month"
-            className={
-              "text-xs font-mono uppercase tracking-wide rounded px-3 py-1.5 border " +
-              (period === "last_month"
-                ? "bg-blueprint-accent text-blueprint-bg border-blueprint-accent"
-                : "border-blueprint-line text-blueprint-muted hover:text-blueprint-ink")
-            }
-          >
-            Last month
-          </Link>
-          <span className="text-xs text-blueprint-muted self-center ml-2">{label}</span>
-        </div>
+        <PeriodPicker unit={unit} value={value} />
+        <p className="text-xs text-blueprint-muted -mt-6 mb-8">{label}</p>
 
         {overall.sessionCount === 0 ? (
           <p className="text-blueprint-muted text-sm">No sessions have happened yet in {label}.</p>
@@ -95,6 +63,22 @@ export default async function SessionEconomicsPage({
                 </p>
               </div>
             </div>
+
+            {overall.attendanceMarked > 0 && (
+              <div className="fb-card mb-10">
+                <p className="text-blueprint-ink font-medium text-sm mb-4">Attendance breakdown</p>
+                <DonutChart
+                  centerLabel="Marked bookings"
+                  centerValue={`${overall.attendanceMarked}`}
+                  formatValue={(v) => `${v}`}
+                  segments={[
+                    { label: "Attended", value: overall.attendedCount, color: "var(--fb-series-1)" },
+                    { label: "No-show", value: overall.noShowCount, color: "var(--fb-series-2)" },
+                    { label: "Excused", value: overall.excusedCount, color: "var(--fb-series-3)" },
+                  ]}
+                />
+              </div>
+            )}
 
             <p className="fb-eyebrow mb-3">By coach ({byCoach.length})</p>
             <ul className="space-y-2 mb-10">

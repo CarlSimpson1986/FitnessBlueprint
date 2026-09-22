@@ -256,6 +256,21 @@ spec lives in the shared Google Doc; this is status, not spec.
   6-week programme ended without moving onto another paid plan since,
   computed from the existing `membership_plans.programme_length_days` —
   no new schema. Both owner-only, linked from the admin hub.
+- **Owner dashboards: Month/Quarter/Year period picker + donut charts**
+  (2026-09-22): `/owner/income` and `/owner/session-economics` both moved
+  off the old this-month/last-month toggle onto a shared `PeriodPicker`
+  (`src/lib/period.ts` + `src/components/PeriodPicker.tsx`) driven by
+  `?unit=month|quarter|year&value=...` in the URL. Income gets a
+  Stripe-vs-GoCardless donut; session economics gets an attended/
+  no-show/excused breakdown donut (`src/lib/session-economics.ts` now
+  tracks `attendedCount`/`excusedCount`, not just the no-show count).
+  Shared `DonutChart` component + three chart-only series colors
+  (`--fb-series-1/2/3` in `globals.css`) validated against the card
+  surface with the dataviz skill's palette checker. Note: the dataviz
+  skill's own guidance flags a 2-slice pie as an anti-pattern (a meter
+  or stacked bar is the "correct" form) — built as a donut with a
+  center total anyway since that was the explicit ask and it's a
+  common, well-executed exception in practice.
 - **Session economics dashboard**: `/owner/session-economics` — fill rate
   and no-show rate per coach, computed read-time from `sessions`/
   `bookings` for sessions that have already happened (`session_date` in
