@@ -363,6 +363,23 @@ spec lives in the shared Google Doc; this is status, not spec.
   reads as `undefined` (falsy) so the tour just always shows, same
   "ignore the Supabase gap" pattern as elsewhere in this app.
 
+- **Weight suggestions on live-logging, from the member's own history**:
+  the "separate, simpler feature" flagged as out-of-scope for Autofinish
+  is now built. Each set on `/sessions/[id]/live` shows "Last time:
+  Xkg × Y" (the member's own most recent log of that exercise name,
+  same name-matching convention `progress.ts` already uses for personal
+  records) and, when the coach's `target` text is written as "% 1RM"
+  or "RPE" (confirmed as real usage, not hypothetical), a calculated
+  "Suggested ~Zkg" — estimated via the Epley 1RM formula from that last
+  log, applying the parsed percentage (or an RPE→%1RM approximation
+  formula, `~2.5% per rep away from failure`, not a copied chart).
+  **Reference only, by design** — nothing auto-fills; the member always
+  types their own number, same as before. `src/lib/exercise-
+  progression.ts` (pure functions, no DB access) + a new history lookup
+  in `live/page.tsx` (matches by exercise name across all the member's
+  past sessions, excluding the current session's own just-logged sets
+  so nothing references itself).
+
 ## Known gaps / not started
 
 - **Stripe billing is not wired up.** `src/app/api/webhooks/stripe/route.ts`

@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import type { MetricType, SegmentType } from "@/lib/workout-content";
+import { suggestNextWeight } from "@/lib/exercise-progression";
 import { LiveLogging, type LiveSegment } from "./LiveLogging";
 
 export default async function LiveSessionPage({
@@ -70,6 +71,43 @@ export default async function LiveSessionPage({
     .in("exercise_id", exerciseIds.length > 0 ? exerciseIds : [""]);
 
   const logBySet = new Map((logs ?? []).map((l) => [l.set_id, l]));
+
+  // "Last time you did X" reference — matched by exercise NAME, not id,
+  // since the same movement gets a brand-new session_exercises row every
+  // week (same convention progress.ts already uses for personal
+  // records). Excludes this session's own exercise ids so a set the
+  // member already logged a moment ago in THIS session never shows up
+  // as its own "history".
+  const exerciseNames = [...new Set((exercises ?? []).map((e) => e.name))];
+  const currentExerciseIdSet = new Set((exercises ?? []).map((e) => e.id));
+
+  const { data: historicalExercises } = exerciseNames.length
+    ? await supabase.from("session_exercises").select("id, name").in("name", exerciseNames)
+    : { data: [] };
+
+  const nameByHistoricalId = new Map((historicalExercises ?? []).map((e) => [e.id, e.name]));
+  const historicalIds = (historicalExercises ?? [])
+    .map((e) => e.id)
+    .filter((id) => !currentExerciseIdSet.has(id));
+
+  const { data: historyLogs } = historicalIds.length
+    ? await supabase
+        .from("exercise_logs")
+        .select("exercise_id, weight_kg, reps, logged_at")
+        .eq("member_id", user.id)
+        .in("exercise_id", historicalIds)
+        .not("weight_kg", "is", null)
+        .order("logged_at", { ascending: false })
+    : { data: [] };
+
+  const lastLogByName = new Map<string, { weightKg: number; reps: number | null }>();
+  for (const log of historyLogs ?? []) {
+    const name = nameByHistoricalId.get(log.exercise_id);
+    // historyLogs is ordered most-recent-first, so the first hit per
+    // name is already the one we want — skip any later, older ones.
+    if (!name || lastLogByName.has(name) || log.weight_kg === null) continue;
+    lastLogByName.set(name, { weightKg: log.weight_kg, reps: log.reps });
+  }
   const setsByExercise = new Map<string, typeof sets>();
   for (const set of sets ?? []) {
     const list = setsByExercise.get(set.exercise_id) ?? [];
@@ -94,6 +132,8 @@ export default async function LiveSessionPage({
       eachSide: exercise.each_side,
       sets: (setsByExercise.get(exercise.id) ?? []).map((set) => {
         const log = logBySet.get(set.id);
+        const lastLog = lastLogByName.get(exercise.name);
+        const suggestion = lastLog ? suggestNextWeight(lastLog.weightKg, lastLog.reps, set.target) : null;
         return {
           id: set.id,
           setNumber: set.set_number,
@@ -102,6 +142,10 @@ export default async function LiveSessionPage({
           reps: log?.reps ?? null,
           timeSeconds: log?.time_seconds ?? null,
           distanceM: log?.distance_m ?? null,
+          lastWeightKg: lastLog?.weightKg ?? null,
+          lastReps: lastLog?.reps ?? null,
+          suggestedKg: suggestion?.suggestedKg ?? null,
+          suggestionBasis: suggestion?.basis ?? null,
         };
       }),
     })),

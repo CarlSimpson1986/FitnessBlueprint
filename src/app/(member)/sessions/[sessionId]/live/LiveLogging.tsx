@@ -14,6 +14,12 @@ export type LiveSet = {
   reps: number | null;
   timeSeconds: number | null;
   distanceM: number | null;
+  // Reference only, computed from the member's own logged history —
+  // never auto-filled into the inputs below, they always type their own.
+  lastWeightKg: number | null;
+  lastReps: number | null;
+  suggestedKg: number | null;
+  suggestionBasis: string | null;
 };
 
 export type LiveExercise = {
@@ -71,7 +77,10 @@ function SetRow({ set, metricType, onSave }: { set: LiveSet; metricType: MetricT
   const fieldClass =
     "w-16 bg-blueprint-raised border border-blueprint-line rounded text-sm text-center text-blueprint-ink px-1 py-1.5 focus:outline-none focus:border-blueprint-accent";
 
+  const showWeightHistory = metricType === "weight_kg" || metricType === "weight_kg_and_reps";
+
   return (
+    <div className="space-y-0.5">
     <div className="flex items-center gap-2">
       <span className="text-xs text-blueprint-muted w-4">{set.setNumber}</span>
       {(metricType === "weight_kg" || metricType === "weight_kg_and_reps") && (
@@ -119,6 +128,22 @@ function SetRow({ set, metricType, onSave }: { set: LiveSet; metricType: MetricT
         />
       )}
       {set.target && <span className="text-[10px] text-blueprint-muted">target: {set.target}</span>}
+    </div>
+      {showWeightHistory && (set.lastWeightKg !== null || set.suggestedKg !== null) && (
+        <p className="text-[10px] text-blueprint-dim pl-6">
+          {set.lastWeightKg !== null && (
+            <>
+              Last time: {set.lastWeightKg}kg{set.lastReps !== null ? ` × ${set.lastReps}` : ""}
+            </>
+          )}
+          {set.suggestedKg !== null && (
+            <>
+              {set.lastWeightKg !== null ? " · " : ""}
+              <span title={set.suggestionBasis ?? undefined}>Suggested ~{set.suggestedKg}kg</span>
+            </>
+          )}
+        </p>
+      )}
     </div>
   );
 }
