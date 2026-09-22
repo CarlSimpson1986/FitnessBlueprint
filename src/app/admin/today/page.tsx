@@ -4,16 +4,26 @@ import { formatSessionTime, toLocalDateKey } from "@/lib/format";
 import { SessionRoster } from "./SessionRoster";
 
 export default async function TodayPage() {
-  const { supabase } = await requireCoachOrOwner();
+  const { supabase, profile } = await requireCoachOrOwner();
 
   const today = toLocalDateKey(new Date());
 
-  const { data: sessions } = await supabase
+  // Coaches only see the sessions THEY'RE taking — this is a day-of
+  // operational page (mark attendance, see readiness for who's about
+  // to walk in), not a scheduling overview, so another coach's class
+  // isn't relevant. Owner still sees every session today, same as
+  // every other page in this app that gives the owner full visibility.
+  let query = supabase
     .from("sessions")
     .select("id, start_time, template_id, coach_id")
     .eq("status", "scheduled")
-    .eq("session_date", today)
-    .order("start_time");
+    .eq("session_date", today);
+
+  if (profile.role === "coach") {
+    query = query.eq("coach_id", profile.id);
+  }
+
+  const { data: sessions } = await query.order("start_time");
 
   const sessionRows = sessions ?? [];
   const templateIds = [...new Set(sessionRows.map((s) => s.template_id))];
@@ -39,11 +49,13 @@ export default async function TodayPage() {
         <p className="fb-eyebrow mb-1">Coach</p>
         <h1 className="text-2xl font-semibold text-blueprint-ink mb-2">Today</h1>
         <p className="text-blueprint-muted mb-10 text-sm leading-relaxed">
-          Mark attendance and see readiness check-ins for today&apos;s sessions.
+          Mark attendance and see readiness check-ins for {profile.role === "coach" ? "your" : "today's"} sessions.
         </p>
 
         {sessionRows.length === 0 ? (
-          <p className="text-blueprint-muted text-sm">No sessions scheduled today.</p>
+          <p className="text-blueprint-muted text-sm">
+            {profile.role === "coach" ? "You're not taking any sessions today." : "No sessions scheduled today."}
+          </p>
         ) : (
           <ul className="space-y-4">
             {sessionRows.map((session) => (

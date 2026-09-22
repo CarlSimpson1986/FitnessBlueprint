@@ -303,6 +303,11 @@ spec lives in the shared Google Doc; this is status, not spec.
   attendance roster (mark attended/no-show/excused, readiness flags)
   got its own page, `/admin/today` — a different job from
   building/scheduling, so it didn't move into the calendar sidebar.
+  **Coach-scoped** (2026-09-22 follow-up): a coach only sees the
+  sessions they're actually taking today, not every coach's session
+  mixed together — this is a day-of "what am I running right now"
+  page, not a scheduling overview. Owner still sees everything, same
+  full-visibility convention as the rest of `/admin`.
   **Session Plans (the free-text block-paste feature) is retired** —
   `workout_templates` + Program Calendar do that job properly now. Its
   two read-sites were updated: the member homepage no longer shows a
