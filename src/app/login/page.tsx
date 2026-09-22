@@ -23,12 +23,19 @@ export default function LoginPage() {
       email,
       options: {
         emailRedirectTo: `${publicEnv.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+        // New members create a password at /signup now — magic link is
+        // only a sign-in method for accounts that already exist.
+        shouldCreateUser: false,
       },
     });
 
     if (error) {
       setStatus("error");
-      setErrorMessage(error.message);
+      setErrorMessage(
+        error.message.toLowerCase().includes("signups not allowed")
+          ? "No account found with that email — create one first."
+          : error.message
+      );
       return;
     }
 
@@ -196,6 +203,13 @@ export default function LoginPage() {
         >
           {mode === "magic-link" ? "Have a password instead?" : "Use magic link instead"}
         </button>
+
+        <a
+          href="/signup"
+          className="mt-3 block text-xs font-mono uppercase tracking-wide text-blueprint-muted hover:text-blueprint-accent transition"
+        >
+          New here? Create an account
+        </a>
       </div>
     </main>
   );

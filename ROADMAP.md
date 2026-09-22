@@ -72,6 +72,18 @@ spec lives in the shared Google Doc; this is status, not spec.
 - **Auth**: magic-link sign-in, onboarding (name/phone/emergency
   contact), owner-issued password fallback with forced first-login
   password change.
+- **Password-required signup** (2026-09-22): new members now create a
+  password at `/signup` (`supabase.auth.signUp`) instead of getting in
+  purely via magic link — owner's call ("everything locked down and
+  password protected"). Magic link on `/login` is now sign-in only for
+  accounts that already exist: `signInWithOtp` passes
+  `shouldCreateUser: false`, so a brand-new email can no longer
+  self-signup passwordlessly through the back door of the old magic-link
+  flow. Existing members who signed up before this change and never set
+  a password are **unaffected** — they still sign in via magic link and
+  can add a password later at `/account` (that opt-in flow already
+  existed). Onboarding itself (`/onboarding`) didn't need to change —
+  it only ever checked for an authenticated user, not how they got one.
 - **Member booking**: timetable view, book/cancel a session, upcoming
   bookings on the homepage.
 - **Credits**: credit ledger, deduction on booking, monthly-reset
@@ -223,6 +235,45 @@ spec lives in the shared Google Doc; this is status, not spec.
   `0014_buddy_booking.sql` (the columns, functions, and RLS) — pasting
   both into one SQL Editor query and running together will fail.
 
+- **Email reminders via Brevo**: daily Vercel Cron
+  (`src/app/api/cron/reminders/route.ts`) sends the Sunday check-in
+  nudge, the 6-week goal check-in due reminder, and a quiet-member
+  alert to the owner (2 missed weekly check-ins in a row) — the email
+  half of a pattern whose in-app banners already existed. Idempotent
+  via a new append-only `email_log` table (`0021`, unique on
+  `recipient_id, email_type, reference_key`) so cron retries/overlaps
+  can't double-send. Brevo chosen over Resend since `src/lib/env.ts`
+  already reserved `BREVO_API_KEY`. Also backfilled `GOCARDLESS_ENVIRONMENT`
+  into env validation — `.env.example` listed it but the schema never
+  checked for it.
+- **Owner income dashboard + 6-week conversion tracker**: `/owner/income`
+  reads live totals + a transaction list straight from the Stripe and
+  GoCardless APIs (This month / Last month) — no local payments table,
+  no in-app checkout, since Guy's payment links and GoCardless mandates
+  already exist outside the app. Reports "not configured" per provider
+  rather than crashing if a key is unset, so this works independently of
+  the Stripe-billing gap below. `/owner/conversions` lists members whose
+  6-week programme ended without moving onto another paid plan since,
+  computed from the existing `membership_plans.programme_length_days` —
+  no new schema. Both owner-only, linked from the admin hub.
+- **Session economics dashboard**: `/owner/session-economics` — fill rate
+  and no-show rate per coach, computed read-time from `sessions`/
+  `bookings` for sessions that have already happened (`session_date` in
+  the past, not coach-cancelled) in the selected month, same read-time-
+  no-stored-counter convention as the challenge tracker and attendance
+  streak. No-show rate is only computed over attendance-marked bookings
+  (`attended`/`no_show`/`excused`) — a session the coach never marked
+  attendance for isn't silently counted as zero no-shows, and the page
+  surfaces a "sessions with attendance never marked" count so that gap
+  is visible rather than hidden in the maths. Also lists the 10
+  lowest-fill-rate sessions in the period. `src/lib/session-economics.ts`.
+- **Next.js 16 migration: `middleware.ts` → `src/proxy.ts`**: this Next.js
+  version deprecates root `middleware.ts` in favor of a `src/proxy.ts`
+  convention, and having both files present broke the production build.
+  Merged the coach-subdomain rewrite, Supabase session refresh, and
+  security headers into the single `src/proxy.ts`. Pure infra fix, no
+  behavior change intended.
+
 ## Known gaps / not started
 
 - **Stripe billing is not wired up.** `src/app/api/webhooks/stripe/route.ts`
@@ -251,14 +302,32 @@ spec lives in the shared Google Doc; this is status, not spec.
   by hand via the hosted project's SQL Editor because the `supabase` CLI's
   browser-login token wasn't reaching either the sandboxed or interactive
   shell here. Worth revisiting so `supabase db push` actually works.
-- **Owner/business dashboards** — not started: at-risk member alerts,
-  session economics (fill rate/no-show/revenue per session or coach),
-  trial-to-member conversion tracking for the 6-week funnel. Revenue/
-  fill-rate reporting specifically is blocked on Stripe billing above —
-  there's no payments log to report on until that's wired up.
+- **Owner/business dashboards, mostly done.** Income (`/owner/income`,
+  read-only, live from Stripe/GoCardless), 6-week conversion tracking
+  (`/owner/conversions`), and session economics (`/owner/session-economics`
+  — fill rate and no-show rate per coach, computed read-time from
+  sessions/bookings for whichever have already happened; also surfaces a
+  "sessions with attendance never marked" count and a lowest-fill-rate
+  list) are all shipped — see Done above. Still not started: at-risk
+  member alerts as a dashboard view (the quiet-member *email* to the
+  owner exists via the Brevo cron, but there's nowhere in-app to see who
+  triggered it).
 - **Merch** — deliberately trivial: just a link-out to the existing
   Squarespace shop, not a native shop. Owner confirmed volume doesn't
   justify more.
+
+## Pending manual action
+
+- **Migration `0021_email_reminders.sql`** (email reminder log table) is
+  written and committed but its hosted-DB status is unconfirmed as of
+  this session — same manual SQL-Editor-paste workflow as every
+  migration so far. Check it's actually been run before relying on the
+  reminders cron; per the note below, this exact thing has silently
+  slipped before.
+- **`GOCARDLESS_ENVIRONMENT`** was added to `src/lib/env.ts` validation
+  this session (019bf80) — confirm it's actually set in Vercel's
+  env vars, since `.env.example` had listed it long before validation
+  existed to catch it being missing.
 
 ## Infra notes worth remembering
 
