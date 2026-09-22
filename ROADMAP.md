@@ -310,8 +310,19 @@ spec lives in the shared Google Doc; this is status, not spec.
   gone anyway) no longer previews it. The `session_plans` table itself
   is untouched in the database (historical data, no destructive
   migration) — only app code stopped reading/writing it.
-  Stage 2 (redesign `SegmentExerciseEditor` for readability) and
-  Stage 3 (AI-assisted multi-week progression, "Autofinish") are
+- **`SegmentExerciseEditor` redesigned for readability** (Stage 2 of
+  the same plan): segments now render as a single top-to-bottom
+  sequential list instead of a wrapping 2-3 column grid — they're a
+  sequence (warmup → circuit → finisher), and the grid broke that
+  reading order. Exercises collapse to a compact "name + set count"
+  header and expand on click (tracked by key, so state survives
+  reorders) instead of every exercise's full set-editor being open at
+  once. Reorder buttons restyled smaller/secondary so segment content
+  stays the visual focus. Shared by both the session workout builder
+  and the workout-template editor — one component, both call sites
+  fixed at once. Pure presentation-layer change, save flow/data shape
+  untouched.
+  Stage 3 (AI-assisted multi-week progression, "Autofinish") is
   planned but not yet built — see the plan file from that session if
   picking this back up.
 
