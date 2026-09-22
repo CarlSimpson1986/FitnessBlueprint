@@ -385,6 +385,21 @@ spec lives in the shared Google Doc; this is status, not spec.
   past sessions, excluding the current session's own just-logged sets
   so nothing references itself).
 
+- **Weekly booking limit actually enforced**: `membership_plans.
+  sessions_per_week` has existed since `0001` but was never checked
+  anywhere — a member on a "2x per week" plan could book as many
+  sessions as they liked, only credit-pack plans had any real cap.
+  Migration `0023` adds the check to `book_session()` (full function
+  body copied forward from `0014`, per this project's "never edit a
+  past migration in place" rule): if the active plan sets
+  `sessions_per_week`, counts the member's already-`booked` sessions in
+  the same Mon-Sun week as the one being booked, and rejects once
+  that's used up. The plan name and credit balance were already shown
+  to members on the Bookings page and `/account/purchases` — added a
+  matching "X/Y this week" next to them on the Bookings page, computed
+  with the exact same Mon-Sun boundary as the server-side check so
+  what a member sees always matches what actually blocks them.
+
 ## Known gaps / not started
 
 - **Stripe billing is not wired up.** `src/app/api/webhooks/stripe/route.ts`

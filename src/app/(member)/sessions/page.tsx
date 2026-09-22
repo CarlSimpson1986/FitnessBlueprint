@@ -39,12 +39,51 @@ export default async function SessionsPage() {
       .order("started_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    supabase.from("membership_plans").select("id, name, credit_pack_size"),
+    supabase.from("membership_plans").select("id, name, credit_pack_size, sessions_per_week"),
     supabase.from("credit_ledger").select("delta").eq("member_id", user.id),
   ]);
 
   const sessionRows = sessions ?? [];
   const sessionIds = sessionRows.map((s) => s.id);
+
+  const planById = new Map((allPlans ?? []).map((p) => [p.id, p]));
+  const activePlan = activeMembership ? planById.get(activeMembership.plan_id) : null;
+  const activePlanName = activePlan?.name ?? null;
+  const creditBalance = activePlan?.credit_pack_size
+    ? (creditLedgerRows ?? []).reduce((sum, row) => sum + row.delta, 0)
+    : null;
+
+  // "X/Y this week" for capped recurring plans — mirrors the same
+  // Mon-Sun boundary book_session() (0023) enforces server-side, so
+  // what a member sees here always matches what actually blocks them.
+  let weeklyUsed: number | null = null;
+  if (activePlan?.sessions_per_week != null) {
+    const now = new Date();
+    const dow = now.getDay();
+    const daysSinceMonday = dow === 0 ? 6 : dow - 1;
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - daysSinceMonday);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+
+    const { data: weekSessions } = await supabase
+      .from("sessions")
+      .select("id")
+      .gte("session_date", toLocalDateKey(weekStart))
+      .lte("session_date", toLocalDateKey(weekEnd));
+
+    const weekSessionIds = (weekSessions ?? []).map((s) => s.id);
+    const { data: weekBookings } = weekSessionIds.length
+      ? await supabase
+          .from("bookings")
+          .select("id")
+          .eq("member_id", user.id)
+          .eq("status", "booked")
+          .in("session_id", weekSessionIds)
+      : { data: [] };
+
+    weeklyUsed = (weekBookings ?? []).length;
+  }
 
   const [
     { data: myBookings },
@@ -121,13 +160,6 @@ export default async function SessionsPage() {
       },
     ])
   );
-
-  const planById = new Map((allPlans ?? []).map((p) => [p.id, p]));
-  const activePlan = activeMembership ? planById.get(activeMembership.plan_id) : null;
-  const activePlanName = activePlan?.name ?? null;
-  const creditBalance = activePlan?.credit_pack_size
-    ? (creditLedgerRows ?? []).reduce((sum, row) => sum + row.delta, 0)
-    : null;
 
   const templateById = new Map((templates ?? []).map((t) => [t.id, t]));
   const coachById = new Map((coaches ?? []).map((c) => [c.id, c]));
@@ -271,6 +303,8 @@ export default async function SessionsPage() {
             {activePlanName}
             {creditBalance !== null &&
               ` · ${creditBalance} credit${creditBalance === 1 ? "" : "s"} remaining`}
+            {weeklyUsed !== null &&
+              ` · ${weeklyUsed}/${activePlan?.sessions_per_week} this week`}
           </p>
         )}
 
