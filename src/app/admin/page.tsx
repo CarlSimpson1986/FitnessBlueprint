@@ -16,26 +16,14 @@ export default async function AdminPage() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Link
-            href="/admin/sessions"
+            href="/admin/today"
             className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
           >
             <p className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-2">
-              Sessions
+              Today
             </p>
             <p className="text-blueprint-muted text-sm leading-relaxed">
-              Schedule the timetable, cancel sessions, browse day by day.
-            </p>
-          </Link>
-
-          <Link
-            href="/admin/session-plans"
-            className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
-          >
-            <p className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-2">
-              Session plans
-            </p>
-            <p className="text-blueprint-muted text-sm leading-relaxed">
-              Bulk-upload a training block, published day by day.
+              Mark attendance and see readiness for today&apos;s sessions.
             </p>
           </Link>
 
@@ -59,7 +47,8 @@ export default async function AdminPage() {
               Program calendar
             </p>
             <p className="text-blueprint-muted text-sm leading-relaxed">
-              See a training block&apos;s shape across the weeks.
+              Classes, scheduling, and templates — everything for the
+              timetable in one place.
             </p>
           </Link>
 

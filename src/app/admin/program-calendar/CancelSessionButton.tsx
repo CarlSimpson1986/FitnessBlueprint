@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { cancelSession } from "./actions";
+import { cancelSession } from "./schedule-actions";
 
 export function CancelSessionButton({ sessionId }: { sessionId: string }) {
   const router = useRouter();
@@ -34,16 +34,16 @@ export function CancelSessionButton({ sessionId }: { sessionId: string }) {
   }
 
   return (
-    <div className="flex flex-col items-end gap-1">
+    <div>
       <button
         type="button"
         onClick={handleClick}
         disabled={isPending}
-        className="text-xs font-mono uppercase tracking-wide text-blueprint-muted border border-blueprint-line rounded px-3 py-2 hover:border-red-400 hover:text-red-400 disabled:opacity-50 transition"
+        className="block text-[10px] font-mono uppercase tracking-wide text-blueprint-muted hover:text-red-400 disabled:opacity-50"
       >
         {isPending ? "…" : "Cancel session"}
       </button>
-      {error && <p className="text-xs text-red-400 max-w-[16rem] text-right">{error}</p>}
+      {error && <p className="text-[10px] text-red-400 mt-1">{error}</p>}
     </div>
   );
 }

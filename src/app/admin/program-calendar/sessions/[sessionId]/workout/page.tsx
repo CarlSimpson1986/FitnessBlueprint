@@ -87,10 +87,10 @@ export default async function SessionWorkoutPage({
     <main className="min-h-screen px-8 py-16">
       <div className="max-w-6xl mx-auto">
         <Link
-          href="/admin/sessions"
+          href="/admin/program-calendar"
           className="inline-block font-mono text-xs tracking-wide text-blueprint-muted hover:text-blueprint-accent transition mb-6"
         >
-          ← Manage sessions
+          ← Program calendar
         </Link>
         <p className="fb-eyebrow mb-1">Coach</p>
         <h1 className="text-2xl font-semibold text-blueprint-ink mb-2">

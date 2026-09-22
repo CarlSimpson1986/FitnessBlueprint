@@ -1,7 +1,8 @@
 // Shared types for the Session -> Segment -> Exercise -> Set workout content
 // model (supabase/migrations/0015_workout_content_and_logging.sql,
 // 0020_exercise_sets.sql), reused by both the per-session builder
-// (src/app/admin/sessions/[sessionId]/workout) and the reusable template
+// (src/app/admin/program-calendar/sessions/[sessionId]/workout) and the
+// reusable template
 // library (src/app/admin/workout-templates), which share the same
 // segment/exercise editing UI (src/components/SegmentExerciseEditor.tsx)
 // and save shape.

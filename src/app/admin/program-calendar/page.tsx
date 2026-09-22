@@ -2,6 +2,8 @@ import Link from "next/link";
 import { requireCoachOrOwner } from "@/lib/auth";
 import { toLocalDateKey } from "@/lib/format";
 import { ProgramCalendarClient, type DayCard } from "./ProgramCalendarClient";
+import { ClassesPanel, type ClassRow } from "./ClassesPanel";
+import { ScheduleSessionPanel } from "./ScheduleSessionPanel";
 
 const WEEK_OPTIONS = [1, 2, 4, 6] as const;
 type WeekOption = (typeof WEEK_OPTIONS)[number];
@@ -65,6 +67,19 @@ export default async function ProgramCalendarPage({
       .in("session_id", sessionIds.length > 0 ? sessionIds : [""]),
   ]);
 
+  // Sidebar data — unscoped from the visible date range, unlike the
+  // lookups above which only cover classes/coaches used by sessions
+  // already on screen.
+  const [{ data: allClasses }, { data: allCoaches }] = await Promise.all([
+    supabase
+      .from("session_templates")
+      .select("id, code, name, description, default_duration_minutes, default_capacity, is_active")
+      .order("name"),
+    supabase.from("profiles").select("id, full_name").in("role", ["coach", "owner"]).order("full_name"),
+  ]);
+
+  const activeClasses = (allClasses ?? []).filter((c) => c.is_active);
+
   const segmentIds = (segments ?? []).map((s) => s.id);
   const { data: exercises } = await supabase
     .from("session_exercises")
@@ -119,60 +134,99 @@ export default async function ProgramCalendarPage({
         <p className="fb-eyebrow mb-1">Coach</p>
         <h1 className="text-2xl font-semibold text-blueprint-ink mb-2">Program calendar</h1>
         <p className="text-blueprint-muted mb-6 text-sm leading-relaxed">
-          See how a training block looks across the weeks. Assign a saved{" "}
-          <Link href="/admin/workout-templates" className="text-blueprint-accent hover:opacity-80">
-            workout template
-          </Link>{" "}
-          to any scheduled session, or open it to build one from scratch.
+          Classes, scheduling, and workout templates all live here now.
+          Assign a saved template to any scheduled session, or open it to
+          build one from scratch.
         </p>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-          <div className="flex items-center gap-2">
-            <Link
-              href={`/admin/program-calendar?weeks=${weeks}&start=${prevStart}`}
-              className="text-xs font-mono text-blueprint-muted hover:text-blueprint-accent border border-blueprint-line rounded px-2 py-1"
-            >
-              ←
-            </Link>
-            <Link
-              href={`/admin/program-calendar?weeks=${weeks}`}
-              className="text-xs font-mono text-blueprint-muted hover:text-blueprint-accent border border-blueprint-line rounded px-2 py-1"
-            >
-              Today
-            </Link>
-            <Link
-              href={`/admin/program-calendar?weeks=${weeks}&start=${nextStart}`}
-              className="text-xs font-mono text-blueprint-muted hover:text-blueprint-accent border border-blueprint-line rounded px-2 py-1"
-            >
-              →
-            </Link>
-            <span className="text-xs text-blueprint-muted ml-2">
-              {startKey} – {endKey}
-            </span>
-          </div>
-          <div className="flex gap-2">
-            {WEEK_OPTIONS.map((w) => (
-              <Link
-                key={w}
-                href={`/admin/program-calendar?weeks=${w}${params.start ? `&start=${params.start}` : ""}`}
-                className={
-                  "text-xs font-mono uppercase tracking-wide rounded px-3 py-1.5 border " +
-                  (w === weeks
-                    ? "bg-blueprint-accent text-blueprint-bg border-blueprint-accent"
-                    : "border-blueprint-line text-blueprint-muted hover:text-blueprint-ink")
-                }
-              >
-                {w} week{w > 1 ? "s" : ""}
-              </Link>
-            ))}
+        <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-8">
+          <aside className="space-y-8 lg:border-r lg:border-blueprint-line/60 lg:pr-6">
+            <ClassesPanel classes={(allClasses ?? []) as ClassRow[]} />
+
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <p className="fb-eyebrow">Workout templates</p>
+                <Link
+                  href="/admin/workout-templates/new"
+                  className="text-[10px] font-mono uppercase tracking-wide text-blueprint-accent hover:opacity-80"
+                >
+                  + New
+                </Link>
+              </div>
+              {(templates ?? []).length === 0 ? (
+                <p className="text-[10px] text-blueprint-muted">None yet.</p>
+              ) : (
+                <ul className="space-y-1">
+                  {(templates ?? []).map((t) => (
+                    <li key={t.id}>
+                      <Link
+                        href={`/admin/workout-templates/${t.id}`}
+                        className="text-xs text-blueprint-ink hover:text-blueprint-accent"
+                      >
+                        {t.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div>
+              <p className="fb-eyebrow mb-3">Schedule a session</p>
+              <ScheduleSessionPanel templates={activeClasses} coaches={allCoaches ?? []} />
+            </div>
+          </aside>
+
+          <div>
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/admin/program-calendar?weeks=${weeks}&start=${prevStart}`}
+                  className="text-xs font-mono text-blueprint-muted hover:text-blueprint-accent border border-blueprint-line rounded px-2 py-1"
+                >
+                  ←
+                </Link>
+                <Link
+                  href={`/admin/program-calendar?weeks=${weeks}`}
+                  className="text-xs font-mono text-blueprint-muted hover:text-blueprint-accent border border-blueprint-line rounded px-2 py-1"
+                >
+                  Today
+                </Link>
+                <Link
+                  href={`/admin/program-calendar?weeks=${weeks}&start=${nextStart}`}
+                  className="text-xs font-mono text-blueprint-muted hover:text-blueprint-accent border border-blueprint-line rounded px-2 py-1"
+                >
+                  →
+                </Link>
+                <span className="text-xs text-blueprint-muted ml-2">
+                  {startKey} – {endKey}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                {WEEK_OPTIONS.map((w) => (
+                  <Link
+                    key={w}
+                    href={`/admin/program-calendar?weeks=${w}${params.start ? `&start=${params.start}` : ""}`}
+                    className={
+                      "text-xs font-mono uppercase tracking-wide rounded px-3 py-1.5 border " +
+                      (w === weeks
+                        ? "bg-blueprint-accent text-blueprint-bg border-blueprint-accent"
+                        : "border-blueprint-line text-blueprint-muted hover:text-blueprint-ink")
+                    }
+                  >
+                    {w} week{w > 1 ? "s" : ""}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <ProgramCalendarClient
+              dayKeys={dayKeys}
+              cardsByDate={Object.fromEntries(cardsByDate)}
+              templates={templates ?? []}
+            />
           </div>
         </div>
-
-        <ProgramCalendarClient
-          dayKeys={dayKeys}
-          cardsByDate={Object.fromEntries(cardsByDate)}
-          templates={templates ?? []}
-        />
       </div>
     </main>
   );

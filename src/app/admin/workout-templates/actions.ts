@@ -7,7 +7,8 @@ export type ActionResult = { error?: string; templateId?: string };
 
 /**
  * Create-or-replace, same full-replace reasoning as saveSessionWorkout
- * (src/app/admin/sessions/[sessionId]/workout/actions.ts) — a template is
+ * (src/app/admin/program-calendar/sessions/[sessionId]/workout/actions.ts) —
+ * a template is
  * small, hand-built content, not worth diffing. Pass templateId to replace
  * an existing template's content in place (keeps its id, so any session
  * that already copied from it is unaffected — copies are independent rows).

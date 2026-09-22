@@ -289,6 +289,32 @@ spec lives in the shared Google Doc; this is status, not spec.
   security headers into the single `src/proxy.ts`. Pure infra fix, no
   behavior change intended.
 
+- **Admin scheduling consolidated into Program Calendar** (2026-09-22,
+  Stage 1 of the admin-consolidation plan): `/admin/sessions` and
+  `/admin/session-plans` are both gone. `/admin/program-calendar` now
+  has a sidebar with **Classes** (`session_templates` — FNL/KIDS/GC
+  etc. — finally has real CRUD; there was previously no admin UI for
+  this at all, only a read-only dropdown; RLS already permitted it),
+  a **Workout templates** list, and **Schedule a session** (relocated
+  `createSessions`/`cancelSession`, unchanged logic, now in
+  `src/app/admin/program-calendar/schedule-actions.ts`). The per-session
+  workout builder moved to
+  `/admin/program-calendar/sessions/[sessionId]/workout`. The day-of
+  attendance roster (mark attended/no-show/excused, readiness flags)
+  got its own page, `/admin/today` — a different job from
+  building/scheduling, so it didn't move into the calendar sidebar.
+  **Session Plans (the free-text block-paste feature) is retired** —
+  `workout_templates` + Program Calendar do that job properly now. Its
+  two read-sites were updated: the member homepage no longer shows a
+  "what's on today" plan-text block, and the admin session list (now
+  gone anyway) no longer previews it. The `session_plans` table itself
+  is untouched in the database (historical data, no destructive
+  migration) — only app code stopped reading/writing it.
+  Stage 2 (redesign `SegmentExerciseEditor` for readability) and
+  Stage 3 (AI-assisted multi-week progression, "Autofinish") are
+  planned but not yet built — see the plan file from that session if
+  picking this back up.
+
 ## Known gaps / not started
 
 - **Stripe billing is not wired up.** `src/app/api/webhooks/stripe/route.ts`

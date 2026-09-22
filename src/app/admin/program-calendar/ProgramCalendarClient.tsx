@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { assignTemplateToSession } from "../workout-templates/actions";
+import { CancelSessionButton } from "./CancelSessionButton";
 
 export type DayCard = {
   sessionId: string;
@@ -72,7 +73,7 @@ function SessionCard({
       {expanded && (
         <div className="mt-2 pt-2 border-t border-blueprint-line/60 space-y-1.5">
           <Link
-            href={`/admin/sessions/${card.sessionId}/workout`}
+            href={`/admin/program-calendar/sessions/${card.sessionId}/workout`}
             className="block text-[10px] font-mono uppercase tracking-wide text-blueprint-accent hover:opacity-80"
           >
             Open builder →
@@ -100,6 +101,7 @@ function SessionCard({
             </button>
           </div>
           {error && <p className="text-[10px] text-red-400">{error}</p>}
+          <CancelSessionButton sessionId={card.sessionId} />
         </div>
       )}
     </div>
