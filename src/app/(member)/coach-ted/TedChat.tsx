@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState, type FormEvent } from "react";
+import { TedText } from "./TedText";
 
 type Message = {
   id: string;
@@ -28,33 +29,43 @@ export function TedChat({ initialMessages }: { initialMessages: Message[] }) {
     setMessages((prev) => [...prev, { id: pendingId, question: trimmed, answer: null }]);
     setQuestion("");
 
+    const setAnswer = (answer: string) =>
+      setMessages((prev) => prev.map((m) => (m.id === pendingId ? { ...m, answer } : m)));
+
     try {
       const res = await fetch("/api/coach-ted", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: trimmed }),
       });
-      const data = await res.json().catch(() => null);
 
-      if (!res.ok) {
+      // Errors (rate limit, not signed in, bad input) come back as JSON;
+      // a real answer streams back as plain text.
+      if (!res.ok || !res.body) {
+        const data = await res.json().catch(() => null);
         setMessages((prev) => prev.filter((m) => m.id !== pendingId));
-        if (res.status === 429 && data?.error) {
-          setError(data.error);
-        } else {
-          setError(data?.error ?? "Something went wrong — please try again.");
-        }
+        setError(data?.error ?? "Something went wrong — please try again.");
         return;
       }
 
-      setMessages((prev) =>
-        prev.map((m) => (m.id === pendingId ? { ...m, answer: data.answer as string } : m))
-      );
+      // Show Ted's answer as it arrives instead of waiting for all of it.
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let answer = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        answer += decoder.decode(value, { stream: true });
+        setAnswer(answer);
+      }
+      answer += decoder.decode();
+      setAnswer(answer || "Sorry — I didn't catch that. Please try again.");
     } catch {
       setMessages((prev) => prev.filter((m) => m.id !== pendingId));
       setError("Something went wrong — please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(false);
   }
 
   return (
@@ -81,10 +92,10 @@ export function TedChat({ initialMessages }: { initialMessages: Message[] }) {
                 height={20}
                 className="rounded-full object-cover mt-0.5 shrink-0"
               />
-              {message.answer === null ? (
+              {message.answer === null || message.answer === "" ? (
                 <p className="text-sm text-blueprint-muted">Thinking…</p>
               ) : (
-                <p className="text-sm text-blueprint-ink whitespace-pre-wrap">{message.answer}</p>
+                <TedText text={message.answer} />
               )}
             </div>
           </div>

@@ -9,6 +9,10 @@ import { serverEnv } from "@/lib/env";
 
 const EUTILS_BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils";
 
+// PubMed is an extra, not a dependency — if NCBI is slow, Ted answers
+// without it rather than keeping the member waiting.
+const PUBMED_TIMEOUT_MS = 4000;
+
 export type PubMedArticle = {
   pmid: string;
   title: string;
@@ -28,7 +32,8 @@ export async function searchPubMed(
     `${EUTILS_BASE}/esearch.fcgi?db=pubmed&retmode=json&retmax=${maxResults}` +
     `&term=${encodeURIComponent(query)}${keyParam}`;
 
-  const searchRes = await fetch(searchUrl);
+  const signal = AbortSignal.timeout(PUBMED_TIMEOUT_MS);
+  const searchRes = await fetch(searchUrl, { signal });
   if (!searchRes.ok) {
     console.error("PubMed esearch failed:", searchRes.status);
     return [];
@@ -42,7 +47,7 @@ export async function searchPubMed(
     `${EUTILS_BASE}/esummary.fcgi?db=pubmed&retmode=json` +
     `&id=${ids.join(",")}${keyParam}`;
 
-  const summaryRes = await fetch(summaryUrl);
+  const summaryRes = await fetch(summaryUrl, { signal });
   if (!summaryRes.ok) {
     console.error("PubMed esummary failed:", summaryRes.status);
     return [];

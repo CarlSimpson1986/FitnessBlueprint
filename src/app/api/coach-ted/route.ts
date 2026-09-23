@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { embedText, generateTedAnswer } from "@/lib/coach-ted/gemini";
+import { embedText, streamTedAnswer } from "@/lib/coach-ted/gemini";
 import { searchPubMed } from "@/lib/coach-ted/pubmed";
 
 const DAILY_QUESTION_LIMIT = 20;
@@ -61,7 +61,21 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
+  const started = Date.now();
+  const timings: Record<string, number> = {};
+  const mark = (name: string) => {
+    timings[name] = Date.now() - started;
+  };
+
+  // PubMed doesn't depend on the embedding, so start it now in parallel.
+  // On a cache hit it's simply unused (it's free and time-boxed).
+  const pubmedPromise = searchPubMed(question, 5).catch((err) => {
+    console.error("PubMed search failed:", err);
+    return [];
+  });
+
   const questionEmbedding = await embedText(question);
+  mark("embed");
 
   // --- Tier 1: cache lookup ------------------------------------------------
   const { data: cacheMatches, error: cacheError } = await admin.rpc(
@@ -72,6 +86,7 @@ export async function POST(request: Request) {
       match_count: 1,
     }
   );
+  mark("cache");
 
   if (cacheError) {
     console.error("Q&A cache lookup failed:", cacheError);
@@ -96,18 +111,20 @@ export async function POST(request: Request) {
       }),
     ]);
 
-    return NextResponse.json({ answer: cacheHit.answer, cached: true });
+    console.log("coach-ted timings (cache hit)", timings);
+    return new Response(cacheHit.answer, { headers: { "Content-Type": "text/plain; charset=utf-8" } });
   }
 
   // --- Tier 2: fresh pipeline — PubMed + knowledge base + Gemini ----------
   const [pubmedResults, kbMatches] = await Promise.all([
-    searchPubMed(question, 5),
+    pubmedPromise,
     admin
       .rpc("match_knowledge_base", { query_embedding: questionEmbedding, match_count: 5 })
       .then((r) => r.data ?? []),
   ]);
+  mark("context");
 
-  const answer = await generateTedAnswer(question, {
+  const context = {
     pubmedSources: pubmedResults.map((a) => ({
       title: a.title,
       url: a.url,
@@ -117,27 +134,54 @@ export async function POST(request: Request) {
       category: k.category,
       content: k.content,
     })),
+  };
+
+  // Streamed as plain text so the answer appears as it's written. The
+  // cache + conversation writes (Tier 3) happen once it's finished — the
+  // function stays alive until the stream closes.
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      let answer = "";
+      try {
+        for await (const chunk of streamTedAnswer(question, context)) {
+          if (!timings.firstToken) mark("firstToken");
+          answer += chunk;
+          controller.enqueue(encoder.encode(chunk));
+        }
+      } catch (err) {
+        console.error("Coach Ted generation failed:", err);
+        controller.enqueue(encoder.encode((answer ? "\n\n" : "") + "Sorry — I lost my train of thought. Please try again."));
+        controller.close();
+        return;
+      }
+      mark("done");
+      console.log("coach-ted timings", timings, { pubmed: pubmedResults.length, kb: kbMatches.length });
+
+      // --- Tier 3: cache the new answer for next time ---------------------
+      if (answer.trim()) {
+        const { data: newCacheRow } = await admin
+          .from("coach_ted_qa_cache")
+          .insert({
+            question,
+            question_embedding: questionEmbedding,
+            answer,
+            sources: pubmedResults.map((a) => ({ title: a.title, url: a.url })),
+          })
+          .select("id")
+          .single();
+
+        await admin.from("coach_ted_conversations").insert({
+          member_id: user.id,
+          question,
+          answer,
+          matched_qa_cache_id: newCacheRow?.id ?? null,
+          was_served_from_cache: false,
+        });
+      }
+      controller.close();
+    },
   });
 
-  // --- Tier 3: cache the new answer for next time -------------------------
-  const { data: newCacheRow } = await admin
-    .from("coach_ted_qa_cache")
-    .insert({
-      question,
-      question_embedding: questionEmbedding,
-      answer,
-      sources: pubmedResults.map((a) => ({ title: a.title, url: a.url })),
-    })
-    .select("id")
-    .single();
-
-  await admin.from("coach_ted_conversations").insert({
-    member_id: user.id,
-    question,
-    answer,
-    matched_qa_cache_id: newCacheRow?.id ?? null,
-    was_served_from_cache: false,
-  });
-
-  return NextResponse.json({ answer, cached: false });
+  return new Response(stream, { headers: { "Content-Type": "text/plain; charset=utf-8" } });
 }

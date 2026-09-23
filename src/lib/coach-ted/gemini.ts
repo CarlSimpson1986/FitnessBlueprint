@@ -103,12 +103,15 @@ Rules you must always follow:
   further with their coach.
 - Keep answers conversational and concise — a few short paragraphs,
   not an essay.
+- Write plain text for a phone chat bubble: no markdown — no asterisks,
+  bold, italics, or headings. A short "- " list is fine when it helps.
 `.trim();
 
-export async function generateTedAnswer(
-  question: string,
-  context: TedContext
-): Promise<string> {
+/**
+ * Streams Ted's answer as it's generated, so the member sees it appear
+ * within a few seconds instead of waiting for the whole thing.
+ */
+export async function* streamTedAnswer(question: string, context: TedContext): AsyncGenerator<string> {
   const model = getClient().getGenerativeModel({
     model: GEMINI_TEXT_MODEL,
     systemInstruction: TED_SYSTEM_PROMPT,
@@ -131,6 +134,9 @@ export async function generateTedAnswer(
 
   const prompt = `Member's question: "${question}"\n\nContext:\n${contextBlock || "(no matching context found — answer from general exercise science knowledge, and be upfront that this isn't backed by a specific source this time)"}`;
 
-  const result = await model.generateContent(prompt);
-  return result.response.text();
+  const result = await model.generateContentStream(prompt);
+  for await (const chunk of result.stream) {
+    const text = chunk.text();
+    if (text) yield text;
+  }
 }
