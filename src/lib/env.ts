@@ -30,6 +30,8 @@ const serverOnlySchema = z.object({
   BREVO_API_KEY: z.string().optional(),
   BREVO_SENDER_EMAIL: z.string().optional(),
   CRON_SECRET: z.string().optional(),
+  // Set by Vercel itself, not by us: "production" | "preview" | "development".
+  VERCEL_ENV: z.enum(["production", "preview", "development"]).optional(),
 });
 
 function parsePublicEnv() {
@@ -75,6 +77,7 @@ function parseServerEnv() {
     BREVO_API_KEY: process.env.BREVO_API_KEY,
     BREVO_SENDER_EMAIL: process.env.BREVO_SENDER_EMAIL,
     CRON_SECRET: process.env.CRON_SECRET,
+    VERCEL_ENV: process.env.VERCEL_ENV,
   });
 
   if (!parsed.success) {

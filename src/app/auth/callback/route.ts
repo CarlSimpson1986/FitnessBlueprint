@@ -34,6 +34,13 @@ export async function GET(request: Request) {
 
       return NextResponse.redirect(`${origin}${next}`);
     }
+
+    // Most common cause: the link was requested in a different browser
+    // (or on a different host) than the one it was opened in, so the
+    // PKCE code verifier cookie isn't here.
+    console.error("auth callback: code exchange failed", error.message);
+  } else {
+    console.error("auth callback: no code in URL", searchParams.toString());
   }
 
   return NextResponse.redirect(`${origin}/login?error=auth_callback_failed`);

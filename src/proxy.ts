@@ -1,10 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { publicEnv, serverEnv } from "@/lib/env";
 
 /**
  * Runs on every request (except static assets — see `matcher` below).
  *
- * Three jobs, all security-relevant:
+ * Four jobs, all security-relevant:
+ *  0. Redirect stray production aliases to the one canonical host (see
+ *     the comment inline — it's what keeps magic links working).
  *  1. Route coach.fitnessblueprint.co.uk transparently to /admin/* — same
  *     Next.js app, same Vercel project, same env vars/auth/database as the
  *     member-facing domain. This is purely a URL/branding layer; RLS +
@@ -22,10 +25,21 @@ import { updateSession } from "@/lib/supabase/middleware";
  * Do not add page-specific logic here. Keep this file boring and global.
  */
 export async function proxy(request: NextRequest) {
-  const sessionResponse = await updateSession(request);
-
   const host = request.headers.get("host") ?? "";
   const isCoachHost = host.startsWith("coach.");
+
+  // Production is reachable on several *.vercel.app aliases, but magic
+  // links always come back to NEXT_PUBLIC_SITE_URL. Supabase's PKCE code
+  // verifier cookie is per-host, so requesting a link on one alias and
+  // landing on another fails the code exchange and bounces to /login.
+  // Keep everyone on the one canonical host so that can't happen.
+  const canonicalHost = new URL(publicEnv.NEXT_PUBLIC_SITE_URL).host;
+  if (serverEnv().VERCEL_ENV === "production" && !isCoachHost && host !== canonicalHost) {
+    const url = new URL(request.nextUrl.pathname + request.nextUrl.search, publicEnv.NEXT_PUBLIC_SITE_URL);
+    return NextResponse.redirect(url, 308);
+  }
+
+  const sessionResponse = await updateSession(request);
   const needsAdminRewrite =
     isCoachHost && !request.nextUrl.pathname.startsWith("/admin");
 

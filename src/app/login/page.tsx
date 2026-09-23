@@ -1,12 +1,22 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { publicEnv } from "@/lib/env";
 
 export default function LoginPage() {
+  // useSearchParams needs a Suspense boundary or the page can't prerender.
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
+  const callbackFailed = useSearchParams().get("error") === "auth_callback_failed";
   const [mode, setMode] = useState<"magic-link" | "password">("magic-link");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -102,6 +112,14 @@ export default function LoginPage() {
             ? "Enter your email and we'll send you a link to sign in — no password needed."
             : "Sign in with the password the gym gave you."}
         </p>
+
+        {callbackFailed && status === "idle" && (
+          <p role="alert" className="mb-6 text-sm text-red-400 leading-relaxed">
+            That sign-in link didn&apos;t work — it may have expired, or been opened in a different
+            browser from the one you requested it in. Send yourself a new one below, or sign in with
+            your password.
+          </p>
+        )}
 
         {mode === "magic-link" ? (
           <form onSubmit={handleMagicLinkSubmit} className="space-y-4">
