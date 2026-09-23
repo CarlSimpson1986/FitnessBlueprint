@@ -3,6 +3,7 @@ import { requireCoachOrOwner } from "@/lib/auth";
 import { TestAccountSwitcher } from "@/components/TestAccountSwitcher";
 import { DEMO_EMAIL_PATTERN } from "@/lib/demo-data";
 import { DemoDataCard } from "./demo-data/DemoDataCard";
+import { EmailCheckCard } from "./email-check/EmailCheckCard";
 
 export default async function AdminPage() {
   const { supabase, profile } = await requireCoachOrOwner();
@@ -94,6 +95,8 @@ export default async function AdminPage() {
           {profile.role === "owner" && <TestAccountSwitcher />}
 
           {profile.role === "owner" && <DemoDataCard loaded={demoLoaded} />}
+
+          {profile.role === "owner" && <EmailCheckCard />}
 
           {profile.role === "owner" && (
             <Link

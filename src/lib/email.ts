@@ -5,14 +5,25 @@ import { serverEnv } from "@/lib/env";
  * Thin wrapper around Brevo's transactional email REST API — plain fetch,
  * not the @getbrevo/brevo SDK, since this is one straightforward POST and
  * doesn't warrant a new dependency. See src/app/api/cron/reminders/route.ts
- * for the only caller.
+ * and the owner's "Send me a test email" action for callers.
  *
  * No-ops (logs a warning, doesn't throw) if BREVO_API_KEY/BREVO_SENDER_EMAIL
  * are unset — Carl needs to verify a sending domain in Brevo before this
  * can go live, and the cron route shouldn't crash while that's pending.
  */
+export function isInternalAddress(email: string) {
+  return email.toLowerCase().endsWith(".invalid");
+}
+
 export async function sendEmail(input: { to: string; subject: string; html: string }): Promise<{ error?: string }> {
   const env = serverEnv();
+
+  // Test/demo accounts use the reserved .invalid TLD (src/lib/test-accounts.ts,
+  // src/lib/demo-data.ts). Sending to them would only bounce and hurt the
+  // Brevo sender reputation.
+  if (isInternalAddress(input.to)) {
+    return {};
+  }
 
   if (!env.BREVO_API_KEY || !env.BREVO_SENDER_EMAIL) {
     console.warn(
