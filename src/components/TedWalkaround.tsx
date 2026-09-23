@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { markTedTourSeen } from "@/app/(member)/ted-tour-actions";
 
@@ -77,6 +78,7 @@ function useTargetRect(target: string | undefined) {
 }
 
 export function TedWalkaround() {
+  const router = useRouter();
   const [dismissed, setDismissed] = useState(false);
   const [step, setStep] = useState(0);
   const current = STEPS[step]!;
@@ -167,10 +169,19 @@ export function TedWalkaround() {
               )}
               <button
                 type="button"
-                onClick={() => (isLast ? finish() : setStep((s) => s + 1))}
+                onClick={() => {
+                  if (!isLast) {
+                    setStep((s) => s + 1);
+                    return;
+                  }
+                  // Straight into Ted's goal wizard — /goals opens it
+                  // automatically when the member has no active goal.
+                  finish();
+                  router.push("/goals");
+                }}
                 className="fb-btn-primary px-5 py-2 text-sm"
               >
-                {isLast ? "Got it, let's go" : "Next"}
+                {isLast ? "Set my first goal" : "Next"}
               </button>
             </div>
           </div>

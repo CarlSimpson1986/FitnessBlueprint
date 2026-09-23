@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { InstallAppTab } from "./InstallAppTab";
 
 const TABS = [
   {
@@ -87,6 +88,7 @@ export function BottomNav() {
           </Link>
         );
       })}
+      <InstallAppTab />
     </nav>
   );
 }
