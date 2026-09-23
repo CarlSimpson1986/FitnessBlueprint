@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { serverEnv } from "@/lib/env";
-import { GEMINI_TEXT_MODEL } from "@/lib/gemini-models";
+import { withGeminiFallback } from "@/lib/gemini-models";
 
 /**
  * Gemini Flash wrapper for Coach Ted.
@@ -111,12 +111,11 @@ Rules you must always follow:
  * Streams Ted's answer as it's generated, so the member sees it appear
  * within a few seconds instead of waiting for the whole thing.
  */
-export async function* streamTedAnswer(question: string, context: TedContext): AsyncGenerator<string> {
-  const model = getClient().getGenerativeModel({
-    model: GEMINI_TEXT_MODEL,
-    systemInstruction: TED_SYSTEM_PROMPT,
-  });
-
+export async function* streamTedAnswer(
+  question: string,
+  context: TedContext,
+  onModel?: (model: string) => void
+): AsyncGenerator<string> {
   const contextBlock = [
     context.knowledgeBase.length
       ? `Fitness Blueprint's own guidance:\n${context.knowledgeBase
@@ -134,7 +133,14 @@ export async function* streamTedAnswer(question: string, context: TedContext): A
 
   const prompt = `Member's question: "${question}"\n\nContext:\n${contextBlock || "(no matching context found — answer from general exercise science knowledge, and be upfront that this isn't backed by a specific source this time)"}`;
 
-  const result = await model.generateContentStream(prompt);
+  // Errors like 503 "high demand" surface when the stream is opened, so
+  // falling back to another model happens before any text is sent.
+  const { result, model } = await withGeminiFallback((modelName, generationConfig) =>
+    getClient()
+      .getGenerativeModel({ model: modelName, systemInstruction: TED_SYSTEM_PROMPT, generationConfig })
+      .generateContentStream(prompt)
+  );
+  onModel?.(model);
   for await (const chunk of result.stream) {
     const text = chunk.text();
     if (text) yield text;

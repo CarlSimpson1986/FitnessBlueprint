@@ -143,8 +143,9 @@ export async function POST(request: Request) {
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       let answer = "";
+      let model = "";
       try {
-        for await (const chunk of streamTedAnswer(question, context)) {
+        for await (const chunk of streamTedAnswer(question, context, (m) => (model = m))) {
           if (!timings.firstToken) mark("firstToken");
           answer += chunk;
           controller.enqueue(encoder.encode(chunk));
@@ -156,7 +157,7 @@ export async function POST(request: Request) {
         return;
       }
       mark("done");
-      console.log("coach-ted timings", timings, { pubmed: pubmedResults.length, kb: kbMatches.length });
+      console.log("coach-ted timings", timings, { model, pubmed: pubmedResults.length, kb: kbMatches.length });
 
       // --- Tier 3: cache the new answer for next time ---------------------
       if (answer.trim()) {

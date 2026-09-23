@@ -21,6 +21,30 @@ export type PubMedArticle = {
   url: string;
 };
 
+const STOPWORDS = new Set(
+  (
+    "a an the is are was were be been being am do does did doing to of in on at for from by with about " +
+    "into over after before between and or but if then so than too very can could should would will " +
+    "i me my we our you your he she it they them this that these those what which who whom how why when " +
+    "where there here best way good better much many more most some any per day days get got make should " +
+    "really just also ok okay please tell know want need thing things"
+  ).split(" ")
+);
+
+/**
+ * PubMed searches literally — a member's whole sentence ("What is the best
+ * way to warm up before heavy squats?") ANDs every word and finds nothing.
+ * Keep the meaningful words ("warm up heavy squats").
+ */
+export function pubmedQueryFrom(question: string) {
+  const words = question
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length > 1 && !STOPWORDS.has(w));
+  return words.slice(0, 6).join(" ");
+}
+
 export async function searchPubMed(
   query: string,
   maxResults = 5
@@ -28,9 +52,12 @@ export async function searchPubMed(
   const apiKey = serverEnv().PUBMED_API_KEY;
   const keyParam = apiKey ? `&api_key=${apiKey}` : "";
 
+  const term = pubmedQueryFrom(query);
+  if (!term) return [];
+
   const searchUrl =
-    `${EUTILS_BASE}/esearch.fcgi?db=pubmed&retmode=json&retmax=${maxResults}` +
-    `&term=${encodeURIComponent(query)}${keyParam}`;
+    `${EUTILS_BASE}/esearch.fcgi?db=pubmed&retmode=json&retmax=${maxResults}&sort=relevance` +
+    `&term=${encodeURIComponent(term)}${keyParam}`;
 
   const signal = AbortSignal.timeout(PUBMED_TIMEOUT_MS);
   const searchRes = await fetch(searchUrl, { signal });

@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { serverEnv } from "@/lib/env";
-import { GEMINI_TEXT_MODEL } from "@/lib/gemini-models";
+import { withGeminiFallback } from "@/lib/gemini-models";
 import type { SegmentInput } from "@/lib/workout-content";
 
 /**
@@ -75,12 +75,6 @@ export async function generateProgressionWeeks(
   const additionalWeeks = Math.max(weekCount - 1, 0);
   if (additionalWeeks === 0) return [];
 
-  const model = getClient().getGenerativeModel({
-    model: GEMINI_TEXT_MODEL,
-    systemInstruction: PROGRESSION_SYSTEM_PROMPT,
-    generationConfig: { responseMimeType: "application/json" },
-  });
-
   const prompt = `Week 1 (JSON, this exact shape repeats for every week in your output):
 ${JSON.stringify(week1)}
 
@@ -88,7 +82,15 @@ Progression instruction from the coach: "${instruction}"
 
 Generate exactly ${additionalWeeks} additional week(s) (week 2 through week ${weekCount}), each following week 1's shape. Return a JSON array of ${additionalWeeks} week(s), where each week is an array of segments in the same shape as week 1 above.`;
 
-  const result = await model.generateContent(prompt);
+  const { result } = await withGeminiFallback((modelName, generationConfig) =>
+    getClient()
+      .getGenerativeModel({
+        model: modelName,
+        systemInstruction: PROGRESSION_SYSTEM_PROMPT,
+        generationConfig: { ...generationConfig, responseMimeType: "application/json" },
+      })
+      .generateContent(prompt)
+  );
   const text = result.response.text();
 
   let parsed: unknown;
