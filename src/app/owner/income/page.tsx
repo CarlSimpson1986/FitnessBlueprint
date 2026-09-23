@@ -77,7 +77,7 @@ export default async function IncomePage({
             <DonutChart
               centerLabel="Total income"
               centerValue={formatPence(combinedTotal)}
-              formatValue={formatPence}
+              valueFormat="pence"
               segments={[
                 { label: "Stripe", value: stripe.totalPence, color: "var(--fb-series-1)" },
                 { label: "GoCardless", value: gocardless.totalPence, color: "var(--fb-series-2)" },

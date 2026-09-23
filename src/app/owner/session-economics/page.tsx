@@ -70,7 +70,7 @@ export default async function SessionEconomicsPage({
                 <DonutChart
                   centerLabel="Marked bookings"
                   centerValue={`${overall.attendanceMarked}`}
-                  formatValue={(v) => `${v}`}
+                  valueFormat="count"
                   segments={[
                     { label: "Attended", value: overall.attendedCount, color: "var(--fb-series-1)" },
                     { label: "No-show", value: overall.noShowCount, color: "var(--fb-series-2)" },

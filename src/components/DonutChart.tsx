@@ -4,6 +4,15 @@ import { useState } from "react";
 
 export type DonutSegment = { label: string; value: number; color: string };
 
+// A named format rather than a formatter function: this is a Client
+// Component rendered from Server Components, and functions can't cross
+// that boundary (it crashes the page at render time).
+export type DonutValueFormat = "pence" | "count";
+
+function formatDonutValue(value: number, format: DonutValueFormat) {
+  return format === "pence" ? `£${(value / 100).toFixed(2)}` : `${value}`;
+}
+
 /**
  * Part-to-whole donut with an always-visible legend (values + %) so the
  * numbers are never hidden behind hover-only interaction — hover just
@@ -13,13 +22,14 @@ export function DonutChart({
   segments,
   centerLabel,
   centerValue,
-  formatValue,
+  valueFormat,
 }: {
   segments: DonutSegment[];
   centerLabel: string;
   centerValue: string;
-  formatValue: (value: number) => string;
+  valueFormat: DonutValueFormat;
 }) {
+  const formatValue = (value: number) => formatDonutValue(value, valueFormat);
   const [hovered, setHovered] = useState<number | null>(null);
   const total = segments.reduce((sum, s) => sum + s.value, 0);
 
