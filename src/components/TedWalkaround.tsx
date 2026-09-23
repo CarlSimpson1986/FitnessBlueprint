@@ -135,7 +135,7 @@ export function TedWalkaround() {
         <div className="relative max-w-sm w-full bg-blueprint-raised border border-blueprint-line rounded-xl p-6 shadow-2xl">
           <div className="flex items-center gap-3 mb-4">
             <Image
-              src="/coach-ted-avatar.png"
+              src="/coach-ted.png"
               alt=""
               width={40}
               height={40}

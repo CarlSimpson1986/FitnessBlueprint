@@ -39,7 +39,7 @@ export default async function WeeklyCheckinPage() {
           </p>
         ) : existing ? (
           <div className="fb-card flex items-start gap-3">
-            <Image src="/coach-ted-avatar.png" alt="" width={32} height={32} className="rounded-full object-cover shrink-0" />
+            <Image src="/coach-ted.png" alt="" width={32} height={32} className="rounded-full object-cover shrink-0" />
             <div>
               <p className="text-sm text-blueprint-ink mb-2">
                 Checked in — thanks, {firstName}. Your coach can see it now. Same time next Sunday.

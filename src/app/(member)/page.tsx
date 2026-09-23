@@ -220,7 +220,7 @@ export default async function HomePage() {
         {weeklyCheckinOpen && (
           <Link href="/check-in" className="fb-card-accent mb-4 flex items-center gap-3">
             <Image
-              src="/coach-ted-avatar.png"
+              src="/coach-ted.png"
               alt=""
               width={36}
               height={36}

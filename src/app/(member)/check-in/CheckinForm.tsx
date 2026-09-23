@@ -57,7 +57,7 @@ export function CheckinForm({ firstName, lastWeightKg }: { firstName: string; la
   return (
     <div className="space-y-6">
       <div className="fb-card flex items-start gap-3">
-        <Image src="/coach-ted-avatar.png" alt="" width={32} height={32} className="rounded-full object-cover shrink-0" />
+        <Image src="/coach-ted.png" alt="" width={32} height={32} className="rounded-full object-cover shrink-0" />
         <p className="text-sm text-blueprint-ink">
           Hey {firstName} — weekly check-in time. Takes a minute, and your coach sees it so they can
           help with whatever&apos;s getting in the way.

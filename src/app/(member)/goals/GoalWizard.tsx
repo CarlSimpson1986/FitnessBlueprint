@@ -60,7 +60,7 @@ function TedBubble({ children }: { children: React.ReactNode }) {
   return (
     <div className="fb-card mr-8 flex items-start gap-2">
       <Image
-        src="/coach-ted-avatar.png"
+        src="/coach-ted.png"
         alt=""
         width={20}
         height={20}

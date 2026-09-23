@@ -22,7 +22,7 @@ const TABS = [
     label: "Coach Ted",
     icon: (
       <Image
-        src="/coach-ted-avatar.png"
+        src="/coach-ted.png"
         alt=""
         width={24}
         height={24}
