@@ -1,6 +1,6 @@
 "use server";
 
-import { requireCoachOrOwner } from "@/lib/auth";
+import { requireOwner } from "@/lib/auth";
 import type { ChallengeType } from "@/lib/challenges";
 
 export type ActionResult = { error?: string };
@@ -14,7 +14,7 @@ export async function createChallenge(input: {
   startsAt: string;
   endsAt: string;
 }): Promise<ActionResult> {
-  const { supabase, user } = await requireCoachOrOwner();
+  const { supabase, user } = await requireOwner();
 
   const title = input.title.trim();
   if (!title) {

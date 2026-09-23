@@ -1,6 +1,6 @@
 "use server";
 
-import { requireCoachOrOwner } from "@/lib/auth";
+import { requireOwner } from "@/lib/auth";
 
 export type ActionResult = { error?: string };
 
@@ -13,12 +13,12 @@ export type ClassInput = {
 };
 
 /**
- * RLS already permits this — "coaches and owner manage templates" (0002)
+ * RLS already permits this — "owner manages classes" (0024)
  * is `for all` on session_templates using is_coach_or_owner(), so this
  * needed no new policy, only this action + UI.
  */
 export async function createClass(input: ClassInput): Promise<ActionResult> {
-  const { supabase } = await requireCoachOrOwner();
+  const { supabase } = await requireOwner();
 
   if (!input.code.trim() || !input.name.trim()) {
     return { error: "Code and name are required." };
@@ -40,7 +40,7 @@ export async function createClass(input: ClassInput): Promise<ActionResult> {
 }
 
 export async function updateClass(classId: string, input: ClassInput): Promise<ActionResult> {
-  const { supabase } = await requireCoachOrOwner();
+  const { supabase } = await requireOwner();
 
   if (!input.code.trim() || !input.name.trim()) {
     return { error: "Code and name are required." };
@@ -72,7 +72,7 @@ export async function updateClass(classId: string, input: ClassInput): Promise<A
  * filters on is_active (e.g. schedule-actions.ts, program-calendar).
  */
 export async function setClassActive(classId: string, isActive: boolean): Promise<ActionResult> {
-  const { supabase } = await requireCoachOrOwner();
+  const { supabase } = await requireOwner();
 
   const { error } = await supabase.from("session_templates").update({ is_active: isActive }).eq("id", classId);
 

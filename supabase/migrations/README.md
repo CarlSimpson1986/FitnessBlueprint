@@ -14,6 +14,7 @@ Run in order — the filenames are numbered deliberately, don't reorder.
 | `0019_workout_templates.sql` | Reusable named workout templates (`workout_templates`/`template_segments`/`template_exercises`), assigned onto the program calendar |
 | `0020_exercise_sets.sql` | Per-set granularity (`session_exercise_sets`/`template_exercise_sets`) replacing the shared rounds/target/rest-per-exercise shape from 0015 |
 | `0021_email_reminders.sql` | `email_log` — idempotency/send log for the daily reminders cron (Sunday check-in, goal check-in due, quiet-member alert) |
+| `0024_owner_only_writes.sql` | Only the owner creates/edits classes, sessions, workouts, templates, challenges, events; coaches are view-only and mark attendance on their own sessions |
 
 ## Adding a new migration
 

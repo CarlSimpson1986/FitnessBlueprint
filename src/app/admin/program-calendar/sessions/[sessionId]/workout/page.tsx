@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { requireCoachOrOwner } from "@/lib/auth";
 import { formatSessionDate, formatSessionTime } from "@/lib/format";
 import { WorkoutBuilder, type SegmentDraft } from "./WorkoutBuilder";
+import { MemberWorkoutPreview } from "@/components/MemberWorkoutPreview";
+import { SessionRoster } from "@/app/admin/today/SessionRoster";
 
 export default async function SessionWorkoutPage({
   params,
@@ -10,11 +12,11 @@ export default async function SessionWorkoutPage({
   params: Promise<{ sessionId: string }>;
 }) {
   const { sessionId } = await params;
-  const { supabase } = await requireCoachOrOwner();
+  const { supabase, profile } = await requireCoachOrOwner();
 
   const { data: session } = await supabase
     .from("sessions")
-    .select("id, session_date, start_time, template_id")
+    .select("id, session_date, start_time, template_id, coach_id")
     .eq("id", sessionId)
     .maybeSingle();
 
@@ -82,6 +84,45 @@ export default async function SessionWorkoutPage({
       })),
     })),
   }));
+
+  // Coaches view the program and track attendance; only the owner edits
+  // (0024). A coach gets the session as-is: roster + readiness + the
+  // workout as members see it, and can mark attendance on their own class.
+  if (profile.role !== "owner") {
+    const { data: coach } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", session.coach_id)
+      .maybeSingle();
+    const isMine = session.coach_id === profile.id;
+
+    return (
+      <main className="min-h-screen px-6 py-16">
+        <div className="max-w-4xl mx-auto">
+          <Link
+            href="/admin/program-calendar"
+            className="inline-block font-mono text-xs tracking-wide text-blueprint-muted hover:text-blueprint-accent transition mb-6"
+          >
+            ← Program calendar
+          </Link>
+          <p className="fb-eyebrow mb-1">{isMine ? "Your session" : "Session"}</p>
+          <h1 className="text-2xl font-semibold text-blueprint-ink mb-2">{template?.name ?? "Session"}</h1>
+          <p className="text-blueprint-muted mb-8 text-sm">
+            {formatSessionDate(session.session_date)} · {formatSessionTime(session.start_time)} ·{" "}
+            {coach?.full_name ?? "Coach TBC"}
+          </p>
+
+          <div className="flex flex-col-reverse md:flex-row gap-8 items-start">
+            <div className="flex-1 w-full fb-card !p-0">
+              <p className="fb-eyebrow px-4 pt-4 mb-3">Who&apos;s coming</p>
+              <SessionRoster sessionId={sessionId} canMark={isMine} />
+            </div>
+            <MemberWorkoutPreview title={template?.name ?? "Session"} segments={initialSegments} />
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen px-8 py-16">

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireCoachOrOwner } from "@/lib/auth";
+import { requireOwner } from "@/lib/auth";
 import type { SegmentDraft } from "@/lib/workout-content";
 import { TemplateEditor } from "../TemplateEditor";
 import { AutofinishPanel } from "../AutofinishPanel";
@@ -11,7 +11,7 @@ export default async function EditWorkoutTemplatePage({
   params: Promise<{ templateId: string }>;
 }) {
   const { templateId } = await params;
-  const { supabase } = await requireCoachOrOwner();
+  const { supabase } = await requireOwner();
 
   const { data: template } = await supabase
     .from("workout_templates")

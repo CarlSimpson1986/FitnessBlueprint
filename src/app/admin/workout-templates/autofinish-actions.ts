@@ -1,6 +1,6 @@
 "use server";
 
-import { requireCoachOrOwner } from "@/lib/auth";
+import { requireOwner } from "@/lib/auth";
 import type { SegmentInput } from "@/lib/workout-content";
 import { generateProgressionWeeks as generateWeeksFromAI } from "@/lib/progression-ai/gemini";
 import { saveWorkoutTemplate, assignTemplateToSessionsInWeek } from "./actions";
@@ -21,7 +21,7 @@ export async function generateProgressionWeeks(
   weekCount: number,
   instruction: string
 ): Promise<GenerateResult> {
-  const { supabase } = await requireCoachOrOwner();
+  const { supabase } = await requireOwner();
 
   if (!instruction.trim()) {
     return { error: "Describe how you want the block to progress." };

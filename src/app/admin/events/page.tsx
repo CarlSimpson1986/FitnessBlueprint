@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { requireCoachOrOwner } from "@/lib/auth";
+import { requireOwner } from "@/lib/auth";
 import { CreateEventForm } from "./CreateEventForm";
 
 export default async function ManageEventsPage() {
-  const { supabase } = await requireCoachOrOwner();
+  const { supabase } = await requireOwner();
 
   const today = new Date().toISOString().slice(0, 10);
 

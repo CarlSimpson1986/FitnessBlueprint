@@ -1,6 +1,6 @@
 "use server";
 
-import { requireCoachOrOwner } from "@/lib/auth";
+import { requireOwner } from "@/lib/auth";
 import type { SegmentInput } from "@/lib/workout-content";
 import { saveWorkoutTemplate } from "@/app/admin/workout-templates/actions";
 
@@ -12,11 +12,11 @@ export type ActionResult = { error?: string };
  * copy-on-assign — see src/app/admin/program-calendar), "this is the whole
  * workout now" is simpler and safer than diffing against what's there.
  * Deleting session_segments cascades to session_exercises (FK on delete
- * cascade, 0015) — RLS ("coaches and owner manage session segments", 0015)
+ * cascade, 0015) — RLS ("owner manages session segments", 0024)
  * is what actually authorizes this, no admin client needed.
  */
 export async function saveSessionWorkout(sessionId: string, segments: SegmentInput[]): Promise<ActionResult> {
-  const { supabase } = await requireCoachOrOwner();
+  const { supabase } = await requireOwner();
 
   if (segments.length === 0) {
     return { error: "Add at least one segment." };
@@ -99,7 +99,7 @@ export async function saveSessionWorkout(sessionId: string, segments: SegmentInp
   return {};
 }
 
-type Supabase = Awaited<ReturnType<typeof requireCoachOrOwner>>["supabase"];
+type Supabase = Awaited<ReturnType<typeof requireOwner>>["supabase"];
 
 /**
  * Reads a session's current workout back into the same SegmentInput shape
@@ -190,12 +190,12 @@ async function loadSessionWorkout(
  * Either way it's a real, independent copy — editing it afterward never
  * touches the source.
  *
- * RLS: "coaches and owner manage sessions" (0002) authorizes the insert,
- * and the session_segments/exercises/sets "coaches and owner manage"
- * policies (0015, 0020) authorize the workout write — no admin client.
+ * RLS: "owner manages sessions" (0024) authorizes the insert,
+ * and the session_segments/exercises/sets "owner manages ..."
+ * policies (0024) authorize the workout write — no admin client.
  */
 export async function pasteSessionToDate(sourceSessionId: string, dateKey: string): Promise<ActionResult> {
-  const { supabase } = await requireCoachOrOwner();
+  const { supabase } = await requireOwner();
 
   const { data: source, error: sourceError } = await supabase
     .from("sessions")
@@ -271,7 +271,7 @@ export async function pasteSessionToDate(sourceSessionId: string, dateKey: strin
  * workout_template (independent copy, via saveWorkoutTemplate).
  */
 export async function saveSessionWorkoutToLibrary(sessionId: string, name: string): Promise<ActionResult> {
-  const { supabase } = await requireCoachOrOwner();
+  const { supabase } = await requireOwner();
 
   const workout = await loadSessionWorkout(supabase, sessionId);
   if (workout.error || !workout.segments) {

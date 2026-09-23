@@ -1,6 +1,6 @@
 "use server";
 
-import { requireCoachOrOwner } from "@/lib/auth";
+import { requireOwner } from "@/lib/auth";
 import type { SegmentInput } from "@/lib/workout-content";
 
 export type ActionResult = { error?: string; templateId?: string };
@@ -18,7 +18,7 @@ export async function saveWorkoutTemplate(
   segments: SegmentInput[],
   templateId?: string
 ): Promise<ActionResult> {
-  const { supabase, user } = await requireCoachOrOwner();
+  const { supabase, user } = await requireOwner();
 
   const trimmedName = name.trim();
   if (!trimmedName) {
@@ -138,7 +138,7 @@ export async function assignTemplateToSessionsInWeek(
   classTypeId: string,
   weekStartDate: string
 ): Promise<ActionResult & { assignedCount?: number }> {
-  const { supabase } = await requireCoachOrOwner();
+  const { supabase } = await requireOwner();
 
   const weekStart = new Date(`${weekStartDate}T00:00:00`);
   const weekEnd = new Date(weekStart);
@@ -171,7 +171,7 @@ export async function assignTemplateToSessionsInWeek(
 }
 
 export async function deleteWorkoutTemplate(templateId: string): Promise<ActionResult> {
-  const { supabase } = await requireCoachOrOwner();
+  const { supabase } = await requireOwner();
 
   const { error } = await supabase.from("workout_templates").delete().eq("id", templateId);
   if (error) {
@@ -188,7 +188,7 @@ export async function deleteWorkoutTemplate(templateId: string): Promise<ActionR
  * calendar (src/app/admin/program-calendar).
  */
 export async function assignTemplateToSession(templateId: string, sessionId: string): Promise<ActionResult> {
-  const { supabase } = await requireCoachOrOwner();
+  const { supabase } = await requireOwner();
 
   const { data: segments, error: segmentsError } = await supabase
     .from("template_segments")

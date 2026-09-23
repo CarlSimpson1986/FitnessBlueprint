@@ -1,6 +1,6 @@
 "use server";
 
-import { requireCoachOrOwner } from "@/lib/auth";
+import { requireOwner } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { toLocalDateKey } from "@/lib/format";
 
@@ -18,7 +18,7 @@ export async function createSessions(input: {
   weeksToRepeat: number;
   capacity: number | null;
 }): Promise<ActionResult> {
-  const { supabase } = await requireCoachOrOwner();
+  const { supabase } = await requireOwner();
 
   const { data: template, error: templateError } = await supabase
     .from("session_templates")
@@ -53,7 +53,7 @@ export async function createSessions(input: {
     };
   });
 
-  // Relies on RLS ("coaches and owner manage sessions") to actually
+  // Relies on RLS ("owner manages sessions", 0024) to actually
   // enforce who can write here — this is the RLS-respecting client,
   // not the admin client, since there's nothing to bypass.
   const { error } = await supabase.from("sessions").insert(rows);
@@ -74,7 +74,7 @@ export async function createSessions(input: {
  * update alone wouldn't.
  */
 export async function cancelSession(sessionId: string): Promise<ActionResult> {
-  const { user: staff } = await requireCoachOrOwner();
+  const { user: staff } = await requireOwner();
 
   const admin = createAdminClient();
 

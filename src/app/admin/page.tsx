@@ -35,17 +35,19 @@ export default async function AdminPage() {
             </p>
           </Link>
 
-          <Link
-            href="/admin/workout-templates"
-            className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
-          >
-            <p className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-2">
-              Workout templates
-            </p>
-            <p className="text-blueprint-muted text-sm leading-relaxed">
-              Build a workout once, reuse it across sessions.
-            </p>
-          </Link>
+          {profile.role === "owner" && (
+            <Link
+              href="/admin/workout-templates"
+              className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
+            >
+              <p className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-2">
+                Workout templates
+              </p>
+              <p className="text-blueprint-muted text-sm leading-relaxed">
+                Build a workout once, reuse it across sessions.
+              </p>
+            </Link>
+          )}
 
           <Link
             href="/admin/program-calendar"
@@ -55,34 +57,39 @@ export default async function AdminPage() {
               Program calendar
             </p>
             <p className="text-blueprint-muted text-sm leading-relaxed">
-              Classes, scheduling, and templates — everything for the
-              timetable in one place.
+              {profile.role === "owner"
+                ? "Classes, scheduling, and templates — everything for the timetable in one place."
+                : "The whole programme, view-only — open your sessions to see the workout and who's coming."}
             </p>
           </Link>
 
-          <Link
-            href="/admin/challenges"
-            className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
-          >
-            <p className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-2">
-              Challenges
-            </p>
-            <p className="text-blueprint-muted text-sm leading-relaxed">
-              Run attendance, habit, or event-prep challenges.
-            </p>
-          </Link>
+          {profile.role === "owner" && (
+            <Link
+              href="/admin/challenges"
+              className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
+            >
+              <p className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-2">
+                Challenges
+              </p>
+              <p className="text-blueprint-muted text-sm leading-relaxed">
+                Run attendance, habit, or event-prep challenges.
+              </p>
+            </Link>
+          )}
 
-          <Link
-            href="/admin/events"
-            className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
-          >
-            <p className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-2">
-              Events
-            </p>
-            <p className="text-blueprint-muted text-sm leading-relaxed">
-              Post races, socials, and other gym events.
-            </p>
-          </Link>
+          {profile.role === "owner" && (
+            <Link
+              href="/admin/events"
+              className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
+            >
+              <p className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-2">
+                Events
+              </p>
+              <p className="text-blueprint-muted text-sm leading-relaxed">
+                Post races, socials, and other gym events.
+              </p>
+            </Link>
+          )}
 
           {profile.role === "owner" && <TestAccountSwitcher />}
 

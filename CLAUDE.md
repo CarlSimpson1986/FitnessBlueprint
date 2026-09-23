@@ -16,6 +16,10 @@ Google Doc — this file is build rules only, not feature context.
 - Roles: `member`, `coach`, `owner`. Coaches have `coach_access_level`
   of `full` or `cover_and_kids_only` (Tommy is the only `cover_and_kids_only`
   coach right now).
+- **Only the owner (Guy) creates or edits anything.** Coaches are
+  view-only for the programme and mark attendance on their own sessions
+  (migration 0024). Any new create/edit feature is `requireOwner()` plus
+  an owner-only RLS write policy by default — never `requireCoachOrOwner()`.
 
 ## IMPORTANT: security rules that block on violation
 

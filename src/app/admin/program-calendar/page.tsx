@@ -24,7 +24,8 @@ export default async function ProgramCalendarPage({
 }: {
   searchParams: Promise<{ weeks?: string; start?: string }>;
 }) {
-  const { supabase } = await requireCoachOrOwner();
+  const { supabase, profile } = await requireCoachOrOwner();
+  const isOwner = profile.role === "owner";
   const params = await searchParams;
 
   const weeks = parseWeeks(params.weeks);
@@ -109,6 +110,7 @@ export default async function ProgramCalendarPage({
       time: session.start_time.slice(0, 5),
       className: classNameById.get(session.template_id) ?? "Session",
       coachName: coachNameById.get(session.coach_id) ?? "Coach TBC",
+      isMine: session.coach_id === profile.id,
       segmentCount: segmentBySessionCount.get(session.id) ?? 0,
       exerciseCount: exerciseCountBySession.get(session.id) ?? 0,
     };
@@ -134,48 +136,50 @@ export default async function ProgramCalendarPage({
         <p className="fb-eyebrow mb-1">Coach</p>
         <h1 className="text-2xl font-semibold text-blueprint-ink mb-2">Program calendar</h1>
         <p className="text-blueprint-muted mb-6 text-sm leading-relaxed">
-          Classes, scheduling, and workout templates all live here now.
-          Assign a saved template to any scheduled session, or open it to
-          build one from scratch.
+          {isOwner
+            ? "Classes, scheduling, and workout templates all live here now. Assign a saved template to any scheduled session, or open it to build one from scratch."
+            : "The whole programme, view-only. Your sessions are highlighted — open one to see the workout, who's coming and how they're feeling."}
         </p>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-8">
-          <aside className="space-y-8 lg:border-r lg:border-blueprint-line/60 lg:pr-6">
-            <ClassesPanel classes={(allClasses ?? []) as ClassRow[]} />
+        <div className={isOwner ? "grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-8" : ""}>
+          {isOwner && (
+            <aside className="space-y-8 lg:border-r lg:border-blueprint-line/60 lg:pr-6">
+              <ClassesPanel classes={(allClasses ?? []) as ClassRow[]} />
 
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <p className="fb-eyebrow">Workout templates</p>
-                <Link
-                  href="/admin/workout-templates/new"
-                  className="text-[10px] font-mono uppercase tracking-wide text-blueprint-accent hover:opacity-80"
-                >
-                  + New
-                </Link>
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="fb-eyebrow">Workout templates</p>
+                  <Link
+                    href="/admin/workout-templates/new"
+                    className="text-[10px] font-mono uppercase tracking-wide text-blueprint-accent hover:opacity-80"
+                  >
+                    + New
+                  </Link>
+                </div>
+                {(templates ?? []).length === 0 ? (
+                  <p className="text-[10px] text-blueprint-muted">None yet.</p>
+                ) : (
+                  <ul className="space-y-1">
+                    {(templates ?? []).map((t) => (
+                      <li key={t.id}>
+                        <Link
+                          href={`/admin/workout-templates/${t.id}`}
+                          className="text-xs text-blueprint-ink hover:text-blueprint-accent"
+                        >
+                          {t.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
-              {(templates ?? []).length === 0 ? (
-                <p className="text-[10px] text-blueprint-muted">None yet.</p>
-              ) : (
-                <ul className="space-y-1">
-                  {(templates ?? []).map((t) => (
-                    <li key={t.id}>
-                      <Link
-                        href={`/admin/workout-templates/${t.id}`}
-                        className="text-xs text-blueprint-ink hover:text-blueprint-accent"
-                      >
-                        {t.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
 
-            <div>
-              <p className="fb-eyebrow mb-3">Schedule a session</p>
-              <ScheduleSessionPanel templates={activeClasses} coaches={allCoaches ?? []} />
-            </div>
-          </aside>
+              <div>
+                <p className="fb-eyebrow mb-3">Schedule a session</p>
+                <ScheduleSessionPanel templates={activeClasses} coaches={allCoaches ?? []} />
+              </div>
+            </aside>
+          )}
 
           <div>
             <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
@@ -226,6 +230,7 @@ export default async function ProgramCalendarPage({
               templates={templates ?? []}
               classes={activeClasses}
               coaches={allCoaches ?? []}
+              readOnly={!isOwner}
             />
           </div>
         </div>

@@ -1,6 +1,6 @@
 "use server";
 
-import { requireCoachOrOwner } from "@/lib/auth";
+import { requireOwner } from "@/lib/auth";
 
 export type ActionResult = { error?: string };
 
@@ -12,7 +12,7 @@ export async function createGymEvent(input: {
   registrationUrl: string;
   isPaid: boolean;
 }): Promise<ActionResult> {
-  const { supabase, user } = await requireCoachOrOwner();
+  const { supabase, user } = await requireOwner();
 
   const title = input.title.trim();
   if (!title) {

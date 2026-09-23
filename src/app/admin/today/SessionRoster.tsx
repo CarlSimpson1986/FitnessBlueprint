@@ -22,22 +22,50 @@ const FEELING_LABEL: Record<"great" | "okay" | "rough", string> = {
 function ReadinessNote({ readiness }: { readiness: NonNullable<RosterEntry["readiness"]> }) {
   const parts = [FEELING_LABEL[readiness.feeling]];
   if (readiness.sleepQuality) parts.push(`sleep: ${readiness.sleepQuality}`);
-  if (readiness.painArea) parts.push(`pain: ${readiness.painArea}`);
 
   return (
-    <p
-      className={
-        readiness.feeling === "rough" || readiness.painArea
-          ? "text-[10px] text-red-400 mt-0.5"
-          : "text-[10px] text-blueprint-muted mt-0.5"
-      }
-    >
-      {parts.join(" · ")}
+    <>
+      <p
+        className={
+          readiness.feeling === "rough" ? "text-[10px] text-red-400 mt-0.5" : "text-[10px] text-blueprint-muted mt-0.5"
+        }
+      >
+        {parts.join(" · ")}
+      </p>
+      {/* The member's own words from the pre-session check-in ("Any pain or niggles?"). */}
+      {readiness.painArea && (
+        <p className="text-xs text-amber-300 mt-1 border-l-2 border-amber-300/60 pl-2">
+          &ldquo;{readiness.painArea}&rdquo;
+        </p>
+      )}
+    </>
+  );
+}
+
+/** One-line picture of the whole class before it starts. */
+function ClassReadinessSummary({ roster }: { roster: RosterEntry[] }) {
+  const active = roster.filter((e) => e.status !== "cancelled");
+  const checkedIn = active.filter((e) => e.readiness);
+  const count = (feeling: "great" | "okay" | "rough") => checkedIn.filter((e) => e.readiness?.feeling === feeling).length;
+  const comments = checkedIn.filter((e) => e.readiness?.painArea).length;
+
+  return (
+    <p className="text-xs text-blueprint-muted mb-3">
+      <span className="text-blueprint-ink font-medium">{active.length} attending</span> · {checkedIn.length} checked in
+      {checkedIn.length > 0 && (
+        <>
+          {" "}
+          — {count("great")} great, {count("okay")} okay,{" "}
+          <span className={count("rough") > 0 ? "text-red-400" : undefined}>{count("rough")} rough</span>
+          {comments > 0 && <span className="text-amber-300"> · {comments} comment{comments === 1 ? "" : "s"}</span>}
+        </>
+      )}
     </p>
   );
 }
 
-export function SessionRoster({ sessionId }: { sessionId: string }) {
+/** `canMark` false = view-only (a coach looking at a class they aren't taking). */
+export function SessionRoster({ sessionId, canMark = true }: { sessionId: string; canMark?: boolean }) {
   const router = useRouter();
   const [roster, setRoster] = useState<RosterEntry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -90,6 +118,7 @@ export function SessionRoster({ sessionId }: { sessionId: string }) {
 
   return (
     <div className="px-4 pb-4">
+      <ClassReadinessSummary roster={roster} />
       <ul className="space-y-2">
         {roster.map((entry) => (
           <li
@@ -101,7 +130,7 @@ export function SessionRoster({ sessionId }: { sessionId: string }) {
               {entry.readiness && <ReadinessNote readiness={entry.readiness} />}
             </span>
 
-            {entry.status === "booked" ? (
+            {entry.status === "booked" && canMark ? (
               <div className="flex gap-1.5">
                 {(["attended", "no_show", "excused"] as const).map((status) => (
                   <button

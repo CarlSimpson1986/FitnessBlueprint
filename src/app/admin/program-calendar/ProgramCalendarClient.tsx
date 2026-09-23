@@ -13,6 +13,8 @@ export type DayCard = {
   time: string;
   className: string;
   coachName: string;
+  /** Coached by whoever is viewing — highlighted for coaches. */
+  isMine: boolean;
   segmentCount: number;
   exerciseCount: number;
 };
@@ -170,12 +172,14 @@ function SessionCard({
   templates,
   isCopySource,
   onCopy,
+  readOnly,
 }: {
   card: DayCard;
   dateKey: string;
   templates: { id: string; name: string }[];
   isCopySource: boolean;
   onCopy: (source: CopySource) => void;
+  readOnly: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -230,7 +234,9 @@ function SessionCard({
     <div
       className={
         "relative border rounded bg-blueprint-raised/60 p-2 text-left " +
-        (isCopySource ? "border-blueprint-accent ring-1 ring-blueprint-accent" : "border-blueprint-line")
+        (isCopySource || (readOnly && card.isMine)
+          ? "border-blueprint-accent ring-1 ring-blueprint-accent"
+          : "border-blueprint-line")
       }
     >
       <div className="flex items-start gap-1">
@@ -245,18 +251,20 @@ function SessionCard({
               : "No workout yet"}
           </p>
         </Link>
-        <button
-          type="button"
-          aria-label="Session options"
-          onClick={() => (menuOpen ? closeMenu() : setMenuOpen(true))}
-          className="shrink-0 -mt-0.5 px-1 leading-none text-blueprint-muted hover:text-blueprint-ink text-sm"
-        >
-          ⋯
-        </button>
+        {!readOnly && (
+          <button
+            type="button"
+            aria-label="Session options"
+            onClick={() => (menuOpen ? closeMenu() : setMenuOpen(true))}
+            className="shrink-0 -mt-0.5 px-1 leading-none text-blueprint-muted hover:text-blueprint-ink text-sm"
+          >
+            ⋯
+          </button>
+        )}
       </div>
       {notice && <p className="text-[10px] text-blueprint-accent mt-1">{notice}</p>}
 
-      {menuOpen && (
+      {menuOpen && !readOnly && (
         <>
           <div className="fixed inset-0 z-30" onClick={closeMenu} />
           <div className="absolute right-0 top-7 z-40 w-52 rounded-md border border-blueprint-line bg-blueprint-raised shadow-xl py-1">
@@ -360,12 +368,15 @@ export function ProgramCalendarClient({
   templates,
   classes,
   coaches,
+  readOnly = false,
 }: {
   dayKeys: string[];
   cardsByDate: Record<string, DayCard[]>;
   templates: { id: string; name: string }[];
   classes: ClassOption[];
   coaches: CoachOption[];
+  /** Coaches: view the programme only — no add/copy/menu. */
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -484,6 +495,7 @@ export function ProgramCalendarClient({
                     dateKey={dateKey}
                     templates={templates}
                     isCopySource={copySource?.sessionId === card.sessionId}
+                    readOnly={readOnly}
                     onCopy={(source) => {
                       setPasteError(null);
                       setCopySource(source);
@@ -495,7 +507,7 @@ export function ProgramCalendarClient({
                 ) : (
                   isHoverTarget && copySource && <GhostCard source={copySource} label="Click to paste here" />
                 )}
-                {!copySource && (
+                {!copySource && !readOnly && (
                   <button
                     type="button"
                     onClick={() => setAddingDate(dateKey)}

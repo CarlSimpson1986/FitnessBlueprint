@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { requireCoachOrOwner } from "@/lib/auth";
+import { requireOwner } from "@/lib/auth";
 import { TemplateEditor } from "../TemplateEditor";
 
 export default async function NewWorkoutTemplatePage() {
-  await requireCoachOrOwner();
+  await requireOwner();
 
   return (
     <main className="min-h-screen px-8 py-16">

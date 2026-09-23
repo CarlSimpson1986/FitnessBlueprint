@@ -79,8 +79,10 @@ const MARKABLE_STATUSES = ["attended", "no_show", "excused"] as const;
 type MarkableStatus = (typeof MARKABLE_STATUSES)[number];
 
 /**
- * Marking attendance updates a single booking — "coaches and owner
- * update any booking" (0002) covers this, so again no admin client.
+ * Marking attendance updates a single booking. RLS (0024) is what limits
+ * this: "coaches mark attendance on their own sessions" / "owner updates
+ * any booking" — a coach marking someone else's class updates 0 rows and
+ * gets the "no longer booked" error below. No admin client.
  */
 export async function markAttendance(bookingId: string, status: MarkableStatus): Promise<ActionResult> {
   const { supabase } = await requireCoachOrOwner();
