@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { serverEnv } from "@/lib/env";
+import { GEMINI_TEXT_MODEL } from "@/lib/gemini-models";
 import type { SegmentInput } from "@/lib/workout-content";
 
 /**
@@ -75,7 +76,7 @@ export async function generateProgressionWeeks(
   if (additionalWeeks === 0) return [];
 
   const model = getClient().getGenerativeModel({
-    model: "gemini-2.5-flash",
+    model: GEMINI_TEXT_MODEL,
     systemInstruction: PROGRESSION_SYSTEM_PROMPT,
     generationConfig: { responseMimeType: "application/json" },
   });

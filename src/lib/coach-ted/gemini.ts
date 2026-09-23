@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { serverEnv } from "@/lib/env";
+import { GEMINI_TEXT_MODEL } from "@/lib/gemini-models";
 
 /**
  * Gemini Flash wrapper for Coach Ted.
@@ -7,7 +8,7 @@ import { serverEnv } from "@/lib/env";
  * Model/SDK names drift fast in this space — verify against
  * https://ai.google.dev/gemini-api/docs before relying on this in
  * production. Written against the @google/generative-ai package and
- * the Gemini 2.5 Flash model current as of this
+ * the Gemini Flash model current as of this
  * spec (Aug 2026); check whether Google's since consolidated onto a
  * newer @google/genai package.
  */
@@ -109,7 +110,7 @@ export async function generateTedAnswer(
   context: TedContext
 ): Promise<string> {
   const model = getClient().getGenerativeModel({
-    model: "gemini-2.5-flash",
+    model: GEMINI_TEXT_MODEL,
     systemInstruction: TED_SYSTEM_PROMPT,
   });
 
