@@ -1,7 +1,7 @@
 "use server";
 
 import { requireOwner } from "@/lib/auth";
-import type { SegmentInput } from "@/lib/workout-content";
+import { type SegmentInput, toIntensityType, intensityColumns } from "@/lib/workout-content";
 
 export type ActionResult = { error?: string; templateId?: string };
 
@@ -112,6 +112,7 @@ export async function saveWorkoutTemplate(
         set_number: k + 1,
         target: set.target?.trim() || null,
         rest_seconds: set.restSeconds,
+        ...intensityColumns(set),
         sort_order: k,
       }));
 
@@ -214,7 +215,7 @@ export async function assignTemplateToSession(templateId: string, sessionId: str
   const exerciseRows = exercises ?? [];
   const { data: sets, error: setsError } = await supabase
     .from("template_exercise_sets")
-    .select("exercise_id, target, rest_seconds, sort_order")
+    .select("exercise_id, target, rest_seconds, intensity_type, intensity_value, sort_order")
     .in("exercise_id", exerciseRows.map((e) => e.id))
     .order("sort_order");
 
@@ -250,6 +251,8 @@ export async function assignTemplateToSession(templateId: string, sessionId: str
       sets: (setsByExercise.get(exercise.id) ?? []).map((set) => ({
         target: set.target,
         restSeconds: set.rest_seconds,
+        intensityType: toIntensityType(set.intensity_type),
+        intensityValue: set.intensity_value,
       })),
     })),
   }));
@@ -305,6 +308,7 @@ export async function assignTemplateToSession(templateId: string, sessionId: str
         set_number: k + 1,
         target: set.target,
         rest_seconds: set.restSeconds,
+        ...intensityColumns(set),
         sort_order: k,
       }));
 

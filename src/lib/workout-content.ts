@@ -41,9 +41,14 @@ export const METRIC_TYPE_LABEL: Record<MetricType, string> = {
   distance_m: "Distance (m)",
 };
 
+/** Per-set intensity (0027): % of 1RM or RPE, set by the owner in the builder. */
+export type IntensityType = "percent_1rm" | "rpe";
+
 export type ExerciseSetInput = {
   target: string | null;
   restSeconds: number | null;
+  intensityType?: IntensityType | null;
+  intensityValue?: number | null;
 };
 
 export type ExerciseInput = {
@@ -67,6 +72,8 @@ export type ExerciseSetDraft = {
   key: string;
   target: string;
   restSeconds: number | null;
+  intensityType: IntensityType | null;
+  intensityValue: number | null;
 };
 
 export type ExerciseDraft = {
@@ -89,7 +96,7 @@ export type SegmentDraft = {
 };
 
 export function newExerciseSetDraft(): ExerciseSetDraft {
-  return { key: crypto.randomUUID(), target: "", restSeconds: null };
+  return { key: crypto.randomUUID(), target: "", restSeconds: null, intensityType: null, intensityValue: null };
 }
 
 export function newExerciseDraft(): ExerciseDraft {
@@ -130,7 +137,44 @@ export function draftsToInput(segments: SegmentDraft[]): SegmentInput[] {
       sets: e.sets.map((set) => ({
         target: set.target.trim() || null,
         restSeconds: set.restSeconds,
+        ...intensityPair(set.intensityType, set.intensityValue),
       })),
     })),
   }));
+}
+
+export function toIntensityType(value: string | null): IntensityType | null {
+  return value === "percent_1rm" || value === "rpe" ? value : null;
+}
+
+/** Both-or-neither, matching the DB constraint (0027). */
+export function intensityPair(type: IntensityType | null | undefined, value: number | null | undefined) {
+  return type && value !== null && value !== undefined
+    ? { intensityType: type, intensityValue: value }
+    : { intensityType: null, intensityValue: null };
+}
+
+/** DB column form of a set's intensity, for inserts. */
+export function intensityColumns(set: ExerciseSetInput) {
+  const pair = intensityPair(set.intensityType, set.intensityValue);
+  return { intensity_type: pair.intensityType, intensity_value: pair.intensityValue };
+}
+
+export function formatIntensity(type: IntensityType | null | undefined, value: number | null | undefined) {
+  if (!type || value === null || value === undefined) return null;
+  return type === "percent_1rm" ? `${value}% 1RM` : `RPE ${value}`;
+}
+
+/**
+ * What a member sees for a set, e.g. "70% 1RM · 5 reps". Also the string
+ * suggestNextWeight() reads (src/lib/exercise-progression.ts) — its parser
+ * already understands "70% 1RM" / "RPE 8" alongside a rep count.
+ */
+export function describeSet(
+  target: string | null | undefined,
+  type: IntensityType | null | undefined,
+  value: number | null | undefined
+) {
+  const parts = [formatIntensity(type, value), target?.trim() || null].filter(Boolean);
+  return parts.length > 0 ? parts.join(" · ") : null;
 }

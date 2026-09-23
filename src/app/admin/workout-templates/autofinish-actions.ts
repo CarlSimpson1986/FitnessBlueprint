@@ -1,7 +1,7 @@
 "use server";
 
 import { requireOwner } from "@/lib/auth";
-import type { SegmentInput } from "@/lib/workout-content";
+import { type SegmentInput, toIntensityType } from "@/lib/workout-content";
 import { generateProgressionWeeks as generateWeeksFromAI } from "@/lib/progression-ai/gemini";
 import { saveWorkoutTemplate, assignTemplateToSessionsInWeek } from "./actions";
 
@@ -55,7 +55,7 @@ export async function generateProgressionWeeks(
   const exerciseRows = exercises ?? [];
   const { data: sets, error: setsError } = await supabase
     .from("template_exercise_sets")
-    .select("exercise_id, target, rest_seconds, sort_order")
+    .select("exercise_id, target, rest_seconds, intensity_type, intensity_value, sort_order")
     .in("exercise_id", exerciseRows.map((e) => e.id))
     .order("sort_order");
 
@@ -91,6 +91,8 @@ export async function generateProgressionWeeks(
       sets: (setsByExercise.get(exercise.id) ?? []).map((set) => ({
         target: set.target,
         restSeconds: set.rest_seconds,
+        intensityType: toIntensityType(set.intensity_type),
+        intensityValue: set.intensity_value,
       })),
     })),
   }));

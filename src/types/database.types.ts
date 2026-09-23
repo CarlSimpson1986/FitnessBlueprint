@@ -797,6 +797,8 @@ export type Database = {
           target: string | null
           rest_seconds: number | null
           sort_order: number
+          intensity_type: string | null
+          intensity_value: number | null
         }
         Insert: {
           id?: string
@@ -805,6 +807,8 @@ export type Database = {
           target?: string | null
           rest_seconds?: number | null
           sort_order: number
+          intensity_type?: string | null
+          intensity_value?: number | null
         }
         Update: {
           id?: string
@@ -813,6 +817,8 @@ export type Database = {
           target?: string | null
           rest_seconds?: number | null
           sort_order?: number
+          intensity_type?: string | null
+          intensity_value?: number | null
         }
         Relationships: []
       }
@@ -824,6 +830,8 @@ export type Database = {
           target: string | null
           rest_seconds: number | null
           sort_order: number
+          intensity_type: string | null
+          intensity_value: number | null
         }
         Insert: {
           id?: string
@@ -832,6 +840,8 @@ export type Database = {
           target?: string | null
           rest_seconds?: number | null
           sort_order: number
+          intensity_type?: string | null
+          intensity_value?: number | null
         }
         Update: {
           id?: string
@@ -840,6 +850,8 @@ export type Database = {
           target?: string | null
           rest_seconds?: number | null
           sort_order?: number
+          intensity_type?: string | null
+          intensity_value?: number | null
         }
         Relationships: []
       }

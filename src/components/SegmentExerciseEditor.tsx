@@ -16,6 +16,7 @@ import {
   type SegmentDraft,
   type SegmentInput,
   type SegmentType,
+  type IntensityType,
 } from "@/lib/workout-content";
 
 function numberOrNull(value: string): number | null {
@@ -344,14 +345,15 @@ export function SegmentExerciseEditor({
                         </label>
 
                         <div className="space-y-1.5">
-                          <div className="grid grid-cols-[2rem_1fr_1fr_1.5rem] gap-1.5 text-[10px] font-mono uppercase tracking-wide text-blueprint-muted px-0.5">
+                          <div className="grid grid-cols-[2rem_1fr_1.3fr_4.5rem_1.5rem] gap-1.5 text-[10px] font-mono uppercase tracking-wide text-blueprint-muted px-0.5">
                             <span>Set</span>
                             <span>Target</span>
+                            <span>%1RM / RPE</span>
                             <span>Rest, sec</span>
                             <span />
                           </div>
                           {exercise.sets.map((set, setIndex) => (
-                            <div key={set.key} className="grid grid-cols-[2rem_1fr_1fr_1.5rem] gap-1.5 items-center">
+                            <div key={set.key} className="grid grid-cols-[2rem_1fr_1.3fr_4.5rem_1.5rem] gap-1.5 items-center">
                               <span className="text-xs text-blueprint-muted text-center">{setIndex + 1}</span>
                               <input
                                 className={inputClass()}
@@ -359,6 +361,39 @@ export function SegmentExerciseEditor({
                                 value={set.target}
                                 onChange={(e) => updateSet(segIndex, exIndex, setIndex, { target: e.target.value })}
                               />
+                              <div className="flex gap-1 min-w-0">
+                                <select
+                                  className={inputClass() + " w-[4.25rem] shrink-0 px-1"}
+                                  value={set.intensityType ?? ""}
+                                  onChange={(e) => {
+                                    const type = (e.target.value || null) as IntensityType | null;
+                                    updateSet(segIndex, exIndex, setIndex, {
+                                      intensityType: type,
+                                      intensityValue: type ? set.intensityValue : null,
+                                    });
+                                  }}
+                                  aria-label="Intensity type"
+                                >
+                                  <option value="">—</option>
+                                  <option value="percent_1rm">%1RM</option>
+                                  <option value="rpe">RPE</option>
+                                </select>
+                                <input
+                                  type="number"
+                                  inputMode="decimal"
+                                  step={set.intensityType === "rpe" ? 0.5 : 2.5}
+                                  min={set.intensityType === "rpe" ? 1 : 0}
+                                  max={set.intensityType === "rpe" ? 10 : 100}
+                                  disabled={!set.intensityType}
+                                  className={inputClass() + " min-w-0 disabled:opacity-40"}
+                                  placeholder={set.intensityType === "rpe" ? "8" : set.intensityType ? "70" : ""}
+                                  value={set.intensityValue ?? ""}
+                                  onChange={(e) =>
+                                    updateSet(segIndex, exIndex, setIndex, { intensityValue: numberOrNull(e.target.value) })
+                                  }
+                                  aria-label="Intensity value"
+                                />
+                              </div>
                               <input
                                 type="number"
                                 min={0}

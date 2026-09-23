@@ -41,6 +41,11 @@ Critical rules, always:
   "70% 1RM x5", week 2 might say "72.5% 1RM x5"; if it says "12 reps",
   week 2 might say "14 reps" — always a relative/structural change to
   the existing text, never a member-specific absolute number.
+- Sets may carry "intensityType" ("percent_1rm" or "rpe") and
+  "intensityValue". Progress intensity through intensityValue (e.g. 70 ->
+  72.5 for percent_1rm, 7 -> 8 for rpe), keeping intensityType as is;
+  percent_1rm stays <= 100 and rpe between 1 and 10. Leave both null on
+  sets that have none.
 - Only vary structural fields: sets (add/remove), rest seconds,
   exercise choice/order, and the free-text "target" string as described
   above. Never invent a metricType change unless the instruction asks

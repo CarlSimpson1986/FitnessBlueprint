@@ -1,4 +1,4 @@
-import { SEGMENT_TYPE_ACCENT, SEGMENT_TYPE_LABEL, type SegmentDraft } from "@/lib/workout-content";
+import { SEGMENT_TYPE_ACCENT, SEGMENT_TYPE_LABEL, describeSet, type SegmentDraft } from "@/lib/workout-content";
 
 /**
  * Read-only "what a member would see" preview, phone-framed. Renders
@@ -46,7 +46,9 @@ export function MemberWorkoutPreview({ title, segments }: { title: string; segme
                               <li key={set.key} className="text-[10px] text-blueprint-muted flex justify-between gap-2">
                                 <span className="truncate">
                                   Set {i + 1}
-                                  {set.target ? `: ${set.target}` : ""}
+                                  {describeSet(set.target, set.intensityType, set.intensityValue)
+                                    ? `: ${describeSet(set.target, set.intensityType, set.intensityValue)}`
+                                    : ""}
                                 </span>
                                 {set.restSeconds ? <span className="shrink-0">{set.restSeconds}s rest</span> : null}
                               </li>

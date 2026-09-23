@@ -2,13 +2,18 @@
 
 import { useState, useTransition } from "react";
 import { SegmentExerciseEditor } from "@/components/SegmentExerciseEditor";
-import type { SegmentDraft, SegmentInput } from "@/lib/workout-content";
+import { intensityPair, type SegmentDraft, type SegmentInput } from "@/lib/workout-content";
 import { generateProgressionWeeks, approveGeneratedWeek } from "./autofinish-actions";
 
 type ClassOption = { id: string; name: string };
 
 function toDraftSet(set: SegmentInput["exercises"][number]["sets"][number]) {
-  return { key: crypto.randomUUID(), target: set.target ?? "", restSeconds: set.restSeconds };
+  return {
+    key: crypto.randomUUID(),
+    target: set.target ?? "",
+    restSeconds: set.restSeconds,
+    ...intensityPair(set.intensityType, set.intensityValue),
+  };
 }
 
 function toDraftExercise(exercise: SegmentInput["exercises"][number]) {

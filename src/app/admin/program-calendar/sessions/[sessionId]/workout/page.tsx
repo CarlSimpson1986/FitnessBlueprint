@@ -1,3 +1,4 @@
+import { toIntensityType } from "@/lib/workout-content";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireCoachOrOwner } from "@/lib/auth";
@@ -46,7 +47,7 @@ export default async function SessionWorkoutPage({
   const exerciseIds = (exercises ?? []).map((e) => e.id);
   const { data: sets } = await supabase
     .from("session_exercise_sets")
-    .select("id, exercise_id, target, rest_seconds, sort_order")
+    .select("id, exercise_id, target, rest_seconds, intensity_type, intensity_value, sort_order")
     .in("exercise_id", exerciseIds.length > 0 ? exerciseIds : [""])
     .order("sort_order");
 
@@ -81,6 +82,8 @@ export default async function SessionWorkoutPage({
         key: set.id,
         target: set.target ?? "",
         restSeconds: set.rest_seconds,
+        intensityType: toIntensityType(set.intensity_type),
+        intensityValue: set.intensity_value,
       })),
     })),
   }));

@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
-import type { MetricType, SegmentType } from "@/lib/workout-content";
+import { type MetricType, type SegmentType, describeSet, toIntensityType } from "@/lib/workout-content";
 import { suggestNextWeight } from "@/lib/exercise-progression";
 import { LiveLogging, type LiveSegment } from "./LiveLogging";
 
@@ -60,7 +60,7 @@ export default async function LiveSessionPage({
   const exerciseIds = (exercises ?? []).map((e) => e.id);
   const { data: sets } = await supabase
     .from("session_exercise_sets")
-    .select("id, exercise_id, set_number, target, sort_order")
+    .select("id, exercise_id, set_number, target, intensity_type, intensity_value, sort_order")
     .in("exercise_id", exerciseIds.length > 0 ? exerciseIds : [""])
     .order("sort_order");
 
@@ -133,11 +133,14 @@ export default async function LiveSessionPage({
       sets: (setsByExercise.get(exercise.id) ?? []).map((set) => {
         const log = logBySet.get(set.id);
         const lastLog = lastLogByName.get(exercise.name);
-        const suggestion = lastLog ? suggestNextWeight(lastLog.weightKg, lastLog.reps, set.target) : null;
+        // Intensity (%1RM/RPE, 0027) + target together, e.g. "70% 1RM · 5 reps" —
+        // shown to the member and read by the weight suggestion.
+        const target = describeSet(set.target, toIntensityType(set.intensity_type), set.intensity_value);
+        const suggestion = lastLog ? suggestNextWeight(lastLog.weightKg, lastLog.reps, target) : null;
         return {
           id: set.id,
           setNumber: set.set_number,
-          target: set.target,
+          target,
           weightKg: log?.weight_kg ?? null,
           reps: log?.reps ?? null,
           timeSeconds: log?.time_seconds ?? null,

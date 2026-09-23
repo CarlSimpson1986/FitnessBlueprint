@@ -1,7 +1,7 @@
 "use server";
 
 import { requireOwner } from "@/lib/auth";
-import type { SegmentInput } from "@/lib/workout-content";
+import { type SegmentInput, toIntensityType, intensityColumns } from "@/lib/workout-content";
 import { saveWorkoutTemplate } from "@/app/admin/workout-templates/actions";
 
 export type ActionResult = { error?: string };
@@ -86,6 +86,7 @@ export async function saveSessionWorkout(sessionId: string, segments: SegmentInp
         set_number: k + 1,
         target: set.target?.trim() || null,
         rest_seconds: set.restSeconds,
+        ...intensityColumns(set),
         sort_order: k,
       }));
 
@@ -138,7 +139,7 @@ async function loadSessionWorkout(
   const exerciseRows = exercises ?? [];
   const { data: sets, error: setsError } = await supabase
     .from("session_exercise_sets")
-    .select("exercise_id, target, rest_seconds, sort_order")
+    .select("exercise_id, target, rest_seconds, intensity_type, intensity_value, sort_order")
     .in("exercise_id", exerciseRows.map((e) => e.id))
     .order("sort_order");
 
@@ -175,6 +176,8 @@ async function loadSessionWorkout(
         sets: (setsByExercise.get(exercise.id) ?? []).map((set) => ({
           target: set.target,
           restSeconds: set.rest_seconds,
+          intensityType: toIntensityType(set.intensity_type),
+          intensityValue: set.intensity_value,
         })),
       })),
     })),
