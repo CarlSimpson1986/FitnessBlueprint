@@ -4,56 +4,57 @@ Living record of what's built, what's known-broken, and what's next.
 Update this file as work lands — don't let it drift. Full product
 spec lives in the shared Google Doc; this is status, not spec.
 
-## Pick up here next session (as of 2026-09-23)
+## Pick up here next session (as of 2026-09-23, evening)
 
-Everything is **committed, pushed, and deployed to production**
-(`https://fitnessblueprints.vercel.app` — permanent; no custom domain for
-the site, owner's call). Functions now run in `lhr1` (London), next to
-Supabase — pages went from ~4-5s to ~0.3-0.5s.
+Everything is **committed, pushed, and deployed** to
+`https://fitnessblueprints.vercel.app` (permanent URL; functions in `lhr1`).
+All migrations through **0029** have been run by the owner.
 
-**Owner-run migrations:** `0024` (owner-only writes) confirmed run.
-`0025` (book_session rejects started classes) — owner said "yes to all",
-treated as run; verify if booking a started class ever succeeds.
+**Built/fixed 2026-09-23** (live-tested in the browser unless noted):
+- Magic-link bounce fixed (alias hosts 308 to canonical); password sign-in
+  is the default; Account settings + Sign out on /admin; owner can create
+  staff accounts (coach/owner) and reset staff passwords on Members.
+- Coaches view-only + attendance on their own sessions (0024); owner
+  "View as" coach/member in a phone frame; Load/Remove demo data.
+- Program calendar: Everfit-style ⋯ menu, copy/paste (Shift = multi-day).
+- Per-set %1RM / RPE in the workout builder (0027), shown to members and
+  feeding the weight suggestion.
+- Goal wizard: Lose fat / Build muscle (0026) / Get stronger (own lift),
+  research-based 6-week targets (src/lib/goal-guidance.ts).
+- Weekly Sunday check-in with Ted (0028): /check-in, home card Sun–Wed,
+  Sunday Brevo email with button, /admin/check-ins for staff. Not yet
+  seen end-to-end — first real email goes out Sunday ~9am UK.
+- Brevo: domain authenticated (DKIM + DMARC), Supabase auth emails via
+  Brevo SMTP (Brevo "Authorised IPs" disabled for SMTP keys). Reminder
+  cron no longer loses failed sends; skips .invalid demo/test accounts.
+- Coach Ted working again: Google retired both models; now
+  gemini-embedding-001 (768-dim, SEMANTIC_SIMILARITY) + Gemini chat with
+  model fallback (src/lib/gemini-models.ts), streaming answers, plain-text
+  formatting, PubMed keyword search. New Ted photo (public/coach-ted.png).
+- Ted's answer cache fixed (IVFFlat on empty table -> HNSW, 0029) and
+  calibrated to 0.95 (src/lib/coach-ted/cache.ts); owner page
+  /admin/ted-answers to edit/pin/hide/write answers, test, re-index.
+- Walk-around ends in goal setting; "Get app" install tab; Week full on
+  the schedule; started classes unbookable (0025); 55 broken opacity
+  classes fixed; Income by product; Income/Session economics crash fixed.
 
-**Waiting on Guy (Brevo):**
-- Add DMARC TXT in Squarespace DNS for fitnessblueprint.co.uk: host
-  `_dmarc`, value `v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com`.
-  brevo-code + both DKIM CNAMEs are already present.
-- Then: /admin → "Send me a test email" to prove Brevo delivers.
-- Then: Supabase Auth → custom SMTP via Brevo (smtp-relay.brevo.com:587,
-  Brevo SMTP key) so magic links stop depending on Supabase's
-  few-per-hour built-in mailer.
-- Unknown: whether `BREVO_SENDER_EMAIL` is an @fitnessblueprint.co.uk
-  address — it must be for the domain auth to help. Ask.
-
-**Built/fixed 2026-09-23** (all tested live via browser walkthrough
-as owner, coach, member):
-- Magic link bounce-to-login fixed (non-canonical *.vercel.app aliases
-  now 308 to the canonical host; /login explains failed links).
-- Coaches are view-only + attendance trackers (0024, requireOwner on
-  every create/edit action, read-only calendar/session view with roster,
-  class readiness summary, members' pre-session comments).
-- Owner "View as" coach/member in a phone frame (real test accounts).
-- Owner Load/Remove demo data (5 clients, 4 weeks of Test Coach classes).
-- Everfit-style ⋯ menu + copy/paste (Shift for multi-day) on the calendar.
-- Ted walk-around spotlights each tab; solid card.
-- Income by product (+ GoCardless period suffix stripped); Income and
-  Session economics crash (function prop into client DonutChart) fixed.
-- 55 broken opacity classes (CSS-var theme colours) fixed via color-mix.
-- Weekly limit tested end to end; Schedule shows "Week full"; started
-  classes hidden and unbookable.
-- Reminder cron no longer loses failed sends; skips .invalid accounts.
-
-**Still open:**
-- **Coach Ted end-to-end verification** — owner deferred ("do Ted
-  another day"). Owner asks Ted one real question; check Vercel logs.
-- **Workout builder: per-exercise save or not?** Still unanswered — ask.
-- Members page plan dropdown defaults to "1x per week" on every row
-  (looks like the member's current plan when it isn't).
-- Stripe product names "Gcp UNLIMITED MONTHLY" vs "GCP unlimited" are
-  separate products in Stripe — rename there to merge on Income.
-- Browser-automation note: take a screenshot before every coordinate
-  click, or the click is silently dropped (not an app bug).
+**Open — needs a decision or action from the owner:**
+- **Coach Ted is slow (30–45s)** because the Gemini key is on the free
+  tier (queued behind paid traffic; free-tier content is also used by
+  Google to improve products). Options discussed: enable Gemini billing
+  (cheapest), or move answer generation to Claude (Haiku 4.5 ~0.3p /
+  Sonnet 5 ~0.55p / Opus 5 ~1.4p per answer; embeddings stay on Gemini).
+  Owner hasn't chosen.
+- `gemini-embedding-001` no longer appears on Google's pricing page
+  (Gemini Embedding 2 is current) — may be retired next; if so switch
+  EMBEDDING_MODEL and press Re-index on /admin/ted-answers.
+- Brevo emails landing in spam: offered to write branded Supabase email
+  templates; suggested sender name "Fitness Blueprint" (currently "Guy")
+  and turning off Brevo click tracking.
+- Guy's own account still to be created (Members -> Create account ->
+  Owner).
+- Workout builder: per-exercise save needed or not? Still unanswered.
+- Members page plan dropdown defaults to "1x per week" on every row.
 
 ## Done
 
