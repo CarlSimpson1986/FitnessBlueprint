@@ -7,7 +7,7 @@ import { serverEnv } from "@/lib/env";
  * Model/SDK names drift fast in this space — verify against
  * https://ai.google.dev/gemini-api/docs before relying on this in
  * production. Written against the @google/generative-ai package and
- * the Gemini 2.5 Flash + text-embedding-004 models current as of this
+ * the Gemini 2.5 Flash model current as of this
  * spec (Aug 2026); check whether Google's since consolidated onto a
  * newer @google/genai package.
  */
@@ -25,11 +25,54 @@ function getClient() {
   return client;
 }
 
-/** Embeds text into a 768-dim vector for pgvector similarity search. */
+const EMBEDDING_MODEL = "gemini-embedding-001";
+const EMBEDDING_DIMENSIONS = 768; // must match vector(768) in 0003_coach_ted_vectors.sql
+
+/**
+ * Embeds text into a 768-dim vector for pgvector similarity search.
+ *
+ * text-embedding-004 was retired by Google (the API now 404s on it), which
+ * broke every Coach Ted question at the first step. gemini-embedding-001
+ * replaces it; it defaults to 3072 dims, so outputDimensionality asks for
+ * 768 to fit the existing columns. The installed @google/generative-ai
+ * (0.21) can't pass outputDimensionality, hence a direct REST call.
+ * Google recommends normalising reduced-dimension output, so this does.
+ *
+ * Vectors from different embedding models aren't comparable — if this
+ * model ever changes again, clear coach_ted_qa_cache and re-embed
+ * coach_ted_knowledge_base.
+ */
 export async function embedText(text: string): Promise<number[]> {
-  const model = getClient().getGenerativeModel({ model: "text-embedding-004" });
-  const result = await model.embedContent(text);
-  return result.embedding.values;
+  const apiKey = serverEnv().GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY is not set — Coach Ted can't run without it.");
+  }
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${EMBEDDING_MODEL}:embedContent`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+      body: JSON.stringify({
+        model: `models/${EMBEDDING_MODEL}`,
+        content: { parts: [{ text }] },
+        outputDimensionality: EMBEDDING_DIMENSIONS,
+      }),
+    }
+  );
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Embedding failed (${res.status}): ${body.slice(0, 300)}`);
+  }
+
+  const data: { embedding?: { values?: number[] } } = await res.json();
+  const values = data.embedding?.values;
+  if (!values || values.length !== EMBEDDING_DIMENSIONS) {
+    throw new Error(`Embedding returned ${values?.length ?? 0} dims, expected ${EMBEDDING_DIMENSIONS}.`);
+  }
+
+  const norm = Math.sqrt(values.reduce((sum, v) => sum + v * v, 0)) || 1;
+  return values.map((v) => v / norm);
 }
 
 export type TedContext = {
