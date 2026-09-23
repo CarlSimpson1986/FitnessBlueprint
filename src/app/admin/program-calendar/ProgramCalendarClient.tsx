@@ -81,7 +81,7 @@ function QuickAddModal({
       <form
         onSubmit={handleSubmit}
         onClick={(e) => e.stopPropagation()}
-        className="max-w-sm w-full bg-blueprint-bg-raised border border-blueprint-line rounded-lg p-5 space-y-3"
+        className="max-w-sm w-full bg-blueprint-raised border border-blueprint-line rounded-lg p-5 space-y-3"
       >
         <div className="flex items-center justify-between mb-1">
           <p className="text-sm font-semibold text-blueprint-ink">Add a class — {label}</p>
@@ -259,7 +259,7 @@ function SessionCard({
       {menuOpen && (
         <>
           <div className="fixed inset-0 z-30" onClick={closeMenu} />
-          <div className="absolute right-0 top-7 z-40 w-52 rounded-md border border-blueprint-line bg-blueprint-bg-raised shadow-xl py-1">
+          <div className="absolute right-0 top-7 z-40 w-52 rounded-md border border-blueprint-line bg-blueprint-raised shadow-xl py-1">
             {panel === "none" && (
               <>
                 <Link href={builderHref} className={menuItemClass}>
@@ -423,7 +423,7 @@ export function ProgramCalendarClient({
   return (
     <div>
       {copySource && (
-        <div className="sticky top-2 z-20 mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-blueprint-accent bg-blueprint-bg-raised px-3 py-2">
+        <div className="sticky top-2 z-20 mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-blueprint-accent bg-blueprint-raised px-3 py-2">
           <p className="text-xs text-blueprint-ink">
             Copying <span className="text-blueprint-accent font-medium">{copySource.label}</span>. Click a day to
             paste. Hold <kbd className="font-mono text-[10px] border border-blueprint-line rounded px-1">Shift</kbd>{" "}

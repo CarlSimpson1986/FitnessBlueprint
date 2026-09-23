@@ -65,6 +65,7 @@ export function BottomNav() {
           <Link
             key={tab.href}
             href={tab.href}
+            data-tour={tab.href}
             className={`flex flex-col items-center gap-1 px-3 ${
               isActive ? "text-blueprint-accent" : "text-blueprint-ink"
             }`}
