@@ -1,5 +1,9 @@
 import type { Config } from "tailwindcss";
 
+function withAlpha(variable: string) {
+  return `color-mix(in srgb, var(${variable}) calc(<alpha-value> * 100%), transparent)`;
+}
+
 const config: Config = {
   content: [
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
@@ -8,14 +12,18 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Colours are CSS variables, which Tailwind can't apply an opacity
+        // modifier to on its own — without <alpha-value>, classes like
+        // border-blueprint-line/60 were silently not generated (borders fell
+        // back to white, bg-blueprint-raised/40 cards had no background).
         blueprint: {
-          bg: "var(--fb-bg)",
-          raised: "var(--fb-bg-raised)",
-          line: "var(--fb-line)",
-          accent: "var(--fb-accent)",
-          ink: "var(--fb-ink)",
-          muted: "var(--fb-muted)",
-          dim: "var(--fb-dim)",
+          bg: withAlpha("--fb-bg"),
+          raised: withAlpha("--fb-bg-raised"),
+          line: withAlpha("--fb-line"),
+          accent: withAlpha("--fb-accent"),
+          ink: withAlpha("--fb-ink"),
+          muted: withAlpha("--fb-muted"),
+          dim: withAlpha("--fb-dim"),
         },
       },
       fontFamily: {

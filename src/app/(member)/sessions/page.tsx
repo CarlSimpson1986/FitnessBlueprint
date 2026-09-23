@@ -171,8 +171,28 @@ export default async function SessionsPage() {
   );
   const checkedInSessionIds = new Set((myReadiness ?? []).map((r) => r.session_id));
 
+  // The Schedule tab only offers classes that haven't started yet — a class
+  // earlier today is still in sessionRows (so My bookings can show it for
+  // logging) but shouldn't be bookable. Compared in UK time, which is what
+  // start_time is.
+  const nowLondon = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/London",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date());
+  const part = (type: string) => nowLondon.find((p) => p.type === type)?.value ?? "";
+  const londonDate = `${part("year")}-${part("month")}-${part("day")}`;
+  const londonTime = `${part("hour")}:${part("minute")}`;
+  const hasStarted = (session: (typeof sessionRows)[number]) =>
+    session.session_date < londonDate ||
+    (session.session_date === londonDate && session.start_time.slice(0, 5) <= londonTime);
+
   const sessionsByDate = new Map<string, typeof sessionRows>();
-  for (const session of sessionRows) {
+  for (const session of sessionRows.filter((s) => !hasStarted(s))) {
     const list = sessionsByDate.get(session.session_date) ?? [];
     list.push(session);
     sessionsByDate.set(session.session_date, list);

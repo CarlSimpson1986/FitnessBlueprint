@@ -5,6 +5,18 @@ import { resolvePeriod } from "@/lib/period";
 import { PeriodPicker } from "@/components/PeriodPicker";
 import { DonutChart } from "@/components/DonutChart";
 
+/**
+ * GoCardless payment descriptions carry the billing period, e.g.
+ * "Direct debit 8 per month - from 19/09/2026 to 18/10/2026", which would
+ * make every month its own "product". Strip that suffix and tidy spacing.
+ */
+function cleanProductName(name: string) {
+  return name
+    .replace(/\s*[-–—]?\s*from\s+\d{1,2}\/\d{1,2}\/\d{2,4}\s+to\s+\d{1,2}\/\d{1,2}\/\d{2,4}\s*$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function formatPence(pence: number) {
   return `£${(pence / 100).toFixed(2)}`;
 }
@@ -31,7 +43,7 @@ export default async function IncomePage({
     planNamesByPrice.set(plan.price_pence, [...(planNamesByPrice.get(plan.price_pence) ?? []), plan.name]);
   }
   function productOf(t: IncomeTransaction) {
-    if (t.product) return t.product;
+    if (t.product) return cleanProductName(t.product);
     const matches = planNamesByPrice.get(t.amountPence);
     return (matches?.length === 1 && matches[0]) || "Other";
   }
@@ -41,16 +53,18 @@ export default async function IncomePage({
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
-  const byProductMap = new Map<string, { totalPence: number; count: number }>();
+  // Grouped case-insensitively ("GCP unlimited" = "Gcp Unlimited"),
+  // labelled with the first spelling seen.
+  const byProductMap = new Map<string, { name: string; totalPence: number; count: number }>();
   for (const t of allTransactions) {
-    const key = productOf(t);
-    const entry = byProductMap.get(key) ?? { totalPence: 0, count: 0 };
+    const name = productOf(t);
+    const key = name.toLowerCase();
+    const entry = byProductMap.get(key) ?? { name, totalPence: 0, count: 0 };
     entry.totalPence += t.amountPence;
     entry.count += 1;
     byProductMap.set(key, entry);
   }
-  const byProduct = [...byProductMap.entries()]
-    .map(([name, entry]) => ({ name, ...entry }))
+  const byProduct = [...byProductMap.values()]
     .sort((a, b) => b.totalPence - a.totalPence);
   const topProductPence = byProduct[0]?.totalPence ?? 0;
 
