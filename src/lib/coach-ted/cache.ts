@@ -8,4 +8,6 @@
  * changes (use the tester: same-meaning pairs should clear it, related-
  * but-different pairs shouldn't).
  */
-export const CACHE_SIMILARITY_THRESHOLD = 0.85;
+// Temporarily near-exact while the SEMANTIC_SIMILARITY scale is calibrated:
+// with it, different questions scored 90-92% (protein for fat loss vs muscle).
+export const CACHE_SIMILARITY_THRESHOLD = 0.99;
