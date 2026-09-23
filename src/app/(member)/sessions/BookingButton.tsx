@@ -8,10 +8,13 @@ export function BookingButton({
   sessionId,
   bookingId,
   isFull,
+  weekFull = false,
 }: {
   sessionId: string;
   bookingId: string | null;
   isFull: boolean;
+  /** The member's plan allowance for that week is already used up. */
+  weekFull?: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -53,6 +56,14 @@ export function BookingButton({
     return (
       <span className="text-xs font-medium text-blueprint-muted border border-blueprint-line/60 rounded-lg px-3 py-2">
         Full
+      </span>
+    );
+  }
+
+  if (!bookingId && weekFull) {
+    return (
+      <span className="text-xs font-medium text-blueprint-muted border border-blueprint-line/60 rounded-lg px-3 py-2 text-center">
+        Week full
       </span>
     );
   }

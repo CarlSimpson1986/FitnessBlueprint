@@ -191,6 +191,27 @@ export default async function SessionsPage() {
     session.session_date < londonDate ||
     (session.session_date === londonDate && session.start_time.slice(0, 5) <= londonTime);
 
+  // Booked count per Mon-Sun week (keyed by that week's Monday), so the
+  // Schedule can show "Week full" before a member taps Book — same week
+  // boundary as book_session() (0023). The current week uses weeklyUsed,
+  // which also counts bookings from earlier in the week that are no longer
+  // in sessionRows.
+  const weekKeyOf = (dateKey: string) => {
+    const d = new Date(`${dateKey}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+    return d.toISOString().slice(0, 10);
+  };
+  const bookedByWeek = new Map<string, number>();
+  for (const session of sessionRows) {
+    if (!myBookingBySession.has(session.id)) continue;
+    const key = weekKeyOf(session.session_date);
+    bookedByWeek.set(key, (bookedByWeek.get(key) ?? 0) + 1);
+  }
+  const currentWeekKey = weekKeyOf(toLocalDateKey(new Date()));
+  if (weeklyUsed !== null) bookedByWeek.set(currentWeekKey, weeklyUsed);
+  const weekCap = activePlan?.sessions_per_week ?? null;
+  const weekBookedFor = (dateKey: string) => bookedByWeek.get(weekKeyOf(dateKey)) ?? 0;
+
   const sessionsByDate = new Map<string, typeof sessionRows>();
   for (const session of sessionRows.filter((s) => !hasStarted(s))) {
     const list = sessionsByDate.get(session.session_date) ?? [];
@@ -293,7 +314,15 @@ export default async function SessionsPage() {
                         entry={waitlistEntryBySession.get(session.id) ?? null}
                       />
                     ) : (
-                      <BookingButton sessionId={session.id} bookingId={bookingId} isFull={isFull} />
+                      <BookingButton
+                        // Remounts when that week's count changes, so a stale
+                        // "you've hit your limit" error clears after a cancel.
+                        key={`${session.id}-${weekBookedFor(session.session_date)}`}
+                        sessionId={session.id}
+                        bookingId={bookingId}
+                        isFull={isFull}
+                        weekFull={weekCap !== null && weekBookedFor(session.session_date) >= weekCap}
+                      />
                     )}
                   </li>
                 );
