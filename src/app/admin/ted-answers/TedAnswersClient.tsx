@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   addTedAnswer,
   deleteTedAnswer,
+  reindexTedAnswers,
   setTedAnswerFlags,
   testTedQuestion,
   updateTedAnswer,
@@ -217,13 +218,34 @@ function SimilarityTester({ threshold }: { threshold: number }) {
   );
 }
 
+/** Only needed after the embedding model/settings change (see gemini.ts). */
+function ReindexButton() {
+  const { run, isPending, error } = useAction();
+  return (
+    <span className="text-right">
+      <button
+        type="button"
+        disabled={isPending}
+        onClick={() => run(reindexTedAnswers)}
+        className="text-[10px] font-mono uppercase tracking-wide text-blueprint-muted hover:text-blueprint-accent disabled:opacity-50"
+      >
+        {isPending ? "Re-indexing…" : "Re-index"}
+      </button>
+      {error && <span className="block text-xs text-red-400">{error}</span>}
+    </span>
+  );
+}
+
 export function TedAnswersClient({ rows, threshold }: { rows: TedAnswerRow[]; threshold: number }) {
   return (
     <div className="space-y-6">
       <SimilarityTester threshold={threshold} />
       <AddAnswer />
       <div>
-        <p className="fb-eyebrow mb-3">Saved answers ({rows.length})</p>
+        <div className="flex items-center justify-between mb-3">
+          <p className="fb-eyebrow">Saved answers ({rows.length})</p>
+          <ReindexButton />
+        </div>
         {rows.length === 0 ? (
           <p className="text-sm text-blueprint-muted">None yet — every new question Ted answers lands here.</p>
         ) : (

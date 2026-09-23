@@ -75,3 +75,24 @@ export async function testTedQuestion(
     })),
   };
 }
+
+/**
+ * Recomputes every saved question's embedding with the current model and
+ * task type. Needed whenever EMBEDDING_MODEL or its taskType changes —
+ * vectors from different settings aren't comparable.
+ */
+export async function reindexTedAnswers(): Promise<{ error?: string; count?: number }> {
+  const { supabase } = await requireOwner();
+  const { data: rows, error } = await supabase.from("coach_ted_qa_cache").select("id, question");
+  if (error) return { error: error.message };
+
+  for (const row of rows ?? []) {
+    const embedding = await embedText(row.question);
+    const { error: updateError } = await supabase
+      .from("coach_ted_qa_cache")
+      .update({ question_embedding: embedding })
+      .eq("id", row.id);
+    if (updateError) return { error: updateError.message };
+  }
+  return { count: (rows ?? []).length };
+}

@@ -43,7 +43,17 @@ const EMBEDDING_DIMENSIONS = 768; // must match vector(768) in 0003_coach_ted_ve
  * model ever changes again, clear coach_ted_qa_cache and re-embed
  * coach_ted_knowledge_base.
  */
-export async function embedText(text: string): Promise<number[]> {
+/**
+ * taskType tells the model what the vector is for. SEMANTIC_SIMILARITY is
+ * built for "do these two questions mean the same thing" — the answer
+ * cache's job. Tested 2026-09-23 without it: paraphrases (79-81%) and
+ * different questions (up to 80%, e.g. caffeine vs creatine) overlapped.
+ * Changing it means re-embedding stored questions (Re-index on
+ * /admin/ted-answers).
+ */
+export type EmbeddingTask = "SEMANTIC_SIMILARITY" | "RETRIEVAL_QUERY" | "RETRIEVAL_DOCUMENT";
+
+export async function embedText(text: string, taskType: EmbeddingTask = "SEMANTIC_SIMILARITY"): Promise<number[]> {
   const apiKey = serverEnv().GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("GEMINI_API_KEY is not set — Coach Ted can't run without it.");
@@ -57,6 +67,7 @@ export async function embedText(text: string): Promise<number[]> {
       body: JSON.stringify({
         model: `models/${EMBEDDING_MODEL}`,
         content: { parts: [{ text }] },
+        taskType,
         outputDimensionality: EMBEDDING_DIMENSIONS,
       }),
     }
