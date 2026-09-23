@@ -19,6 +19,7 @@ Run in order — the filenames are numbered deliberately, don't reorder.
 | `0026_goal_type_build_muscle.sql` | Adds `build_muscle` to `goal_type` for the goal wizard's Build muscle option |
 | `0027_set_intensity.sql` | Per-set `intensity_type` (%1RM / RPE) + `intensity_value` on session and template sets |
 | `0028_weekly_checkins.sql` | Sunday weekly check-in with Ted (`weekly_checkins`) + RLS: members own rows, coaches/owner read |
+| `0029_ted_cache_curation.sql` | HNSW vector indexes (IVFFlat built on empty tables can miss matches) + owner insert/delete on Coach Ted's answer cache |
 
 ## Adding a new migration
 

@@ -3,9 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { embedText, streamTedAnswer } from "@/lib/coach-ted/gemini";
 import { searchPubMed } from "@/lib/coach-ted/pubmed";
+import { CACHE_SIMILARITY_THRESHOLD } from "@/lib/coach-ted/cache";
 
 const DAILY_QUESTION_LIMIT = 20;
-const CACHE_SIMILARITY_THRESHOLD = 0.85;
+
 
 /**
  * Coach Ted's pipeline. Three tiers, cheapest first:
@@ -98,10 +99,18 @@ export async function POST(request: Request) {
 
   if (cacheHit) {
     await Promise.all([
+      // Was hit_count: 1 on every hit, so the counter never went past 1.
       admin
         .from("coach_ted_qa_cache")
-        .update({ hit_count: 1, last_served_at: new Date().toISOString() })
-        .eq("id", cacheHit.id),
+        .select("hit_count")
+        .eq("id", cacheHit.id)
+        .single()
+        .then(({ data }) =>
+          admin
+            .from("coach_ted_qa_cache")
+            .update({ hit_count: (data?.hit_count ?? 0) + 1, last_served_at: new Date().toISOString() })
+            .eq("id", cacheHit.id)
+        ),
       admin.from("coach_ted_conversations").insert({
         member_id: user.id,
         question,
@@ -161,7 +170,7 @@ export async function POST(request: Request) {
 
       // --- Tier 3: cache the new answer for next time ---------------------
       if (answer.trim()) {
-        const { data: newCacheRow } = await admin
+        const { data: newCacheRow, error: cacheInsertError } = await admin
           .from("coach_ted_qa_cache")
           .insert({
             question,
@@ -171,6 +180,7 @@ export async function POST(request: Request) {
           })
           .select("id")
           .single();
+        if (cacheInsertError) console.error("Coach Ted: caching the answer failed:", cacheInsertError);
 
         await admin.from("coach_ted_conversations").insert({
           member_id: user.id,
