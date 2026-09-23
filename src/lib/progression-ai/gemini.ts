@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { serverEnv } from "@/lib/env";
-import { withGeminiFallback } from "@/lib/gemini-models";
+import { PLANNING_MODELS, withGeminiFallback } from "@/lib/gemini-models";
 import type { SegmentInput } from "@/lib/workout-content";
 
 /**
@@ -82,7 +82,7 @@ Progression instruction from the coach: "${instruction}"
 
 Generate exactly ${additionalWeeks} additional week(s) (week 2 through week ${weekCount}), each following week 1's shape. Return a JSON array of ${additionalWeeks} week(s), where each week is an array of segments in the same shape as week 1 above.`;
 
-  const { result } = await withGeminiFallback((modelName, generationConfig) =>
+  const { result } = await withGeminiFallback(PLANNING_MODELS, (modelName, generationConfig) =>
     getClient()
       .getGenerativeModel({
         model: modelName,

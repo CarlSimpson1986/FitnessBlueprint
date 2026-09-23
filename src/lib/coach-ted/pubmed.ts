@@ -27,7 +27,8 @@ const STOPWORDS = new Set(
     "into over after before between and or but if then so than too very can could should would will " +
     "i me my we our you your he she it they them this that these those what which who whom how why when " +
     "where there here best way good better much many more most some any per day days get got make should " +
-    "really just also ok okay please tell know want need thing things"
+    "really just also ok okay please tell know want need thing things take eat do use start stop go feel " +
+    "try avoid week weeks times time often long beginner"
   ).split(" ")
 );
 
@@ -36,13 +37,13 @@ const STOPWORDS = new Set(
  * way to warm up before heavy squats?") ANDs every word and finds nothing.
  * Keep the meaningful words ("warm up heavy squats").
  */
-export function pubmedQueryFrom(question: string) {
-  const words = question
+export function pubmedKeywords(question: string) {
+  return question
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, " ")
     .split(/\s+/)
-    .filter((w) => w.length > 1 && !STOPWORDS.has(w));
-  return words.slice(0, 6).join(" ");
+    .filter((w) => w.length > 1 && !STOPWORDS.has(w))
+    .slice(0, 6);
 }
 
 export async function searchPubMed(
@@ -52,22 +53,28 @@ export async function searchPubMed(
   const apiKey = serverEnv().PUBMED_API_KEY;
   const keyParam = apiKey ? `&api_key=${apiKey}` : "";
 
-  const term = pubmedQueryFrom(query);
-  if (!term) return [];
-
-  const searchUrl =
-    `${EUTILS_BASE}/esearch.fcgi?db=pubmed&retmode=json&retmax=${maxResults}&sort=relevance` +
-    `&term=${encodeURIComponent(term)}${keyParam}`;
+  const keywords = pubmedKeywords(query);
+  if (keywords.length === 0) return [];
 
   const signal = AbortSignal.timeout(PUBMED_TIMEOUT_MS);
-  const searchRes = await fetch(searchUrl, { signal });
-  if (!searchRes.ok) {
-    console.error("PubMed esearch failed:", searchRes.status);
-    return [];
-  }
-  const searchData = await searchRes.json();
-  const ids: string[] = searchData?.esearchresult?.idlist ?? [];
+  const search = async (term: string): Promise<string[]> => {
+    const url =
+      `${EUTILS_BASE}/esearch.fcgi?db=pubmed&retmode=json&retmax=${maxResults}&sort=relevance` +
+      `&term=${encodeURIComponent(term)}${keyParam}`;
+    const res = await fetch(url, { signal });
+    if (!res.ok) {
+      console.error("PubMed esearch failed:", res.status);
+      return [];
+    }
+    const data = await res.json();
+    return data?.esearchresult?.idlist ?? [];
+  };
 
+  // All key words first; if that's too narrow, any of them, best match first.
+  let ids = await search(keywords.join(" "));
+  if (ids.length === 0 && keywords.length > 1) {
+    ids = await search(keywords.join(" OR "));
+  }
   if (ids.length === 0) return [];
 
   const summaryUrl =

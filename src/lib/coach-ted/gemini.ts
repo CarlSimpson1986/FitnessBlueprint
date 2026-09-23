@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { serverEnv } from "@/lib/env";
-import { withGeminiFallback } from "@/lib/gemini-models";
+import { CHAT_MODELS, withGeminiFallback } from "@/lib/gemini-models";
 
 /**
  * Gemini Flash wrapper for Coach Ted.
@@ -135,7 +135,7 @@ export async function* streamTedAnswer(
 
   // Errors like 503 "high demand" surface when the stream is opened, so
   // falling back to another model happens before any text is sent.
-  const { result, model } = await withGeminiFallback((modelName, generationConfig) =>
+  const { result, model } = await withGeminiFallback(CHAT_MODELS, (modelName, generationConfig) =>
     getClient()
       .getGenerativeModel({ model: modelName, systemInstruction: TED_SYSTEM_PROMPT, generationConfig })
       .generateContentStream(prompt)

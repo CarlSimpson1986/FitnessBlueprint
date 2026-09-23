@@ -11,10 +11,15 @@
  */
 export const GEMINI_TEXT_MODEL = "gemini-3.6-flash";
 
-// Tried in order when the one before is overloaded (503), rate limited
-// (429), erroring (500) or gone (404). The "-latest" aliases are Google's
-// rolling pointers, so they survive the next rename.
-const FALLBACK_MODELS = ["gemini-flash-lite-latest", "gemini-flash-latest"];
+// Model chains, tried in order when one is overloaded (503), rate
+// limited (429), erroring (500) or gone (404). The "-latest" aliases are
+// Google's rolling pointers, so they survive the next rename.
+//
+// Coach Ted: short chat answers, where speed matters most — Flash-Lite
+// first (gemini-3.6-flash measured 32-63s to first token).
+export const CHAT_MODELS = ["gemini-flash-lite-latest", "gemini-flash-latest", GEMINI_TEXT_MODEL];
+// Autofinish: structured multi-week JSON, where quality matters more.
+export const PLANNING_MODELS = [GEMINI_TEXT_MODEL, "gemini-flash-latest", "gemini-flash-lite-latest"];
 
 /**
  * Short chat answers and structured JSON don't need long internal
@@ -38,13 +43,16 @@ function statusOf(err: unknown): number | undefined {
  * Returns the result and which model produced it.
  */
 export async function withGeminiFallback<T>(
+  models: string[],
   attempt: (modelName: string, generationConfig: Record<string, unknown>) => Promise<T>
 ): Promise<{ result: T; model: string }> {
   let lastError: unknown;
-  for (const modelName of [GEMINI_TEXT_MODEL, ...FALLBACK_MODELS]) {
+  for (const modelName of models) {
     for (const config of [LOW_THINKING, {}]) {
       try {
-        return { result: await attempt(modelName, config), model: modelName };
+        const result = await attempt(modelName, config);
+        // Logged by callers — shows whether the low-thinking setting was accepted.
+        return { result, model: config === LOW_THINKING ? `${modelName} (low thinking)` : modelName };
       } catch (err) {
         lastError = err;
         const status = statusOf(err);
