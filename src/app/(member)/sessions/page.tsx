@@ -250,7 +250,9 @@ export default async function SessionsPage() {
                   {formatSessionDate(session.session_date)} · {formatSessionTime(session.start_time)} ·{" "}
                   {coach ? coach.full_name : "Coach TBC"} · {taken}/{session.capacity} spots
                 </p>
-                <div className="flex items-center gap-2 mb-1">
+                {/* Check in first (how you're feeling), then start the session. */}
+                <ReadinessCheckin sessionId={session.id} hasCheckedIn={checkedInSessionIds.has(session.id)} />
+                <div className="flex items-center gap-2 mt-3">
                   <Link
                     href={`/sessions/${session.id}/live`}
                     className="fb-btn-secondary flex-1 text-center"
@@ -259,7 +261,6 @@ export default async function SessionsPage() {
                   </Link>
                   <BookingButton sessionId={session.id} bookingId={bookingId} isFull={false} />
                 </div>
-                <ReadinessCheckin sessionId={session.id} hasCheckedIn={checkedInSessionIds.has(session.id)} />
               </div>
             );
           })

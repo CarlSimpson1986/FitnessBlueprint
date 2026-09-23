@@ -4,20 +4,34 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { saveGoal, type GoalType } from "./goals-actions";
+import { checkTarget, guidanceFor, suggestedTargets, type Guidance } from "@/lib/goal-guidance";
 
 type TypeOption = { value: GoalType; label: string };
 const TYPE_OPTIONS: TypeOption[] = [
-  { value: "lose_weight", label: "Lose weight" },
-  { value: "build_strength", label: "Build strength" },
+  { value: "lose_weight", label: "Lose fat" },
+  { value: "build_muscle", label: "Build muscle" },
+  { value: "build_strength", label: "Get stronger" },
   { value: "general_fitness", label: "General fitness" },
   { value: "event_prep", label: "Event prep" },
 ];
 
-const METRIC_OPTIONS = ["Weight (kg)", "Waist (cm)", "Body fat %", "Deadlift (kg)", "Total lifted (kg)", "Sessions/week"];
+const SOMETHING_ELSE = "Something else";
+
+// What each goal is tracked by. Strength goals skip this — the member names
+// their own lift instead of picking from a fixed list.
+const METRICS_BY_TYPE: Record<Exclude<GoalType, "build_strength">, string[]> = {
+  lose_weight: ["Weight (kg)", "Body fat %", "Waist (cm)"],
+  build_muscle: ["Weight (kg)", "Body fat %"],
+  general_fitness: ["Sessions/week", "Total lifted (kg)", "Weight (kg)", "Waist (cm)", SOMETHING_ELSE],
+  event_prep: ["Sessions/week", "Total lifted (kg)", "Weight (kg)", SOMETHING_ELSE],
+};
 
 type Step =
   | "type"
   | "metric"
+  | "customMetric"
+  | "exercise"
+  | "baseline"
   | "longTarget"
   | "longDate"
   | "microTarget"
@@ -40,39 +54,6 @@ function fmtDate(date: Date) {
 
 function toIsoDate(date: Date) {
   return date.toISOString().slice(0, 10);
-}
-
-function sanityCheck(
-  value: string,
-  metric: string,
-  baseline: number | null
-): { unrealistic: boolean; note: string } {
-  const numMatch = value.match(/[\d.]+/);
-  const num = numMatch ? parseFloat(numMatch[0]) : null;
-  const mentionsStone = /stone/i.test(value);
-
-  if (mentionsStone && num) {
-    const kg = num * 6.35;
-    if (kg > 6) {
-      return {
-        unrealistic: true,
-        note: `That's ${kg.toFixed(1)}kg in 6 weeks — that's not a pace I'd back safely. Safe fat loss tops out around 1kg a week, so more like ${Math.max(0, kg - (kg - 6)).toFixed(0)}kg in 6 weeks would be realistic.`,
-      };
-    }
-  } else if (baseline !== null && num !== null && (metric === "Weight (kg)" || metric === "Body fat %")) {
-    const diff = baseline - num;
-    const perWeek = diff / 6;
-    const cap = metric === "Weight (kg)" ? 1 : 0.5;
-    if (perWeek > cap) {
-      const suggested = (baseline - cap * 6).toFixed(1);
-      return {
-        unrealistic: true,
-        note: `That's ${diff.toFixed(1)}${metric === "Weight (kg)" ? "kg" : "%"} in 6 weeks — more than I'd want to see happen that fast. Something like ${suggested} would still be a strong 6 weeks and won't burn you out.`,
-      };
-    }
-  }
-
-  return { unrealistic: false, note: "" };
 }
 
 function TedBubble({ children }: { children: React.ReactNode }) {
@@ -136,6 +117,10 @@ export function GoalWizard({
   const [textInput, setTextInput] = useState("");
   const [retryNote, setRetryNote] = useState<string | null>(null);
   const [customHabit, setCustomHabit] = useState("");
+  // A current value the member typed in because we had none on record —
+  // saved as a body_metrics entry with the goal so Progress has a baseline.
+  const [typedWeight, setTypedWeight] = useState<number | null>(null);
+  const [typedBodyFat, setTypedBodyFat] = useState<number | null>(null);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -143,18 +128,94 @@ export function GoalWizard({
     setMessages((prev) => [...prev, { id: `${from}-${prev.length}`, from, text }]);
   }
 
+  function baselineFor(forMetric: string) {
+    if (forMetric === "Weight (kg)") return typedWeight ?? weightBaseline;
+    if (forMetric === "Body fat %") return typedBodyFat ?? bodyFatBaseline;
+    return null;
+  }
+
+  /** Evidence-based 6-week range for this goal, when there's one to give. */
+  function currentGuidance(): { baseline: number; g: Guidance } | null {
+    if (type !== "lose_weight" && type !== "build_muscle") return null;
+    if (metric !== "Weight (kg)" && metric !== "Body fat %") return null;
+    const baseline = baselineFor(metric);
+    if (baseline === null) return null;
+    const g = guidanceFor(type === "lose_weight" ? "lose_fat" : "build_muscle", metric, baseline);
+    return g ? { baseline, g } : null;
+  }
+
+  function askLongTarget() {
+    say("ted", "What's the big-picture target — the ultimate number you're aiming for, whenever you get there?");
+    setStep("longTarget");
+  }
+
   function pickType(option: TypeOption) {
     setType(option.value);
     say("user", option.label);
+    if (option.value === "build_strength") {
+      say("ted", "Which lift do you want to get stronger at? Type your own — squat, bench, deadlift, pull-ups, anything.");
+      setStep("exercise");
+      return;
+    }
     say("ted", "Got it. What should we track it with?");
     setStep("metric");
   }
 
   function pickMetric(value: string) {
+    say("user", value);
+    if (value === SOMETHING_ELSE) {
+      say("ted", "What do you want to track? Name it and the unit — e.g. 5k time (min).");
+      setStep("customMetric");
+      return;
+    }
+    setMetric(value);
+    const needsBaseline =
+      (type === "lose_weight" || type === "build_muscle") &&
+      (value === "Weight (kg)" || value === "Body fat %") &&
+      baselineFor(value) === null;
+    if (needsBaseline) {
+      say(
+        "ted",
+        value === "Weight (kg)"
+          ? "What do you weigh right now, in kg? I'll use it to tell you what's realistic."
+          : "What's your body fat % right now? A rough number's fine — I'll use it to tell you what's realistic."
+      );
+      setStep("baseline");
+      return;
+    }
+    askLongTarget();
+  }
+
+  function submitCustomMetric() {
+    const value = textInput.trim();
+    if (!value) return;
     setMetric(value);
     say("user", value);
-    say("ted", "What's the big-picture target — the ultimate number you're aiming for, whenever you get there?");
+    setTextInput("");
+    askLongTarget();
+  }
+
+  function submitExercise() {
+    const lift = textInput.trim();
+    if (!lift) return;
+    setMetric(`${lift} (kg)`);
+    say("user", lift);
+    setTextInput("");
+    say(
+      "ted",
+      `Nice. Strength comes quickest early on — newer lifters can often add weight most weeks, experienced lifters a lot slower. What's the big-picture ${lift} number you're after, in kg?`
+    );
     setStep("longTarget");
+  }
+
+  function submitBaseline() {
+    const num = parseFloat(textInput);
+    if (!Number.isFinite(num) || num <= 0) return;
+    if (metric === "Weight (kg)") setTypedWeight(num);
+    else setTypedBodyFat(num);
+    say("user", `${num}${metric === "Weight (kg)" ? "kg" : "%"}`);
+    setTextInput("");
+    askLongTarget();
   }
 
   function submitLongTarget() {
@@ -173,23 +234,31 @@ export function GoalWizard({
     setTextInput("");
     say(
       "ted",
-      "Here's the thing though — we're not going to stare at that far-off number every day. Let's just focus on the next 6 weeks. What could you realistically hit by then?"
+      "Here's the thing though — we're not going to stare at that far-off number every day. Let's just focus on the next 6 weeks."
+    );
+    const guided = currentGuidance();
+    say(
+      "ted",
+      guided
+        ? `${guided.g.explanation} Pick one below or type your own.`
+        : "What could you realistically hit by then?"
     );
     setStep("microTarget");
   }
 
-  function submitMicroTarget() {
-    if (!textInput.trim()) return;
-    const value = textInput.trim();
-    const baseline = metric === "Weight (kg)" ? weightBaseline : metric === "Body fat %" ? bodyFatBaseline : null;
-    const result = sanityCheck(value, metric, baseline);
+  function submitMicroTarget(picked?: string) {
+    const value = (picked ?? textInput).trim();
+    if (!value) return;
 
     say("user", value);
     setTextInput("");
 
-    if (result.unrealistic) {
-      say("ted", `${result.note} Want to try a different number?`);
-      setRetryNote(result.note);
+    const guided = currentGuidance();
+    const num = parseFloat(value);
+    const note = guided && Number.isFinite(num) ? checkTarget(guided.baseline, num, guided.g) : null;
+    if (note) {
+      say("ted", `${note} Want to try a different number?`);
+      setRetryNote(note);
       return;
     }
 
@@ -248,6 +317,8 @@ export function GoalWizard({
         barriers: barriers || null,
         habits,
         why: whyValue || null,
+        baseline:
+          typedWeight !== null || typedBodyFat !== null ? { weightKg: typedWeight, bodyFatPct: typedBodyFat } : null,
       });
 
       if (result.error) {
@@ -290,7 +361,7 @@ export function GoalWizard({
 
       {step === "metric" && (
         <div className="flex flex-wrap gap-1.5">
-          {METRIC_OPTIONS.map((option) => (
+          {(type === "build_strength" ? [] : METRICS_BY_TYPE[type]).map((option) => (
             <button
               key={option}
               type="button"
@@ -300,6 +371,52 @@ export function GoalWizard({
               {option}
             </button>
           ))}
+        </div>
+      )}
+
+      {step === "exercise" && (
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={textInput}
+            onChange={(e) => setTextInput(e.target.value)}
+            placeholder="e.g. Back squat"
+            className="flex-1 bg-blueprint-raised border border-blueprint-line rounded-lg px-4 py-3 text-sm text-blueprint-ink placeholder:text-blueprint-muted focus:outline-none focus:border-blueprint-accent"
+          />
+          <button type="button" onClick={submitExercise} disabled={!textInput.trim()} className="fb-btn-primary disabled:opacity-50">
+            Send
+          </button>
+        </div>
+      )}
+
+      {step === "customMetric" && (
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={textInput}
+            onChange={(e) => setTextInput(e.target.value)}
+            placeholder="e.g. 5k time (min)"
+            className="flex-1 bg-blueprint-raised border border-blueprint-line rounded-lg px-4 py-3 text-sm text-blueprint-ink placeholder:text-blueprint-muted focus:outline-none focus:border-blueprint-accent"
+          />
+          <button type="button" onClick={submitCustomMetric} disabled={!textInput.trim()} className="fb-btn-primary disabled:opacity-50">
+            Send
+          </button>
+        </div>
+      )}
+
+      {step === "baseline" && (
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            inputMode="decimal"
+            value={textInput}
+            onChange={(e) => setTextInput(e.target.value)}
+            placeholder="e.g. 82"
+            className="flex-1 bg-blueprint-raised border border-blueprint-line rounded-lg px-4 py-3 text-sm text-blueprint-ink placeholder:text-blueprint-muted focus:outline-none focus:border-blueprint-accent"
+          />
+          <button type="button" onClick={submitBaseline} disabled={!textInput.trim()} className="fb-btn-primary disabled:opacity-50">
+            Send
+          </button>
         </div>
       )}
 
@@ -333,17 +450,39 @@ export function GoalWizard({
       )}
 
       {step === "microTarget" && (
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            value={textInput}
-            onChange={(e) => setTextInput(e.target.value)}
-            placeholder={retryNote ? "New 6-week target" : "e.g. 74"}
-            className="flex-1 bg-blueprint-raised border border-blueprint-line rounded-lg px-4 py-3 text-sm text-blueprint-ink placeholder:text-blueprint-muted focus:outline-none focus:border-blueprint-accent"
-          />
-          <button type="button" onClick={submitMicroTarget} disabled={!textInput.trim()} className="fb-btn-primary disabled:opacity-50">
-            Send
-          </button>
+        <div className="space-y-2">
+          {(() => {
+            const guided = currentGuidance();
+            if (!guided) return null;
+            const unit = guided.g.unit === "kg" ? "kg" : "%";
+            return (
+              <div className="flex flex-wrap gap-1.5">
+                {suggestedTargets(guided.baseline, guided.g).map((t) => (
+                  <button
+                    key={t.label}
+                    type="button"
+                    onClick={() => submitMicroTarget(String(t.value))}
+                    className="text-xs font-medium text-blueprint-ink border border-blueprint-accent rounded-lg px-3 py-1.5 hover:bg-blueprint-accent/15 transition"
+                  >
+                    {t.label}: {t.value}
+                    {unit}
+                  </button>
+                ))}
+              </div>
+            );
+          })()}
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={textInput}
+              onChange={(e) => setTextInput(e.target.value)}
+              placeholder={retryNote ? "New 6-week target" : "e.g. 74"}
+              className="flex-1 bg-blueprint-raised border border-blueprint-line rounded-lg px-4 py-3 text-sm text-blueprint-ink placeholder:text-blueprint-muted focus:outline-none focus:border-blueprint-accent"
+            />
+            <button type="button" onClick={() => submitMicroTarget()} disabled={!textInput.trim()} className="fb-btn-primary disabled:opacity-50">
+              Send
+            </button>
+          </div>
         </div>
       )}
 

@@ -16,6 +16,7 @@ Run in order — the filenames are numbered deliberately, don't reorder.
 | `0021_email_reminders.sql` | `email_log` — idempotency/send log for the daily reminders cron (Sunday check-in, goal check-in due, quiet-member alert) |
 | `0024_owner_only_writes.sql` | Only the owner creates/edits classes, sessions, workouts, templates, challenges, events; coaches are view-only and mark attendance on their own sessions |
 | `0025_no_booking_started_sessions.sql` | `book_session()` rejects classes that have already started (UK time) |
+| `0026_goal_type_build_muscle.sql` | Adds `build_muscle` to `goal_type` for the goal wizard's Build muscle option |
 
 ## Adding a new migration
 

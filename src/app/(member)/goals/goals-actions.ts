@@ -4,7 +4,7 @@ import { requireProfile } from "@/lib/auth";
 
 export type ActionResult = { error?: string };
 
-export type GoalType = "lose_weight" | "build_strength" | "general_fitness" | "event_prep";
+export type GoalType = "lose_weight" | "build_muscle" | "build_strength" | "general_fitness" | "event_prep";
 
 export type SaveGoalInput = {
   type: GoalType;
@@ -16,6 +16,8 @@ export type SaveGoalInput = {
   barriers: string | null;
   habits: string[];
   why: string | null;
+  /** Current weight/body fat the member typed into the wizard, if we had none. */
+  baseline?: { weightKg: number | null; bodyFatPct: number | null } | null;
 };
 
 /**
@@ -60,6 +62,16 @@ export async function saveGoal(input: SaveGoalInput): Promise<ActionResult> {
 
   if (error) {
     return { error: error.message };
+  }
+
+  // Log it as a body metric so Progress has a starting point. RLS
+  // ("members log own body metrics", 0017) scopes this to the member.
+  if (input.baseline && (input.baseline.weightKg !== null || input.baseline.bodyFatPct !== null)) {
+    await supabase.from("body_metrics").insert({
+      member_id: user.id,
+      weight_kg: input.baseline.weightKg,
+      body_fat_pct: input.baseline.bodyFatPct,
+    });
   }
 
   return {};

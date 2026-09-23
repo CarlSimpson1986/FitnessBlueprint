@@ -16,8 +16,9 @@ type ActiveGoal = {
 };
 
 const TYPE_LABEL: Record<GoalType, string> = {
-  lose_weight: "Lose weight",
-  build_strength: "Build strength",
+  lose_weight: "Lose fat",
+  build_muscle: "Build muscle",
+  build_strength: "Get stronger",
   general_fitness: "General fitness",
   event_prep: "Event prep",
 };
