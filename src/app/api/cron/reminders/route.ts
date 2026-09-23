@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isInternalAddress, sendEmail } from "@/lib/email";
-import { serverEnv } from "@/lib/env";
+import { publicEnv, serverEnv } from "@/lib/env";
 import { mondayOf, weekKey } from "@/lib/progress";
 import { toLocalDateKey } from "@/lib/format";
 import type { Database } from "@/types/database.types";
@@ -65,8 +65,20 @@ async function sendOnce(
   return "sent";
 }
 
+function checkinEmailHtml(name: string, url: string) {
+  return `
+<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;max-width:480px;margin:0 auto;color:#111">
+  <p style="font-size:16px">Hey ${name},</p>
+  <p style="font-size:16px">It's Sunday — time for your weekly check-in with Ted. One minute: how your week went, a win, and anything getting in the way. Your coach reads every one.</p>
+  <p style="margin:28px 0">
+    <a href="${url}" style="background:#2e9bf0;color:#000;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:8px;display:inline-block">Do my check-in</a>
+  </p>
+  <p style="font-size:13px;color:#666">Fitness Blueprint</p>
+</div>`.trim();
+}
+
 function firstName(fullName: string) {
-  return fullName.split(" ")[0];
+  return fullName.split(" ")[0] ?? "there";
 }
 
 /**
@@ -124,27 +136,29 @@ export async function GET(request: Request) {
   }
 
   // ---------------------------------------------------------------------
-  // 2. Sunday check-in reminder — members with no body_metrics row yet
-  // this week (Mon-start).
+  // 2. Sunday weekly check-in — every member who hasn't done this week's
+  // check-in with Ted (weekly_checkins, 0028) yet. The home page prompts
+  // them too, Sunday–Wednesday; this email is the nudge to open the app.
   // ---------------------------------------------------------------------
   if (dayOfWeek === 0) {
-    const weekStartKey = toLocalDateKey(mondayOf(now));
-    const [{ data: members }, { data: loggedRows }] = await Promise.all([
+    const weekOf = toLocalDateKey(now); // the Sunday this check-in is for
+    const checkinUrl = `${publicEnv.NEXT_PUBLIC_SITE_URL}/check-in`;
+    const [{ data: members }, { data: doneRows }] = await Promise.all([
       supabase.from("profiles").select("id, email, full_name").eq("role", "member"),
-      supabase.from("body_metrics").select("member_id").gte("recorded_at", `${weekStartKey}T00:00:00Z`),
+      supabase.from("weekly_checkins").select("member_id").eq("week_of", weekOf),
     ]);
-    const loggedMemberIds = new Set((loggedRows ?? []).map((r) => r.member_id));
+    const doneMemberIds = new Set((doneRows ?? []).map((r) => r.member_id));
 
     for (const member of members ?? []) {
-      if (loggedMemberIds.has(member.id) || !member.email) continue;
+      if (doneMemberIds.has(member.id) || !member.email || isInternalAddress(member.email)) continue;
 
       const outcome = await sendOnce(
         supabase,
-        { recipient_id: member.id, email_type: "sunday_checkin_reminder", reference_key: weekStartKey },
+        { recipient_id: member.id, email_type: "sunday_checkin_reminder", reference_key: weekOf },
         {
-            to: member.email,
-            subject: "Time for your weekly check-in",
-            html: `<p>Hey ${firstName(member.full_name)},</p><p>Quick one — log this week's weight, waist, or body fat % in the app whenever you've got a moment.</p>`,
+          to: member.email,
+          subject: "Your weekly check-in with Ted",
+          html: checkinEmailHtml(firstName(member.full_name), checkinUrl),
         }
       );
       if (outcome === "sent") results.sundayReminders++;
@@ -164,9 +178,10 @@ export async function GET(request: Request) {
     // Every owner-role profile, not just one — CLAUDE.md's role model
     // describes a single owner, but the app doesn't actually constrain
     // that at the DB level, so this stays correct if it's ever untrue.
-    const [{ data: members }, { data: recentLogs }, { data: owners }] = await Promise.all([
+    const [{ data: members }, { data: recentLogs }, { data: recentCheckins }, { data: owners }] = await Promise.all([
       supabase.from("profiles").select("id, full_name, email").eq("role", "member"),
       supabase.from("body_metrics").select("member_id, recorded_at").gte("recorded_at", `${week2Start}T00:00:00Z`),
+      supabase.from("weekly_checkins").select("member_id, week_of").gte("week_of", week2Start),
       supabase.from("profiles").select("id, email, full_name").eq("role", "owner"),
     ]);
 
@@ -181,6 +196,13 @@ export async function GET(request: Request) {
         const set = weeksLoggedByMember.get(log.member_id) ?? new Set<string>();
         set.add(wk);
         weeksLoggedByMember.set(log.member_id, set);
+      }
+      // A weekly check-in (dated by its Sunday) counts for that Mon–Sun week.
+      for (const checkin of recentCheckins ?? []) {
+        const wk = weekKey(new Date(`${checkin.week_of}T12:00:00`));
+        const set = weeksLoggedByMember.get(checkin.member_id) ?? new Set<string>();
+        set.add(wk);
+        weeksLoggedByMember.set(checkin.member_id, set);
       }
 
       for (const member of members ?? []) {

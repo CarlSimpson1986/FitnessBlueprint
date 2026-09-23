@@ -65,6 +65,18 @@ export default async function AdminPage() {
           )}
 
           <Link
+            href="/admin/check-ins"
+            className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
+          >
+            <p className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-2">
+              Weekly check-ins
+            </p>
+            <p className="text-blueprint-muted text-sm leading-relaxed">
+              How members&apos; weeks went — ratings, wins, struggles, notes for the coach.
+            </p>
+          </Link>
+
+          <Link
             href="/admin/program-calendar"
             className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
           >

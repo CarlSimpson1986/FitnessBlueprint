@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
@@ -7,6 +8,7 @@ import { FeedbackList } from "./FeedbackList";
 import { EventsList, type EventItem } from "./EventsList";
 import { ReadinessCheckin } from "./ReadinessCheckin";
 import { TedWalkaround } from "@/components/TedWalkaround";
+import { openCheckinWeek } from "@/lib/weekly-checkin";
 
 const FEEDBACK_LOOKBACK_DAYS = 14;
 
@@ -153,6 +155,18 @@ export default async function HomePage() {
       .maybeSingle(),
   ]);
 
+  // Sunday–Wednesday: Ted prompts this week's check-in until it's done.
+  const checkinWeek = openCheckinWeek();
+  const { data: thisWeeksCheckin } = checkinWeek
+    ? await supabase
+        .from("weekly_checkins")
+        .select("id")
+        .eq("member_id", user.id)
+        .eq("week_of", checkinWeek)
+        .maybeSingle()
+    : { data: null };
+  const weeklyCheckinOpen = checkinWeek !== null && !thisWeeksCheckin;
+
   const hasSetGoals = !!anyGoalRow;
   const hasLoggedMetrics = !!anyBodyMetricRow;
   const showOnboarding = !hasSetGoals || !hasLoggedMetrics;
@@ -201,6 +215,23 @@ export default async function HomePage() {
               </Link>
             </div>
           </div>
+        )}
+
+        {weeklyCheckinOpen && (
+          <Link href="/check-in" className="fb-card-accent mb-4 flex items-center gap-3">
+            <Image
+              src="/coach-ted-avatar.png"
+              alt=""
+              width={36}
+              height={36}
+              className="rounded-full object-cover shrink-0"
+            />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-blueprint-ink font-medium">Your weekly check-in&apos;s ready</p>
+              <p className="text-xs text-blueprint-muted mt-0.5">One minute with Ted — how was your week?</p>
+            </div>
+            <span className="text-xs text-blueprint-accent whitespace-nowrap">Check in →</span>
+          </Link>
         )}
 
         {checkinDue && (

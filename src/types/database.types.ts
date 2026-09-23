@@ -822,6 +822,48 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_checkins: {
+        Row: {
+          id: string
+          member_id: string
+          week_of: string
+          weight_kg: number | null
+          energy: number
+          sleep: number
+          nutrition: number
+          win: string | null
+          struggle: string | null
+          note_for_coach: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          member_id: string
+          week_of: string
+          weight_kg?: number | null
+          energy: number
+          sleep: number
+          nutrition: number
+          win?: string | null
+          struggle?: string | null
+          note_for_coach?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          member_id?: string
+          week_of?: string
+          weight_kg?: number | null
+          energy?: number
+          sleep?: number
+          nutrition?: number
+          win?: string | null
+          struggle?: string | null
+          note_for_coach?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       template_exercise_sets: {
         Row: {
           id: string

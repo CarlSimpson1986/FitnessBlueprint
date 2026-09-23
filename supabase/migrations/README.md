@@ -18,6 +18,7 @@ Run in order — the filenames are numbered deliberately, don't reorder.
 | `0025_no_booking_started_sessions.sql` | `book_session()` rejects classes that have already started (UK time) |
 | `0026_goal_type_build_muscle.sql` | Adds `build_muscle` to `goal_type` for the goal wizard's Build muscle option |
 | `0027_set_intensity.sql` | Per-set `intensity_type` (%1RM / RPE) + `intensity_value` on session and template sets |
+| `0028_weekly_checkins.sql` | Sunday weekly check-in with Ted (`weekly_checkins`) + RLS: members own rows, coaches/owner read |
 
 ## Adding a new migration
 
