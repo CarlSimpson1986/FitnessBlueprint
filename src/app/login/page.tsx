@@ -17,7 +17,9 @@ export default function LoginPage() {
 function LoginForm() {
   const router = useRouter();
   const callbackFailed = useSearchParams().get("error") === "auth_callback_failed";
-  const [mode, setMode] = useState<"magic-link" | "password">("magic-link");
+  // Password first: new members set one at /signup, and staff set one in
+  // Account settings. Magic link is one tap away for anyone without one.
+  const [mode, setMode] = useState<"magic-link" | "password">("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
@@ -110,7 +112,7 @@ function LoginForm() {
         <p className="text-blueprint-muted mb-8 text-sm leading-relaxed">
           {mode === "magic-link"
             ? "Enter your email and we'll send you a link to sign in — no password needed."
-            : "Sign in with the password the gym gave you."}
+            : "Sign in with your email and password."}
         </p>
 
         {callbackFailed && status === "idle" && (

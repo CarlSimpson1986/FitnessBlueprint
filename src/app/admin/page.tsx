@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireCoachOrOwner } from "@/lib/auth";
+import { signOut } from "@/app/(member)/account/actions";
 import { TestAccountSwitcher } from "@/components/TestAccountSwitcher";
 import { DEMO_EMAIL_PATTERN } from "@/lib/demo-data";
 import { DemoDataCard } from "./demo-data/DemoDataCard";
@@ -16,9 +17,22 @@ export default async function AdminPage() {
   return (
     <main className="min-h-screen px-6 py-16">
       <div className="max-w-2xl mx-auto">
-        <p className="fb-eyebrow mb-1">
-          Admin
-        </p>
+        <div className="flex items-center justify-between mb-1">
+          <p className="fb-eyebrow">Admin</p>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/account/settings"
+              className="text-xs text-blueprint-muted hover:text-blueprint-accent transition"
+            >
+              Account settings
+            </Link>
+            <form action={signOut}>
+              <button type="submit" className="text-xs text-blueprint-muted hover:text-red-400 transition">
+                Sign out
+              </button>
+            </form>
+          </div>
+        </div>
         <h1 className="text-2xl font-semibold text-blueprint-ink mb-10">
           {profile.role === "owner" ? "Everything, in one place" : "Coach tools"}
         </h1>
