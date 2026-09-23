@@ -1,9 +1,16 @@
 import Link from "next/link";
 import { requireCoachOrOwner } from "@/lib/auth";
 import { TestAccountSwitcher } from "@/components/TestAccountSwitcher";
+import { DEMO_EMAIL_PATTERN } from "@/lib/demo-data";
+import { DemoDataCard } from "./demo-data/DemoDataCard";
 
 export default async function AdminPage() {
-  const { profile } = await requireCoachOrOwner();
+  const { supabase, profile } = await requireCoachOrOwner();
+  const { count: demoProfileCount } =
+    profile.role === "owner"
+      ? await supabase.from("profiles").select("id", { count: "exact", head: true }).like("email", DEMO_EMAIL_PATTERN)
+      : { count: 0 };
+  const demoLoaded = (demoProfileCount ?? 0) > 0;
 
   return (
     <main className="min-h-screen px-6 py-16">
@@ -78,6 +85,8 @@ export default async function AdminPage() {
           </Link>
 
           {profile.role === "owner" && <TestAccountSwitcher />}
+
+          {profile.role === "owner" && <DemoDataCard loaded={demoLoaded} />}
 
           {profile.role === "owner" && (
             <Link

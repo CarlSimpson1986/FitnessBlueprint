@@ -1,12 +1,12 @@
 "use server";
 
-import { randomBytes } from "crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { requireOwner } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { OWNER_RETURN_COOKIE, TEST_ACCOUNTS, type TestAccountKind } from "@/lib/test-accounts";
+import { ensureTestAccount } from "@/lib/test-accounts-server";
 
 export type ActionResult = { error?: string };
 
@@ -40,36 +40,8 @@ async function signInAsTestAccount(
   }
 
   const admin = createAdminClient();
-
-  const { data: existing } = await admin
-    .from("profiles")
-    .select("id")
-    .eq("email", account.email)
-    .maybeSingle();
-
-  if (!existing) {
-    const { data: created, error: createError } = await admin.auth.admin.createUser({
-      email: account.email,
-      // Never shown or used — the only way in is this switch.
-      password: randomBytes(24).toString("base64url"),
-      email_confirm: true,
-      app_metadata: { test_account: kind },
-    });
-    if (createError || !created.user) {
-      return { error: createError?.message ?? "Could not create the test account." };
-    }
-
-    const { error: profileError } = await admin.from("profiles").insert({
-      id: created.user.id,
-      email: account.email,
-      full_name: account.fullName,
-      role: account.role,
-      coach_access_level: account.role === "coach" ? "full" : null,
-    });
-    if (profileError) {
-      return { error: `Test account created but profile setup failed: ${profileError.message}` };
-    }
-  }
+  const ensured = await ensureTestAccount(admin, kind);
+  if (ensured.error) return { error: ensured.error };
 
   const { data: link, error: linkError } = await admin.auth.admin.generateLink({
     type: "magiclink",
