@@ -8,6 +8,11 @@
  * changes (use the tester: same-meaning pairs should clear it, related-
  * but-different pairs shouldn't).
  */
-// Temporarily near-exact while the SEMANTIC_SIMILARITY scale is calibrated:
-// with it, different questions scored 90-92% (protein for fat loss vs muscle).
-export const CACHE_SIMILARITY_THRESHOLD = 0.99;
+// Calibrated 2026-09-23 with SEMANTIC_SIMILARITY embeddings via the
+// tester: rewordings of the same question scored 94-97%; related but
+// different questions 90-92% (protein for fat loss vs muscle 92, advanced
+// vs beginner rest days 91, caffeine vs creatine 90, warm-up for running
+// vs squats 90). 0.95 reuses clear rewordings and regenerates anything
+// borderline — a missed reuse costs a fraction of a penny, a wrong one
+// gives a member the wrong advice.
+export const CACHE_SIMILARITY_THRESHOLD = 0.95;
