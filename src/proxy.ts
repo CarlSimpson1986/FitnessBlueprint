@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 import { publicEnv, serverEnv } from "@/lib/env";
+import { OWNER_RETURN_COOKIE } from "@/lib/test-accounts";
 
 /**
  * Runs on every request (except static assets — see `matcher` below).
@@ -17,6 +18,10 @@ import { publicEnv, serverEnv } from "@/lib/env";
  *     a valid (or correctly expired) user — this is what makes RLS work
  *     reliably rather than intermittently.
  *  3. Attach security headers to every response, including API routes.
+ *  4. While the owner is in "view as" (signed into a test account), send
+ *     top-level page loads to /view-as so the app shows inside the phone
+ *     frame. Requests from inside that frame (Sec-Fetch-Dest: iframe) and
+ *     client-side fetches pass through untouched.
  *
  * Named proxy.ts, not middleware.ts — the `middleware` file convention is
  * deprecated in this Next.js version, renamed to `proxy` (see
@@ -37,6 +42,19 @@ export async function proxy(request: NextRequest) {
   if (serverEnv().VERCEL_ENV === "production" && !isCoachHost && host !== canonicalHost) {
     const url = new URL(request.nextUrl.pathname + request.nextUrl.search, publicEnv.NEXT_PUBLIC_SITE_URL);
     return NextResponse.redirect(url, 308);
+  }
+
+  const { pathname } = request.nextUrl;
+  if (
+    request.cookies.has(OWNER_RETURN_COOKIE) &&
+    request.headers.get("sec-fetch-dest") === "document" &&
+    !pathname.startsWith("/view-as") &&
+    !pathname.startsWith("/auth") &&
+    !pathname.startsWith("/api")
+  ) {
+    const url = new URL("/view-as", request.url);
+    url.searchParams.set("path", pathname + request.nextUrl.search);
+    return NextResponse.redirect(url);
   }
 
   const sessionResponse = await updateSession(request);
@@ -62,8 +80,9 @@ export async function proxy(request: NextRequest) {
 }
 
 function applySecurityHeaders(response: NextResponse) {
-  // Prevents the app being framed by another site (clickjacking).
-  response.headers.set("X-Frame-Options", "DENY");
+  // Prevents the app being framed by another site (clickjacking). Same-
+  // origin framing is allowed only for /view-as's phone preview.
+  response.headers.set("X-Frame-Options", "SAMEORIGIN");
 
   // Stops the browser MIME-sniffing responses into something executable.
   response.headers.set("X-Content-Type-Options", "nosniff");
@@ -97,11 +116,11 @@ function applySecurityHeaders(response: NextResponse) {
     "img-src 'self' data: blob: https://*.supabase.co",
     "font-src 'self' data:",
     "connect-src 'self' https://*.supabase.co https://api.stripe.com",
-    "frame-src https://js.stripe.com https://hooks.stripe.com",
+    "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
-    "frame-ancestors 'none'",
+    "frame-ancestors 'self'",
   ].join("; ");
   response.headers.set("Content-Security-Policy", csp);
 }

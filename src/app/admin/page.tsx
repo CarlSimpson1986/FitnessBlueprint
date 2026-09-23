@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireCoachOrOwner } from "@/lib/auth";
+import { TestAccountSwitcher } from "@/components/TestAccountSwitcher";
 
 export default async function AdminPage() {
   const { profile } = await requireCoachOrOwner();
@@ -75,6 +76,8 @@ export default async function AdminPage() {
               Post races, socials, and other gym events.
             </p>
           </Link>
+
+          {profile.role === "owner" && <TestAccountSwitcher />}
 
           {profile.role === "owner" && (
             <Link
