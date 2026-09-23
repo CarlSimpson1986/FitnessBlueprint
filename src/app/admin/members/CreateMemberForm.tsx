@@ -8,6 +8,7 @@ export function CreateMemberForm() {
   const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [role, setRole] = useState<"member" | "coach" | "owner">("member");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
@@ -21,13 +22,14 @@ export function CreateMemberForm() {
       let succeeded = false;
 
       try {
-        const result = await createMemberAccount(fullName, email);
+        const result = await createMemberAccount(fullName, email, role);
         if (result.error) {
           setError(result.error);
         } else if (result.password) {
           setGeneratedPassword(result.password);
           setFullName("");
           setEmail("");
+          setRole("member");
           succeeded = true;
         }
       } catch {
@@ -48,9 +50,9 @@ export function CreateMemberForm() {
         Create account manually
       </h2>
       <p className="text-xs text-blueprint-muted mb-4 leading-relaxed">
-        Use this if a member&apos;s email isn&apos;t working. Give them the password shown below
-        after creating — they&apos;ll be forced to set their own on first login. It&apos;s only shown
-        once, so copy it before doing anything else.
+        For staff (coaches, owners) or a member whose email isn&apos;t working. Give them the
+        password shown below after creating — they&apos;ll be forced to set their own on first
+        login. It&apos;s only shown once, so copy it before doing anything else.
       </p>
       <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2">
         <input
@@ -69,6 +71,15 @@ export function CreateMemberForm() {
           placeholder="Email"
           className="flex-1 bg-blueprint-raised border border-blueprint-line rounded px-3 py-2 text-sm text-blueprint-ink placeholder:text-blueprint-muted/60 focus:outline-none focus:border-blueprint-accent"
         />
+        <select
+          value={role}
+          onChange={(event) => setRole(event.target.value as "member" | "coach" | "owner")}
+          className="bg-blueprint-raised border border-blueprint-line rounded px-3 py-2 text-sm text-blueprint-ink focus:outline-none focus:border-blueprint-accent"
+        >
+          <option value="member">Member</option>
+          <option value="coach">Coach</option>
+          <option value="owner">Owner</option>
+        </select>
         <button
           type="submit"
           disabled={isPending}

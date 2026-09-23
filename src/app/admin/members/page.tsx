@@ -7,7 +7,7 @@ import { ResetPasswordButton } from "./ResetPasswordButton";
 export default async function OwnerMembersPage() {
   const { supabase } = await requireOwner();
 
-  const [{ data: members }, { data: plans }, { data: memberships }] = await Promise.all([
+  const [{ data: members }, { data: plans }, { data: memberships }, { data: staff }] = await Promise.all([
     supabase
       .from("profiles")
       .select("id, full_name, phone, email")
@@ -19,6 +19,14 @@ export default async function OwnerMembersPage() {
       .eq("is_active", true)
       .order("name"),
     supabase.from("member_memberships").select("member_id, plan_id, status").eq("status", "active"),
+    supabase
+      .from("profiles")
+      .select("id, full_name, email, role")
+      .in("role", ["owner", "coach"])
+      // View-as test accounts are managed by the switch, not by hand.
+      .not("email", "like", "%.invalid")
+      .order("role", { ascending: false })
+      .order("full_name"),
   ]);
 
   const planById = new Map((plans ?? []).map((p) => [p.id, p]));
@@ -43,6 +51,29 @@ export default async function OwnerMembersPage() {
         </p>
 
         <CreateMemberForm />
+
+        <p className="fb-eyebrow mb-3">Staff ({(staff ?? []).length})</p>
+        <ul className="space-y-2 mb-10">
+          {(staff ?? []).map((person) => (
+            <li
+              key={person.id}
+              className="flex items-center justify-between gap-4 border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-4 py-3"
+            >
+              <div>
+                <p className="text-blueprint-ink font-medium">
+                  {person.full_name}{" "}
+                  <span className="text-[10px] font-mono uppercase tracking-wide text-blueprint-accent">
+                    {person.role}
+                  </span>
+                </p>
+                <p className="text-xs text-blueprint-muted mt-1">{person.email}</p>
+              </div>
+              <ResetPasswordButton memberId={person.id} />
+            </li>
+          ))}
+        </ul>
+
+        <p className="fb-eyebrow mb-3">Members ({(members ?? []).length})</p>
 
         {(members ?? []).length === 0 && (
           <p className="text-blueprint-muted text-sm">

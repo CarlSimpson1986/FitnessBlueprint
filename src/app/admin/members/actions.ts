@@ -24,9 +24,16 @@ export type ResetPasswordResult = { error?: string; password?: string };
  */
 export async function createMemberAccount(
   fullName: string,
-  email: string
+  email: string,
+  role: "member" | "coach" | "owner" = "member"
 ): Promise<CreateAccountResult> {
   await requireOwner();
+
+  // Staff accounts (Guy, coaches) are created here too — owner-only, same
+  // one-time-password + forced-change flow as members.
+  if (!["member", "coach", "owner"].includes(role)) {
+    return { error: "Invalid role." };
+  }
 
   const trimmedName = fullName.trim();
   const trimmedEmail = email.trim();
@@ -56,7 +63,8 @@ export async function createMemberAccount(
     id: data.user.id,
     email: trimmedEmail,
     full_name: trimmedName,
-    role: "member",
+    role,
+    coach_access_level: role === "coach" ? "full" : null,
   });
 
   if (profileError) {
