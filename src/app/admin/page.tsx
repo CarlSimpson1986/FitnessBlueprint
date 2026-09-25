@@ -5,6 +5,8 @@ import { TestAccountSwitcher } from "@/components/TestAccountSwitcher";
 import { DEMO_EMAIL_PATTERN } from "@/lib/demo-data";
 import { DemoDataCard } from "./demo-data/DemoDataCard";
 import { EmailCheckCard } from "./email-check/EmailCheckCard";
+import { OwnerHighlights } from "./OwnerHighlights";
+import { fetchOwnerHighlights } from "@/lib/owner-highlights";
 
 export default async function AdminPage() {
   const { supabase, profile } = await requireCoachOrOwner();
@@ -13,6 +15,7 @@ export default async function AdminPage() {
       ? await supabase.from("profiles").select("id", { count: "exact", head: true }).like("email", DEMO_EMAIL_PATTERN)
       : { count: 0 };
   const demoLoaded = (demoProfileCount ?? 0) > 0;
+  const highlights = profile.role === "owner" ? await fetchOwnerHighlights(supabase) : null;
 
   return (
     <main className="min-h-screen px-6 py-16">
@@ -36,6 +39,8 @@ export default async function AdminPage() {
         <h1 className="text-2xl font-semibold text-blueprint-ink mb-10">
           {profile.role === "owner" ? "Everything, in one place" : "Coach tools"}
         </h1>
+
+        {highlights && <OwnerHighlights data={highlights} />}
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <Link
