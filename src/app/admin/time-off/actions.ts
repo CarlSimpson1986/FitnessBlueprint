@@ -27,3 +27,15 @@ export async function deleteTimeOff(id: string): Promise<ActionResult> {
   const { error } = await supabase.from("coach_time_off").delete().eq("id", id);
   return error ? { error: error.message } : {};
 }
+
+/**
+ * Hands a session to a covering coach by making them its coach — the
+ * session then drops off the "needs cover" list. RLS: "owner manages
+ * sessions" (0024).
+ */
+export async function assignCover(sessionId: string, coachId: string): Promise<ActionResult> {
+  const { supabase } = await requireOwner();
+  if (!coachId) return { error: "Pick a coach." };
+  const { error } = await supabase.from("sessions").update({ coach_id: coachId }).eq("id", sessionId);
+  return error ? { error: error.message } : {};
+}

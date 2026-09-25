@@ -132,6 +132,10 @@ body {
   .owner-shell main {
     padding: 2.5rem 3rem 4rem;
   }
+  /* The sidebar replaces each page's "← Admin" back link. */
+  .owner-shell main > .mx-auto > a[href="/admin"]:first-child {
+    display: none;
+  }
   /* Line pages up against the sidebar instead of floating mid-screen. */
   .owner-shell main > .mx-auto {
     margin-left: 0;

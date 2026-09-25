@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireOwner } from "@/lib/auth";
 import { formatSessionDate, formatSessionTime } from "@/lib/format";
 import { fetchClassesByCoach, fetchTimeOff, formatRange, isOff } from "@/lib/time-off";
-import { AddTimeOffForm, DeleteTimeOffButton } from "./TimeOffClient";
+import { AddTimeOffForm, AssignCoverSelect, DeleteTimeOffButton } from "./TimeOffClient";
 
 /**
  * Owner records coach holidays (coach_time_off, 0032 — "owner manages
@@ -37,15 +37,13 @@ export default async function TimeOffPage() {
   const needingCover = (t: (typeof timeOff)[number]) =>
     (sessions ?? []).filter((s) => s.coach_id === t.coach_id && s.session_date >= t.starts_on && s.session_date <= t.ends_on);
 
-  const coverFor = (session: { coach_id: string; session_date: string; template_id: string }) =>
-    (coaches ?? [])
-      .filter(
-        (c) =>
-          c.id !== session.coach_id &&
-          classesByCoach.get(c.id)?.has(session.template_id) &&
-          !isOff(timeOff, c.id, session.session_date)
-      )
-      .map((c) => c.full_name);
+  // Everyone who could take a session: not its current coach and not off
+  // that day — split into those who already teach the class and the rest.
+  const coverFor = (session: { coach_id: string; session_date: string; template_id: string }) => {
+    const free = (coaches ?? []).filter((c) => c.id !== session.coach_id && !isOff(timeOff, c.id, session.session_date));
+    const teaches = (c: { id: string }) => classesByCoach.get(c.id)?.has(session.template_id) ?? false;
+    return { suggested: free.filter(teaches), others: free.filter((c) => !teaches(c)) };
+  };
 
   return (
     <main className="min-h-screen px-6 py-16">
@@ -56,8 +54,9 @@ export default async function TimeOffPage() {
         <p className="fb-eyebrow mb-1">Owner</p>
         <h1 className="text-2xl font-semibold text-blueprint-ink mb-2">Coach time off</h1>
         <p className="text-blueprint-muted mb-10 text-sm leading-relaxed">
-          Holidays and days off. Each one lists the sessions that need cover, with coaches who teach
-          that class and are free. The dashboard shows who&apos;s off in the next two weeks, and the
+          Holidays and days off. Each one lists the sessions that need cover — pick a coach from
+          the dropdown to hand them the session. Suggested coaches already teach that class and are
+          free that day. The dashboard shows who&apos;s off in the next two weeks, and the
           program calendar flags those sessions too.
         </p>
 
@@ -95,12 +94,17 @@ export default async function TimeOffPage() {
                       {clashes.map((s) => {
                         const cover = coverFor(s);
                         return (
-                          <li key={s.id} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 text-sm">
+                          <li key={s.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm">
                             <Link href={`/admin/program-calendar/sessions/${s.id}/workout`} className="text-blueprint-ink hover:text-blueprint-accent">
                               {formatSessionDate(s.session_date)} · {formatSessionTime(s.start_time)} · {className.get(s.template_id) ?? "Session"}
                             </Link>
-                            <span className="text-xs text-blueprint-muted">
-                              {cover.length ? `Could cover: ${cover.join(", ")}` : "No other coach teaches this class yet"}
+                            <span className="flex items-center gap-3">
+                              <span className="text-xs text-blueprint-muted">
+                                {cover.suggested.length
+                                  ? `Suggested: ${cover.suggested.map((c) => c.full_name).join(", ")}`
+                                  : "No other coach teaches this class yet"}
+                              </span>
+                              <AssignCoverSelect sessionId={s.id} suggested={cover.suggested} others={cover.others} />
                             </span>
                           </li>
                         );

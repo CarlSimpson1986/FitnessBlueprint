@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { addTimeOff, deleteTimeOff } from "./actions";
+import { addTimeOff, assignCover, deleteTimeOff } from "./actions";
 
 const inputClass =
   "bg-blueprint-raised border border-blueprint-line rounded px-3 py-2 text-sm text-blueprint-ink focus:outline-none focus:border-blueprint-accent";
@@ -101,6 +101,71 @@ export function DeleteTimeOffButton({ id }: { id: string }) {
       <button type="button" onClick={() => setConfirming(false)} className="text-blueprint-muted">
         Cancel
       </button>
+    </span>
+  );
+}
+
+/**
+ * Pick who covers a session. Suggested coaches (teach this class, not off
+ * that day) are listed first; everyone else who isn't off follows.
+ */
+export function AssignCoverSelect({
+  sessionId,
+  suggested,
+  others,
+}: {
+  sessionId: string;
+  suggested: { id: string; full_name: string }[];
+  others: { id: string; full_name: string }[];
+}) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  function pick(coachId: string) {
+    if (!coachId) return;
+    setError(null);
+    startTransition(async () => {
+      const result = await assignCover(sessionId, coachId);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      startTransition(() => router.refresh());
+    });
+  }
+
+  return (
+    <span className="flex flex-col items-end gap-0.5">
+      <select
+        defaultValue=""
+        disabled={isPending}
+        onChange={(e) => pick(e.target.value)}
+        className="bg-blueprint-raised border border-blueprint-line rounded px-2 py-1 text-xs text-blueprint-ink focus:outline-none focus:border-blueprint-accent disabled:opacity-50"
+      >
+        <option value="" disabled>
+          {isPending ? "Assigning…" : "Assign cover…"}
+        </option>
+        {suggested.length > 0 && (
+          <optgroup label="Teaches this class">
+            {suggested.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.full_name}
+              </option>
+            ))}
+          </optgroup>
+        )}
+        {others.length > 0 && (
+          <optgroup label="Other coaches">
+            {others.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.full_name}
+              </option>
+            ))}
+          </optgroup>
+        )}
+      </select>
+      {error && <span className="text-[11px] text-red-400">{error}</span>}
     </span>
   );
 }
