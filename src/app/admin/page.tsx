@@ -147,7 +147,7 @@ export default async function AdminPage() {
                 Ted&apos;s answers
               </p>
               <p className="text-blueprint-muted text-sm leading-relaxed">
-                Review, edit or write the answers Coach Ted reuses.
+                Write answers for Coach Ted to follow and tailor.
               </p>
             </Link>
           )}

@@ -74,8 +74,8 @@ export function TedChat({ initialMessages }: { initialMessages: Message[] }) {
         {messages.length === 0 && (
           <div className="fb-card">
             <p className="text-blueprint-muted text-sm">
-              Ask Coach Ted anything about training, recovery, or nutrition principles.
-              He&apos;ll always point you back to your coach for anything specific to you.
+              Ask Coach Ted anything about training, recovery or nutrition. He knows your goals and
+              progress, so his answers are about you, and he may ask you a quick question first.
             </p>
           </div>
         )}

@@ -56,11 +56,6 @@ function AnswerCard({ row }: { row: TedAnswerRow }) {
       <div className="flex items-start justify-between gap-3 mb-2">
         <p className="text-blueprint-ink font-medium">{row.question}</p>
         <div className="flex gap-1.5 shrink-0">
-          {row.is_pinned && (
-            <span className="text-[10px] font-mono uppercase tracking-wide text-blueprint-accent border border-blueprint-accent rounded px-1.5 py-0.5">
-              Pinned
-            </span>
-          )}
           {row.is_flagged && (
             <span className="text-[10px] font-mono uppercase tracking-wide text-red-400 border border-red-400/60 rounded px-1.5 py-0.5">
               Hidden
@@ -74,12 +69,6 @@ function AnswerCard({ row }: { row: TedAnswerRow }) {
       ) : (
         <p className="text-sm text-blueprint-muted whitespace-pre-wrap">{row.answer}</p>
       )}
-
-      <p className="text-[11px] text-blueprint-muted mt-2">
-        Reused {row.hit_count} time{row.hit_count === 1 ? "" : "s"}
-        {row.last_served_at &&
-          ` · last served ${new Date(row.last_served_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`}
-      </p>
 
       <div className="flex flex-wrap gap-3 mt-3 text-xs font-mono uppercase tracking-wide">
         {editing ? (
@@ -101,14 +90,6 @@ function AnswerCard({ row }: { row: TedAnswerRow }) {
             Edit
           </button>
         )}
-        <button
-          type="button"
-          disabled={isPending}
-          onClick={() => run(() => setTedAnswerFlags(row.id, { is_pinned: !row.is_pinned }))}
-          className="text-blueprint-muted hover:text-blueprint-ink"
-        >
-          {row.is_pinned ? "Unpin" : "Pin"}
-        </button>
         <button
           type="button"
           disabled={isPending}
@@ -146,7 +127,7 @@ function AddAnswer() {
     <div className="fb-card space-y-2">
       <p className="text-blueprint-ink font-medium">Write Ted&apos;s answer yourself</p>
       <p className="text-xs text-blueprint-muted">
-        Saved as pinned. Ted gives this answer to any member asking something with the same meaning.
+        When a member asks something with the same meaning, Ted follows your answer and tailors it to them.
       </p>
       <input value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="The question, e.g. Should I train if I'm sore?" className={fieldClass} />
       <textarea rows={5} value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Your answer, in Ted's voice" className={fieldClass} />
@@ -171,10 +152,10 @@ function SimilarityTester({ threshold }: { threshold: number }) {
 
   return (
     <div className="fb-card space-y-2">
-      <p className="text-blueprint-ink font-medium">Would Ted reuse an answer for this?</p>
+      <p className="text-blueprint-ink font-medium">Would Ted use one of your answers for this?</p>
       <p className="text-xs text-blueprint-muted">
-        Type a question a member might ask. Anything scoring {Math.round(threshold * 100)}% or more gets that saved
-        answer instantly.
+        Type a question a member might ask. Anything scoring {Math.round(threshold * 100)}% or more gets your
+        answer handed to Ted to follow.
       </p>
       <div className="flex gap-2">
         <input value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="e.g. How much protein do I need?" className={fieldClass} />
@@ -208,7 +189,7 @@ function SimilarityTester({ threshold }: { threshold: number }) {
                     "shrink-0 font-mono " + (m.similarity >= threshold ? "text-blueprint-accent" : "text-blueprint-muted")
                   }
                 >
-                  {Math.round(m.similarity * 100)}%{m.similarity >= threshold ? " · reused" : ""}
+                  {Math.round(m.similarity * 100)}%{m.similarity >= threshold ? " · used" : ""}
                 </span>
               </li>
             ))}
@@ -243,11 +224,11 @@ export function TedAnswersClient({ rows, threshold }: { rows: TedAnswerRow[]; th
       <AddAnswer />
       <div>
         <div className="flex items-center justify-between mb-3">
-          <p className="fb-eyebrow">Saved answers ({rows.length})</p>
+          <p className="fb-eyebrow">Your answers ({rows.length})</p>
           <ReindexButton />
         </div>
         {rows.length === 0 ? (
-          <p className="text-sm text-blueprint-muted">None yet — every new question Ted answers lands here.</p>
+          <p className="text-sm text-blueprint-muted">None yet. Write one above.</p>
         ) : (
           <ul className="space-y-3">
             {rows.map((row) => (
