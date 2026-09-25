@@ -32,3 +32,23 @@ enable_signup = true
 [auth.email]
 enable_signup = true
 enable_confirmations = true
+
+# Branded auth emails (2026-09-25). The hosted project's copies live in the
+# Supabase dashboard (Authentication -> Emails); these files are the source
+# of truth — paste from here when changing them. Links must stay
+# {{ .ConfirmationURL }}: it routes through /auth/callback (PKCE code flow).
+[auth.email.template.confirmation]
+subject = "Confirm your email for Fitness Blueprint"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.magic_link]
+subject = "Your Fitness Blueprint sign-in link"
+content_path = "./supabase/templates/magic_link.html"
+
+[auth.email.template.recovery]
+subject = "Reset your Fitness Blueprint password"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.email_change]
+subject = "Confirm your new email for Fitness Blueprint"
+content_path = "./supabase/templates/email_change.html"
