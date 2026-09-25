@@ -25,8 +25,8 @@ export function DemoDataCard({ loaded }: { loaded: boolean }) {
   }
 
   return (
-    <div className="border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5">
-      <p className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-2">Demo data</p>
+    <div className="fb-card">
+      <p className="text-[11px] font-medium uppercase tracking-wide text-blueprint-muted mb-2">Demo data</p>
       <p className="text-blueprint-muted text-sm leading-relaxed mb-4">
         {loaded
           ? "5 demo clients and 4 weeks of Test Coach classes are loaded. Removing them deletes all of it."

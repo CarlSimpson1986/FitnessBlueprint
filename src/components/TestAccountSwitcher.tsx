@@ -32,8 +32,8 @@ export function TestAccountSwitcher() {
   const { run, isPending, pendingKind, error } = useSwitch(switchToTestAccount);
 
   return (
-    <div className="border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5">
-      <p className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-2">View as…</p>
+    <div className="fb-card">
+      <p className="text-[11px] font-medium uppercase tracking-wide text-blueprint-muted mb-2">View as…</p>
       <p className="text-blueprint-muted text-sm leading-relaxed mb-4">
         See the app on a phone exactly as a coach or member does, using test accounts.
       </p>

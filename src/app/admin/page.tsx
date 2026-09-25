@@ -15,14 +15,16 @@ export default async function AdminPage() {
       ? await supabase.from("profiles").select("id", { count: "exact", head: true }).like("email", DEMO_EMAIL_PATTERN)
       : { count: 0 };
   const demoLoaded = (demoProfileCount ?? 0) > 0;
-  const highlights = profile.role === "owner" ? await fetchOwnerHighlights(supabase) : null;
+  const isOwner = profile.role === "owner";
+  const highlights = isOwner ? await fetchOwnerHighlights(supabase) : null;
 
   return (
     <main className="min-h-screen px-6 py-16">
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-1">
           <p className="fb-eyebrow">Admin</p>
-          <div className="flex items-center gap-4">
+          {/* On a laptop the owner has these in the sidebar (OwnerShell). */}
+          <div className={(isOwner ? "lg:hidden " : "") + "flex items-center gap-4"}>
             <Link
               href="/account/settings"
               className="text-xs text-blueprint-muted hover:text-blueprint-accent transition"
@@ -37,12 +39,14 @@ export default async function AdminPage() {
           </div>
         </div>
         <h1 className="text-2xl font-semibold text-blueprint-ink mb-10">
-          {profile.role === "owner" ? "Everything, in one place" : "Coach tools"}
+          {isOwner ? "Dashboard" : "Coach tools"}
         </h1>
 
         {highlights && <OwnerHighlights data={highlights} />}
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {/* Page links — on a laptop the owner's sidebar already has every
+            one of these, so the grid is phone-only for the owner. */}
+        <div className={(isOwner ? "lg:hidden " : "") + "grid gap-4 sm:grid-cols-2"}>
           <Link
             href="/admin/today"
             className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
@@ -122,12 +126,6 @@ export default async function AdminPage() {
               </p>
             </Link>
           )}
-
-          {profile.role === "owner" && <TestAccountSwitcher />}
-
-          {profile.role === "owner" && <DemoDataCard loaded={demoLoaded} />}
-
-          {profile.role === "owner" && <EmailCheckCard />}
 
           {profile.role === "owner" && (
             <Link
@@ -227,6 +225,17 @@ export default async function AdminPage() {
             </Link>
           )}
         </div>
+
+        {isOwner && (
+          <section className="mt-10 lg:mt-0">
+            <p className="fb-eyebrow mb-3">Tools</p>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <TestAccountSwitcher />
+              <DemoDataCard loaded={demoLoaded} />
+              <EmailCheckCard />
+            </div>
+          </section>
+        )}
       </div>
     </main>
   );

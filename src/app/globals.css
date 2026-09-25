@@ -130,7 +130,11 @@ body {
     max-width: 72rem;
   }
   .owner-shell main {
-    padding-top: 2.5rem;
+    padding: 2.5rem 3rem 4rem;
+  }
+  /* Line pages up against the sidebar instead of floating mid-screen. */
+  .owner-shell main > .mx-auto {
+    margin-left: 0;
   }
 }
 

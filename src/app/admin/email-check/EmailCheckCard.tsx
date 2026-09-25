@@ -9,8 +9,8 @@ export function EmailCheckCard() {
   const [result, setResult] = useState<{ error?: string; sentTo?: string } | null>(null);
 
   return (
-    <div className="border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5">
-      <p className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-2">Email check</p>
+    <div className="fb-card">
+      <p className="text-[11px] font-medium uppercase tracking-wide text-blueprint-muted mb-2">Email check</p>
       <p className="text-blueprint-muted text-sm leading-relaxed mb-4">
         Send yourself one email through Brevo to confirm reminders can go out.
       </p>
