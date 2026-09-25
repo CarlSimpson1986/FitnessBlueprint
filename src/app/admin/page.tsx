@@ -37,7 +37,7 @@ export default async function AdminPage() {
           {profile.role === "owner" ? "Everything, in one place" : "Coach tools"}
         </h1>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <Link
             href="/admin/today"
             className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"

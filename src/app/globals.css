@@ -115,3 +115,22 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/*
+  Owner desktop layout (src/components/OwnerShell.tsx). Admin/owner pages
+  were written phone-first with narrow max-w-2xl..4xl containers; on a
+  laptop the owner's pages widen to fill the space beside the sidebar.
+  Pages that are already wider (calendar etc.) are left alone.
+*/
+@media (min-width: 1024px) {
+  .owner-shell main > .mx-auto.max-w-md,
+  .owner-shell main > .mx-auto.max-w-2xl,
+  .owner-shell main > .mx-auto.max-w-3xl,
+  .owner-shell main > .mx-auto.max-w-4xl {
+    max-width: 72rem;
+  }
+  .owner-shell main {
+    padding-top: 2.5rem;
+  }
+}
+
