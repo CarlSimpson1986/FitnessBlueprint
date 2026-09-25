@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireOwner } from "@/lib/auth";
+import { fetchClassesByCoach } from "@/lib/time-off";
 import { AssignMembershipForm } from "./AssignMembershipForm";
 import { CreateMemberForm } from "./CreateMemberForm";
 import { ResetPasswordButton } from "./ResetPasswordButton";
@@ -31,6 +32,15 @@ export default async function OwnerMembersPage() {
   ]);
 
   const planById = new Map((plans ?? []).map((p) => [p.id, p]));
+
+  // "Teaches" on each staff row — derived from the classes they're
+  // scheduled on (src/lib/time-off.ts), not a list to maintain.
+  const [classesByCoach, { data: classTypes }] = await Promise.all([
+    fetchClassesByCoach(supabase),
+    supabase.from("session_templates").select("id, name").order("name"),
+  ]);
+  const teaches = (personId: string) =>
+    (classTypes ?? []).filter((c) => classesByCoach.get(personId)?.has(c.id)).map((c) => c.name);
   const activeMembershipByMember = new Map((memberships ?? []).map((m) => [m.member_id, m]));
 
   return (
@@ -68,6 +78,9 @@ export default async function OwnerMembersPage() {
                   </span>
                 </p>
                 <p className="text-xs text-blueprint-muted mt-1">{person.email}</p>
+                <p className="text-xs text-blueprint-muted mt-1">
+                  {teaches(person.id).length ? `Teaches: ${teaches(person.id).join(", ")}` : "Not scheduled on any classes yet"}
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <ResetPasswordButton memberId={person.id} />

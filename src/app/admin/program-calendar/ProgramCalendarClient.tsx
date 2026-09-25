@@ -15,6 +15,8 @@ export type DayCard = {
   coachName: string;
   /** Coached by whoever is viewing — highlighted for coaches. */
   isMine: boolean;
+  /** The session's coach has time off that day (coach_time_off, 0032). */
+  coachOff: boolean;
   segmentCount: number;
   exerciseCount: number;
 };
@@ -244,7 +246,10 @@ function SessionCard({
           <p className="text-[11px] font-medium text-blueprint-accent group-hover:underline">
             {card.time} — {card.className}
           </p>
-          <p className="text-[10px] text-blueprint-muted mt-0.5">{card.coachName}</p>
+          <p className={"text-[10px] mt-0.5 " + (card.coachOff ? "text-red-400" : "text-blueprint-muted")}>
+            {card.coachName}
+            {card.coachOff && " · off, needs cover"}
+          </p>
           <p className="text-[10px] text-blueprint-muted mt-1">
             {hasWorkout
               ? `${card.segmentCount} segment${card.segmentCount === 1 ? "" : "s"} · ${card.exerciseCount} exercise${card.exerciseCount === 1 ? "" : "s"}`

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireCoachOrOwner } from "@/lib/auth";
 import { toLocalDateKey } from "@/lib/format";
+import { fetchTimeOff, isOff } from "@/lib/time-off";
 import { ProgramCalendarClient, type DayCard } from "./ProgramCalendarClient";
 import { ClassesPanel, type ClassRow } from "./ClassesPanel";
 import { ScheduleSessionPanel } from "./ScheduleSessionPanel";
@@ -103,6 +104,10 @@ export default async function ProgramCalendarPage({
   const classNameById = new Map((sessionTemplates ?? []).map((t) => [t.id, t.name]));
   const coachNameById = new Map((coaches ?? []).map((c) => [c.id, c.full_name]));
 
+  // Coach time off (0032) in the visible range — the owner sees everyone's,
+  // a coach only their own, per its RLS policies.
+  const timeOff = await fetchTimeOff(supabase, startKey, endKey);
+
   const cardsByDate = new Map<string, DayCard[]>();
   for (const session of sessions ?? []) {
     const card: DayCard = {
@@ -111,6 +116,7 @@ export default async function ProgramCalendarPage({
       className: classNameById.get(session.template_id) ?? "Session",
       coachName: coachNameById.get(session.coach_id) ?? "Coach TBC",
       isMine: session.coach_id === profile.id,
+      coachOff: isOff(timeOff, session.coach_id, session.session_date),
       segmentCount: segmentBySessionCount.get(session.id) ?? 0,
       exerciseCount: exerciseCountBySession.get(session.id) ?? 0,
     };

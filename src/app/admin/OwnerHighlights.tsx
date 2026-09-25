@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { fetchOwnerHighlights } from "@/lib/owner-highlights";
+import { formatRange } from "@/lib/time-off";
 
 type Highlights = Awaited<ReturnType<typeof fetchOwnerHighlights>>;
 
@@ -24,6 +25,7 @@ const names = (list: { name: string }[], max = 3) =>
 
 /** Headline tiles at the top of the owner dashboard (src/lib/owner-highlights.ts). */
 export function OwnerHighlights({ data }: { data: Highlights }) {
+  const coverNeeded = data.coachesOff.reduce((sum, c) => sum + c.needsCover, 0);
   const weekPct = data.week.capacity ? Math.round((data.week.booked / data.week.capacity) * 100) : 0;
   return (
     <section className="mb-10">
@@ -68,6 +70,20 @@ export function OwnerHighlights({ data }: { data: Highlights }) {
             data.endingSoon.length
               ? data.endingSoon.slice(0, 3).map((m) => `${m.name} (${m.daysLeft === 0 ? "today" : `${m.daysLeft}d`})`).join(", ")
               : "No programmes ending in the next 7 days"
+          }
+        />
+        <Tile
+          href="/admin/time-off"
+          label="Coaches off (2 weeks)"
+          value={String(data.coachesOff.length)}
+          tone={coverNeeded ? "warn" : "default"}
+          detail={
+            data.coachesOff.length
+              ? data.coachesOff
+                  .slice(0, 3)
+                  .map((c) => `${c.name} ${formatRange(c.startsOn, c.endsOn)}`)
+                  .join(", ") + (coverNeeded ? ` · ${coverNeeded} session${coverNeeded === 1 ? "" : "s"} need cover` : "")
+              : "No one's off in the next two weeks"
           }
         />
       </div>

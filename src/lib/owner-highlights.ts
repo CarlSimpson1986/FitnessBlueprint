@@ -1,5 +1,6 @@
 import type { createClient } from "@/lib/supabase/server";
 import { computeAtRisk } from "@/lib/at-risk";
+import { fetchTimeOff } from "@/lib/time-off";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -41,7 +42,7 @@ export async function fetchOwnerHighlights(supabase: Supabase) {
   const weekStart = addDays(todayKey, -((dow + 6) % 7));
   const weekEnd = addDays(weekStart, 6);
 
-  const [{ data: sessions }, { data: types }, atRisk, { data: plans }] = await Promise.all([
+  const [{ data: sessions }, { data: types }, atRisk, { data: plans }, timeOff] = await Promise.all([
     supabase
       .from("sessions")
       .select("id, session_date, start_time, capacity, template_id")
@@ -51,6 +52,7 @@ export async function fetchOwnerHighlights(supabase: Supabase) {
     supabase.from("session_templates").select("id, name"),
     computeAtRisk(supabase),
     supabase.from("membership_plans").select("id, programme_length_days").not("programme_length_days", "is", null),
+    fetchTimeOff(supabase, todayKey, addDays(todayKey, 13)),
   ]);
 
   const sessionRows = sessions ?? [];
@@ -108,7 +110,33 @@ export async function fetchOwnerHighlights(supabase: Supabase) {
   const nameById = new Map((endingProfiles ?? []).map((p) => [p.id, p.full_name]));
   const endingSoon = endingSoonRaw.map((m) => ({ name: nameById.get(m.memberId) ?? "Member", daysLeft: m.daysLeft }));
 
+  // Coaches off in the next two weeks, and how many of their sessions
+  // in that window still need cover.
+  const offIds = [...new Set(timeOff.map((t) => t.coach_id))];
+  const [{ data: offProfiles }, { data: offSessions }] = offIds.length
+    ? await Promise.all([
+        supabase.from("profiles").select("id, full_name").in("id", offIds),
+        supabase
+          .from("sessions")
+          .select("coach_id, session_date")
+          .eq("status", "scheduled")
+          .gte("session_date", todayKey)
+          .lte("session_date", addDays(todayKey, 13))
+          .in("coach_id", offIds),
+      ])
+    : [{ data: [] }, { data: [] }];
+  const offName = new Map((offProfiles ?? []).map((p) => [p.id, p.full_name]));
+  const coachesOff = timeOff.map((t) => ({
+    name: offName.get(t.coach_id) ?? "Coach",
+    startsOn: t.starts_on,
+    endsOn: t.ends_on,
+    needsCover: (offSessions ?? []).filter(
+      (s) => s.coach_id === t.coach_id && s.session_date >= t.starts_on && s.session_date <= t.ends_on
+    ).length,
+  }));
+
   return {
+    coachesOff,
     busiest,
     quietest,
     week: { booked: weekBooked, capacity: weekCapacity, sessions: thisWeek.length },

@@ -18,6 +18,7 @@ const NAV: { heading: string; links: { href: string; label: string }[] }[] = [
     links: [
       { href: "/admin/program-calendar", label: "Program calendar" },
       { href: "/admin/workout-templates", label: "Workout templates" },
+      { href: "/admin/time-off", label: "Coach time off" },
     ],
   },
   {

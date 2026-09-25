@@ -822,6 +822,36 @@ export type Database = {
         }
         Relationships: []
       }
+      coach_time_off: {
+        Row: {
+          id: string
+          coach_id: string
+          starts_on: string
+          ends_on: string
+          note: string | null
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          coach_id: string
+          starts_on: string
+          ends_on: string
+          note?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          coach_id?: string
+          starts_on?: string
+          ends_on?: string
+          note?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       weekly_checkins: {
         Row: {
           id: string
