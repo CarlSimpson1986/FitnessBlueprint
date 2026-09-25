@@ -1,8 +1,9 @@
 /**
  * Gemini model names, in one place — Google retires these regularly and a
  * retired name 404s at request time, taking the feature down with it.
- * Both Coach Ted (src/lib/coach-ted/gemini.ts) and workout Autofinish
- * (src/lib/progression-ai/gemini.ts) go through withGeminiFallback below.
+ * Workout Autofinish (src/lib/progression-ai/gemini.ts) goes through
+ * withGeminiFallback below. Coach Ted's answers moved to Claude on
+ * 2026-09-25 (src/lib/coach-ted/claude.ts).
  *
  * 2026-09-23: gemini-2.5-flash stopped being available to new API keys
  * ("no longer available to new users... use models/gemini-3.6-flash").
@@ -14,10 +15,6 @@ export const GEMINI_TEXT_MODEL = "gemini-3.6-flash";
 // Model chains, tried in order when one is overloaded (503), rate
 // limited (429), erroring (500) or gone (404). The "-latest" aliases are
 // Google's rolling pointers, so they survive the next rename.
-//
-// Coach Ted: short chat answers, where speed matters most — Flash-Lite
-// first (gemini-3.6-flash measured 32-63s to first token).
-export const CHAT_MODELS = ["gemini-flash-lite-latest", "gemini-flash-latest", GEMINI_TEXT_MODEL];
 // Autofinish: structured multi-week JSON, where quality matters more.
 export const PLANNING_MODELS = [GEMINI_TEXT_MODEL, "gemini-flash-latest", "gemini-flash-lite-latest"];
 

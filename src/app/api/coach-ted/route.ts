@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { embedText, streamTedAnswer } from "@/lib/coach-ted/gemini";
+import { streamTedAnswer } from "@/lib/coach-ted/claude";
+import { embedText } from "@/lib/coach-ted/gemini";
 import { searchPubMed } from "@/lib/coach-ted/pubmed";
 import { CACHE_SIMILARITY_THRESHOLD } from "@/lib/coach-ted/cache";
 
