@@ -15,8 +15,21 @@ export async function sendTestEmail(): Promise<ActionResult> {
   const { profile } = await requireOwner();
   const env = serverEnv();
 
-  if (!env.BREVO_API_KEY || !env.BREVO_SENDER_EMAIL) {
-    return { error: "Brevo isn't configured — BREVO_API_KEY or BREVO_SENDER_EMAIL is missing in Vercel." };
+  // Say exactly which setting is wrong — names and shapes only, never values.
+  const key = (env.BREVO_API_KEY ?? "").trim();
+  const sender = (env.BREVO_SENDER_EMAIL ?? "").trim();
+  const problems = [
+    !key
+      ? "BREVO_API_KEY is empty on this deployment"
+      : key.startsWith("xsmtpsib-")
+        ? "BREVO_API_KEY is the SMTP key (xsmtpsib-) — it needs the API key (xkeysib-)"
+        : !key.startsWith("xkeysib-")
+          ? "BREVO_API_KEY doesn't look like a Brevo API key (should start xkeysib-)"
+          : "",
+    !sender ? "BREVO_SENDER_EMAIL is empty on this deployment" : !sender.includes("@") ? "BREVO_SENDER_EMAIL isn't an email address" : "",
+  ].filter(Boolean);
+  if (problems.length) {
+    return { error: `Brevo setup problem: ${problems.join("; ")}.` };
   }
   if (!profile.email) {
     return { error: "Your profile has no email address." };
