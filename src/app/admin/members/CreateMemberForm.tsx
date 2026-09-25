@@ -12,11 +12,13 @@ export function CreateMemberForm() {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
+  const [emailedTo, setEmailedTo] = useState<string | null>(null);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     setGeneratedPassword(null);
+    setEmailedTo(null);
 
     startTransition(async () => {
       let succeeded = false;
@@ -27,6 +29,7 @@ export function CreateMemberForm() {
           setError(result.error);
         } else if (result.password) {
           setGeneratedPassword(result.password);
+          setEmailedTo(result.emailed ? email.trim() : null);
           setFullName("");
           setEmail("");
           setRole("member");
@@ -50,9 +53,9 @@ export function CreateMemberForm() {
         Create account manually
       </h2>
       <p className="text-xs text-blueprint-muted mb-4 leading-relaxed">
-        For staff (coaches, owners) or a member whose email isn&apos;t working. Give them the
-        password shown below after creating — they&apos;ll be forced to set their own on first
-        login. It&apos;s only shown once, so copy it before doing anything else.
+        For staff (coaches, owners) or a member whose email isn&apos;t working. They&apos;re emailed
+        a temporary password and will be forced to set their own on first login. It&apos;s also
+        shown below once, in case the email doesn&apos;t arrive.
       </p>
       <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2">
         <input
@@ -91,7 +94,11 @@ export function CreateMemberForm() {
       {error && <p className="text-xs text-red-400 mt-3">{error}</p>}
       {generatedPassword && (
         <div className="mt-4 bg-blueprint-raised border border-blueprint-accent rounded p-3">
-          <p className="text-xs text-blueprint-muted mb-1">Password (shown once — copy it now):</p>
+          <p className="text-xs text-blueprint-muted mb-1">
+            {emailedTo
+              ? `Emailed to ${emailedTo}. Password, in case it doesn't arrive (shown once):`
+              : "The email didn't send — give them this password yourself (shown once):"}
+          </p>
           <p className="font-mono text-sm text-blueprint-ink select-all">{generatedPassword}</p>
         </div>
       )}
