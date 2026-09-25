@@ -182,6 +182,20 @@ export default async function AdminPage() {
 
           {profile.role === "owner" && (
             <Link
+              href="/owner/at-risk"
+              className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
+            >
+              <p className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-2">
+                At-risk members
+              </p>
+              <p className="text-blueprint-muted text-sm leading-relaxed">
+                Who&apos;s stopped training or stopped checking in.
+              </p>
+            </Link>
+          )}
+
+          {profile.role === "owner" && (
+            <Link
               href="/owner/income"
               className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
             >

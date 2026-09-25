@@ -263,7 +263,7 @@ export async function GET(request: Request) {
             {
                 to: owner.email,
                 subject: `${member.full_name} has gone quiet on check-ins`,
-                html: `<p>${member.full_name} hasn't logged a weekly check-in for 2 weeks running.</p>`,
+                html: `<p>${member.full_name} hasn't logged a weekly check-in for 2 weeks running.</p><p><a href="${publicEnv.NEXT_PUBLIC_SITE_URL}/owner/at-risk">See everyone at risk</a></p>`,
             }
           );
           if (outcome === "sent") results.quietAlerts++;
