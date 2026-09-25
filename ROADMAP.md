@@ -8,8 +8,7 @@ spec lives in the shared Google Doc; this is status, not spec.
 
 Everything is **committed, pushed, and deployed** to
 `https://fitnessblueprints.vercel.app` (permanent URL; functions in `lhr1`).
-**0034 (calendar feeds) is committed but NOT yet run.** All migrations
-through **0033** have been applied (2026-09-25: 0031 was
+All migrations through **0034** have been applied (2026-09-25: 0031 was
 run on its own — it carries 0030's book_session() changes too, and 0030
 only touched that function, so 0030 is covered).
 
@@ -55,7 +54,13 @@ Branded Supabase auth emails (see below). 6-week programmes now end on
 day 42: book_session() refuses later sessions (0030) and
 the daily cron marks them expired. New owner page /owner/at-risk (not
 training 14+ days with nothing booked / not checking in for 2 weeks),
-linked from the admin hub and the Monday quiet-member email. Members can
+linked from the admin hub and the Monday quiet-member email.
+Later 2026-09-25: owner desktop layout (collapsible sidebar, dashboard
+highlight tiles), Delete person, temp-password welcome email, coach time
+off with cover assignment (0032), Ted's weekly feedback summary (0033,
+Mondays + on /owner/feedback), calendar subscription feeds for members
+and the owner (0034, verified live). Test data still in: Test Coach
+holiday 28–30 Sep, 18:00 GCP test session today. Members can
 only book two weeks ahead (0031; Schedule tab lists only
 that far — src/lib/booking-window.ts).
 
