@@ -53,9 +53,10 @@ follows and tailors (match >= 0.93). Tested on prod: follow-up flow works.
 - `gemini-embedding-001` no longer appears on Google's pricing page
   (Gemini Embedding 2 is current) — may be retired next; if so switch
   EMBEDDING_MODEL and press Re-index on /admin/ted-answers.
-- Brevo emails landing in spam: offered to write branded Supabase email
-  templates; suggested sender name "Fitness Blueprint" (currently "Guy")
-  and turning off Brevo click tracking.
+- Brevo emails landing in spam: branded Supabase auth templates written
+  (supabase/templates/, pasted into the dashboard 2026-09-25) and SMTP
+  sender name set to "Fitness Blueprint". Still to do: turn off Brevo
+  click tracking (owner, in Brevo) and check inbox vs spam placement.
 - Guy's own account still to be created (Members -> Create account ->
   Owner).
 - Workout builder: per-exercise save needed or not? Still unanswered.
