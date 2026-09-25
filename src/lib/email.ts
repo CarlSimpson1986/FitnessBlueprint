@@ -7,7 +7,7 @@ import { serverEnv } from "@/lib/env";
  * doesn't warrant a new dependency. See src/app/api/cron/reminders/route.ts
  * and the owner's "Send me a test email" action for callers.
  *
- * No-ops (logs a warning, doesn't throw) if BREVO_API_KEY/BREVO_SENDER_EMAIL
+ * Returns an error (logs a warning, doesn't throw) if BREVO_API_KEY/BREVO_SENDER_EMAIL
  * are unset — Carl needs to verify a sending domain in Brevo before this
  * can go live, and the cron route shouldn't crash while that's pending.
  */
@@ -26,10 +26,13 @@ export async function sendEmail(input: { to: string; subject: string; html: stri
   }
 
   if (!env.BREVO_API_KEY || !env.BREVO_SENDER_EMAIL) {
+    // Reported as an error (not a silent success) so callers can say the
+    // email didn't go — e.g. the Members page no longer claims "Emailed".
+    // Still no throw: the reminders cron logs it and retries tomorrow.
     console.warn(
       `sendEmail: BREVO_API_KEY or BREVO_SENDER_EMAIL not set — skipping send to ${input.to} ("${input.subject}")`
     );
-    return {};
+    return { error: "Brevo isn't configured (BREVO_API_KEY or BREVO_SENDER_EMAIL missing in Vercel)." };
   }
 
   const res = await fetch("https://api.brevo.com/v3/smtp/email", {

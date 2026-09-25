@@ -13,6 +13,7 @@ export function CreateMemberForm() {
   const [error, setError] = useState<string | null>(null);
   const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
   const [emailedTo, setEmailedTo] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -30,6 +31,7 @@ export function CreateMemberForm() {
         } else if (result.password) {
           setGeneratedPassword(result.password);
           setEmailedTo(result.emailed ? email.trim() : null);
+          setEmailError(result.emailed ? null : (result.emailError ?? null));
           setFullName("");
           setEmail("");
           setRole("member");
@@ -97,7 +99,7 @@ export function CreateMemberForm() {
           <p className="text-xs text-blueprint-muted mb-1">
             {emailedTo
               ? `Emailed to ${emailedTo}. Password, in case it doesn't arrive (shown once):`
-              : "The email didn't send — give them this password yourself (shown once):"}
+              : `The email didn't send${emailError ? ` (${emailError})` : ""} — give them this password yourself (shown once):`}
           </p>
           <p className="font-mono text-sm text-blueprint-ink select-all">{generatedPassword}</p>
         </div>
