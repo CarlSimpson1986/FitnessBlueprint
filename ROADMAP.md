@@ -54,7 +54,6 @@ All migrations through **0029** have been run by the owner.
 - Guy's own account still to be created (Members -> Create account ->
   Owner).
 - Workout builder: per-exercise save needed or not? Still unanswered.
-- Members page plan dropdown defaults to "1x per week" on every row.
 
 ## Done
 
