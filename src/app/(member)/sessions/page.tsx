@@ -8,6 +8,7 @@ import { WaitlistPanel } from "./WaitlistPanel";
 import { BuddyInvitePanel } from "./BuddyInvitePanel";
 import { InviteResponsePanel } from "./InviteResponsePanel";
 import { BookingsTabs } from "./BookingsTabs";
+import { BOOKING_WINDOW_DAYS, lastBookableDate } from "@/lib/booking-window";
 
 export default async function SessionsPage() {
   const { supabase, user } = await requireProfile();
@@ -213,7 +214,10 @@ export default async function SessionsPage() {
   const weekBookedFor = (dateKey: string) => bookedByWeek.get(weekKeyOf(dateKey)) ?? 0;
 
   const sessionsByDate = new Map<string, typeof sessionRows>();
-  for (const session of sessionRows.filter((s) => !hasStarted(s))) {
+  // Schedule only lists what's bookable: up to BOOKING_WINDOW_DAYS ahead
+  // (book_session() enforces the same limit, 0031).
+  const lastBookable = lastBookableDate(londonDate);
+  for (const session of sessionRows.filter((s) => !hasStarted(s) && s.session_date <= lastBookable)) {
     const list = sessionsByDate.get(session.session_date) ?? [];
     list.push(session);
     sessionsByDate.set(session.session_date, list);
@@ -270,6 +274,9 @@ export default async function SessionsPage() {
 
   const scheduleContent = (
     <div>
+      <p className="text-xs text-blueprint-muted mb-4">
+        Bookings open {BOOKING_WINDOW_DAYS / 7} weeks ahead.
+      </p>
       {sessionsByDate.size === 0 && (
         <p className="text-blueprint-muted text-sm">No upcoming sessions scheduled yet.</p>
       )}

@@ -9,8 +9,8 @@ spec lives in the shared Google Doc; this is status, not spec.
 Everything is **committed, pushed, and deployed** to
 `https://fitnessblueprints.vercel.app` (permanent URL; functions in `lhr1`).
 All migrations through **0029** have been run by the owner. **0030
-(programme end date) is committed but NOT yet run** — paste it into the
-Supabase SQL Editor.
+(programme end date) and 0031 (two-week booking window) are committed
+but NOT yet run** — paste them into the Supabase SQL Editor, 0030 first.
 
 **Built/fixed 2026-09-23** (live-tested in the browser unless noted):
 - Magic-link bounce fixed (alias hosts 308 to canonical); password sign-in
@@ -54,13 +54,15 @@ Branded Supabase auth emails (see below). 6-week programmes now end on
 day 42: book_session() refuses later sessions (0030, needs running) and
 the daily cron marks them expired. New owner page /owner/at-risk (not
 training 14+ days with nothing booked / not checking in for 2 weeks),
-linked from the admin hub and the Monday quiet-member email.
+linked from the admin hub and the Monday quiet-member email. Members can
+only book two weeks ahead (0031, needs running; Schedule tab lists only
+that far — src/lib/booking-window.ts).
 
 **Open — needs a decision or action from the owner:**
 - `gemini-embedding-001` no longer appears on Google's pricing page
   (Gemini Embedding 2 is current) — may be retired next; if so switch
   EMBEDDING_MODEL and press Re-index on /admin/ted-answers.
-- Run migration 0030 in the Supabase SQL Editor.
+- Run migrations 0030 then 0031 in the Supabase SQL Editor.
 - First Sunday check-in email goes out 2026-09-27 ~9am UK — confirm it
   arrived and check /admin/check-ins on Monday.
 - Brevo emails landing in spam: branded Supabase auth templates written
