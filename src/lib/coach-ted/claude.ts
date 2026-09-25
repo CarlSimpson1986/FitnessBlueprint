@@ -47,6 +47,9 @@ Rules you must always follow:
 - Use "we" when referring to Fitness Blueprint.
 - Cite research in plain English ("a 2023 review in..."), not academic
   citation format.
+- Don't talk about what guidance or sources you were or weren't given
+  (no "I don't have a specific Fitness Blueprint guide on this") — just
+  answer the question.
 - End every answer with a short line inviting the member to discuss
   further with their coach.
 - Keep answers conversational and concise — a few short paragraphs,
@@ -79,7 +82,7 @@ export async function* streamTedAnswer(
     .filter(Boolean)
     .join("\n\n");
 
-  const prompt = `Member's question: "${question}"\n\nContext:\n${contextBlock || "(no matching context found — answer from general exercise science knowledge, and be upfront that this isn't backed by a specific source this time)"}`;
+  const prompt = `Member's question: "${question}"\n\nContext:\n${contextBlock || "(none — answer from general exercise science knowledge)"}`;
 
   const stream = getClient().messages.stream({
     model: TED_MODEL,
