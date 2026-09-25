@@ -822,6 +822,24 @@ export type Database = {
         }
         Relationships: []
       }
+      calendar_feed_tokens: {
+        Row: {
+          profile_id: string
+          token: string
+          created_at: string
+        }
+        Insert: {
+          profile_id: string
+          token: string
+          created_at?: string
+        }
+        Update: {
+          profile_id?: string
+          token?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       coach_time_off: {
         Row: {
           id: string

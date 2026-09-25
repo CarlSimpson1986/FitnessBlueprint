@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
 import { HomeLink } from "@/components/HomeLink";
 import { SetPasswordForm } from "../SetPasswordForm";
+import { CalendarFeedCard } from "./CalendarFeedCard";
 
 export default async function AccountSettingsPage() {
   const { profile } = await requireProfile();
@@ -24,6 +25,14 @@ export default async function AccountSettingsPage() {
           you&apos;d rather use one.
         </p>
         <SetPasswordForm />
+
+        {/* Members get their bookings, the owner the whole gym. Not coaches (owner's call). */}
+        {(profile.role === "member" || profile.role === "owner") && (
+          <>
+            <p className="fb-eyebrow mt-10 mb-3">Add to your calendar</p>
+            <CalendarFeedCard isOwner={profile.role === "owner"} />
+          </>
+        )}
       </div>
     </main>
   );
