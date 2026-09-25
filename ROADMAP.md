@@ -38,13 +38,12 @@ All migrations through **0029** have been run by the owner.
   the schedule; started classes unbookable (0025); 55 broken opacity
   classes fixed; Income by product; Income/Session economics crash fixed.
 
+**Built 2026-09-25:** Coach Ted's answers now come from Claude Haiku 4.5
+(src/lib/coach-ted/claude.ts, ANTHROPIC_API_KEY) — first text in ~4s,
+full answer ~8s on prod (was 30–45s on free-tier Gemini). Embeddings
+stay on Gemini. Members plan dropdown no longer preselects a plan.
+
 **Open — needs a decision or action from the owner:**
-- **Coach Ted is slow (30–45s)** because the Gemini key is on the free
-  tier (queued behind paid traffic; free-tier content is also used by
-  Google to improve products). Options discussed: enable Gemini billing
-  (cheapest), or move answer generation to Claude (Haiku 4.5 ~0.3p /
-  Sonnet 5 ~0.55p / Opus 5 ~1.4p per answer; embeddings stay on Gemini).
-  Owner hasn't chosen.
 - `gemini-embedding-001` no longer appears on Google's pricing page
   (Gemini Embedding 2 is current) — may be retired next; if so switch
   EMBEDDING_MODEL and press Re-index on /admin/ted-answers.
