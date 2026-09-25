@@ -42,6 +42,12 @@ All migrations through **0029** have been run by the owner.
 (src/lib/coach-ted/claude.ts, ANTHROPIC_API_KEY) — first text in ~4s,
 full answer ~8s on prod (was 30–45s on free-tier Gemini). Embeddings
 stay on Gemini. Members plan dropdown no longer preselects a plan.
+Ted is now personalised (src/lib/coach-ted/member-context.ts): sees the
+member's goals, check-ins, metrics, attendance, best lifts and last week
+of chat; asks a clarifying question when needed; no coach sign-off on
+every answer. Shared answer cache removed (all 5 auto-cached rows
+deleted); /admin/ted-answers now holds Guy's own answers, which Ted
+follows and tailors (match >= 0.93). Tested on prod: follow-up flow works.
 
 **Open — needs a decision or action from the owner:**
 - `gemini-embedding-001` no longer appears on Google's pricing page
