@@ -100,7 +100,47 @@ export async function GET(request: Request) {
   const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday
   const todayKey = toLocalDateKey(now);
 
-  const results = { goalCheckins: 0, sundayReminders: 0, quietAlerts: 0, failed: 0 };
+  const results = { programmesEnded: 0, goalCheckins: 0, sundayReminders: 0, quietAlerts: 0, failed: 0 };
+
+  // ---------------------------------------------------------------------
+  // 0. Finished programmes — a 6-week programme (programme_length_days)
+  // is marked 'expired' the day after its last day, so the member stops
+  // showing as active. book_session() already refuses sessions after the
+  // last day (0030); this keeps the membership status honest too.
+  // ---------------------------------------------------------------------
+  const { data: programmePlans } = await supabase
+    .from("membership_plans")
+    .select("id, programme_length_days")
+    .not("programme_length_days", "is", null);
+  const lengthByPlan = new Map((programmePlans ?? []).map((p) => [p.id, p.programme_length_days ?? 0]));
+
+  const { data: programmeMemberships } = lengthByPlan.size
+    ? await supabase
+        .from("member_memberships")
+        .select("id, plan_id, started_at")
+        .eq("status", "active")
+        .in("plan_id", [...lengthByPlan.keys()])
+    : { data: [] };
+
+  const finishedIds = (programmeMemberships ?? [])
+    .filter((m) => {
+      const days = lengthByPlan.get(m.plan_id) ?? 0;
+      // UK date the programme started — same as book_session()'s check.
+      const startKey = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date(m.started_at));
+      const lastDay = new Date(`${startKey}T00:00:00Z`);
+      lastDay.setUTCDate(lastDay.getUTCDate() + days - 1);
+      return todayKey > lastDay.toISOString().slice(0, 10);
+    })
+    .map((m) => m.id);
+
+  if (finishedIds.length) {
+    const { error: expireError } = await supabase
+      .from("member_memberships")
+      .update({ status: "expired" })
+      .in("id", finishedIds);
+    if (expireError) console.error("reminders: expiring finished programmes failed —", expireError.message);
+    else results.programmesEnded = finishedIds.length;
+  }
 
   // ---------------------------------------------------------------------
   // 1. Goal check-in due — every day, one email per goal (not repeated
