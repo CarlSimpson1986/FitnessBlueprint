@@ -61,6 +61,13 @@ follows and tailors (match >= 0.93). Tested on prod: follow-up flow works.
 - Guy's own account still to be created (Members -> Create account ->
   Owner).
 - Workout builder: per-exercise save needed or not? Still unanswered.
+- **Auto-setup for new 6-week challenge members — waiting on Guy.** Guy
+  will create new Stripe Payment Links just for the 6-week challenge.
+  Once he has, the Stripe webhook (checkout.session.completed) matches
+  those link IDs, creates the account, assigns the 6-week plan and sends
+  a branded welcome email. Only those links; couples/split/monthly links
+  stay manual. Also needed then: a webhook endpoint in Stripe (none exists
+  yet, checked 2026-09-25) and STRIPE_WEBHOOK_SECRET in Vercel.
 
 ## Done
 
