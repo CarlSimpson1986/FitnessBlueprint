@@ -55,8 +55,9 @@ follows and tailors (match >= 0.93). Tested on prod: follow-up flow works.
   EMBEDDING_MODEL and press Re-index on /admin/ted-answers.
 - Brevo emails landing in spam: branded Supabase auth templates written
   (supabase/templates/, pasted into the dashboard 2026-09-25) and SMTP
-  sender name set to "Fitness Blueprint". Still to do: turn off Brevo
-  click tracking (owner, in Brevo) and check inbox vs spam placement.
+  sender name set to "Fitness Blueprint". Tested 2026-09-25: magic link
+  landed in a Yahoo inbox, correct sender, link not rewritten, sign-in
+  works. Optional: turn off Brevo click tracking; test Gmail/Outlook.
 - Guy's own account still to be created (Members -> Create account ->
   Owner).
 - Workout builder: per-exercise save needed or not? Still unanswered.
