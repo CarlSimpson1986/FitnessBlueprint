@@ -60,7 +60,12 @@ highlight tiles), Delete person, temp-password welcome email, coach time
 off with cover assignment (0032), Ted's weekly feedback summary (0033,
 Mondays + on /owner/feedback), calendar subscription feeds for members
 and the owner (0034, verified live). Test data still in: Test Coach
-holiday 28–30 Sep, 18:00 GCP test session today. Members can
+holiday 28–30 Sep, 18:00 GCP test session today.
+App emails (src/lib/email.ts, Brevo API) had likely never sent in prod —
+only an SMTP key existed. Fixed 2026-09-25: Brevo API key (xkeysib) +
+BREVO_SENDER_EMAIL=hello@fitnessblueprint.co.uk in Vercel, confirmed
+with the Email check. sendEmail no longer reports success when
+unconfigured, and the Email check names the exact bad setting. Members can
 only book two weeks ahead (0031; Schedule tab lists only
 that far — src/lib/booking-window.ts).
 
