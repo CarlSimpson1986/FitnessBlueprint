@@ -4,11 +4,13 @@ Living record of what's built, what's known-broken, and what's next.
 Update this file as work lands — don't let it drift. Full product
 spec lives in the shared Google Doc; this is status, not spec.
 
-## Pick up here next session (as of 2026-09-23, evening)
+## Pick up here next session (as of 2026-09-25)
 
 Everything is **committed, pushed, and deployed** to
 `https://fitnessblueprints.vercel.app` (permanent URL; functions in `lhr1`).
-All migrations through **0029** have been run by the owner.
+All migrations through **0029** have been run by the owner. **0030
+(programme end date) is committed but NOT yet run** — paste it into the
+Supabase SQL Editor.
 
 **Built/fixed 2026-09-23** (live-tested in the browser unless noted):
 - Magic-link bounce fixed (alias hosts 308 to canonical); password sign-in
@@ -48,11 +50,19 @@ of chat; asks a clarifying question when needed; no coach sign-off on
 every answer. Shared answer cache removed (all 5 auto-cached rows
 deleted); /admin/ted-answers now holds Guy's own answers, which Ted
 follows and tailors (match >= 0.93). Tested on prod: follow-up flow works.
+Branded Supabase auth emails (see below). 6-week programmes now end on
+day 42: book_session() refuses later sessions (0030, needs running) and
+the daily cron marks them expired. New owner page /owner/at-risk (not
+training 14+ days with nothing booked / not checking in for 2 weeks),
+linked from the admin hub and the Monday quiet-member email.
 
 **Open — needs a decision or action from the owner:**
 - `gemini-embedding-001` no longer appears on Google's pricing page
   (Gemini Embedding 2 is current) — may be retired next; if so switch
   EMBEDDING_MODEL and press Re-index on /admin/ted-answers.
+- Run migration 0030 in the Supabase SQL Editor.
+- First Sunday check-in email goes out 2026-09-27 ~9am UK — confirm it
+  arrived and check /admin/check-ins on Monday.
 - Brevo emails landing in spam: branded Supabase auth templates written
   (supabase/templates/, pasted into the dashboard 2026-09-25) and SMTP
   sender name set to "Fitness Blueprint". Tested 2026-09-25: magic link
@@ -493,7 +503,9 @@ follows and tailors (match >= 0.93). Tested on prod: follow-up flow works.
 
 ## Known gaps / not started
 
-- **Stripe billing is not wired up.** `src/app/api/webhooks/stripe/route.ts`
+- **Stripe billing is not wired up.** (2026-09-25: first use decided —
+  auto-setup for the 6-week challenge links only, waiting on Guy to
+  create those links; see "Pick up here".) `src/app/api/webhooks/stripe/route.ts`
   verifies signatures correctly but every event type (`checkout.session.completed`,
   `invoice.payment_failed`, `customer.subscription.deleted`) is a TODO stub.
   There's also no code anywhere that *creates* a Checkout Session or Payment
@@ -535,14 +547,9 @@ follows and tailors (match >= 0.93). Tested on prod: follow-up flow works.
 
 ## Pending manual action
 
-- **`GEMINI_API_KEY` is not set on Vercel production at all** (confirmed
-  via `vercel env ls production` — not present under any name), not
-  just missing locally as previously noted below. This means Coach Ted
-  has likely been failing for real members since it shipped, and blocks
-  the new "Autofinish with AI" feature (above) from running at all. Get
-  a free key at aistudio.google.com (no card required) and add it to
-  Vercel — no billing needed to get started, only if usage later hits
-  free-tier rate limits.
+- ~~`GEMINI_API_KEY` missing on Vercel production~~ — added 2026-09-22;
+  Ted's answers moved to Claude on 2026-09-25, Gemini is now only used
+  for embeddings and workout Autofinish.
 
 - **Migration `0021_email_reminders.sql`** (email reminder log table) is
   written and committed but its hosted-DB status is unconfirmed as of
