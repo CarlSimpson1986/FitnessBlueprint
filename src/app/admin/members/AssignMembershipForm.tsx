@@ -19,7 +19,7 @@ export function AssignMembershipForm({
   plans: Plan[];
 }) {
   const router = useRouter();
-  const [planId, setPlanId] = useState(plans[0]?.id ?? "");
+  const [planId, setPlanId] = useState("");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -38,6 +38,7 @@ export function AssignMembershipForm({
           setError(result.error);
         } else {
           setSuccess(true);
+          setPlanId("");
           succeeded = true;
         }
       } catch {
@@ -64,6 +65,9 @@ export function AssignMembershipForm({
           onChange={(event) => setPlanId(event.target.value)}
           className="bg-blueprint-raised border border-blueprint-line rounded px-3 py-2 text-sm text-blueprint-ink focus:outline-none focus:border-blueprint-accent"
         >
+          <option value="" disabled>
+            Choose plan…
+          </option>
           {plans.map((plan) => (
             <option key={plan.id} value={plan.id}>
               {plan.name}
