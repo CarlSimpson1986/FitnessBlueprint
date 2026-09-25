@@ -8,8 +8,8 @@ spec lives in the shared Google Doc; this is status, not spec.
 
 Everything is **committed, pushed, and deployed** to
 `https://fitnessblueprints.vercel.app` (permanent URL; functions in `lhr1`).
-**0032 (coach time off) is committed but NOT yet run.** All migrations
-through **0031** have been applied (2026-09-25: 0031 was
+**0033 (weekly summary email type) is committed but NOT yet run.** All
+migrations through **0032** have been applied (2026-09-25: 0031 was
 run on its own — it carries 0030's book_session() changes too, and 0030
 only touched that function, so 0030 is covered).
 

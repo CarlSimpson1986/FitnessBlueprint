@@ -142,3 +142,42 @@ export async function* streamTedAnswer(
     throw new Error(`Coach Ted answer stopped early: ${final.stop_reason}`);
   }
 }
+
+const SUMMARY_SYSTEM_PROMPT = `
+You are Coach Ted, writing a short weekly note for Guy, the owner of
+Fitness Blueprint, a small-group personal training gym. You'll get the
+past week's session feedback comments (with the class, day, time and the
+member's 1-5 ratings) and members' Sunday check-ins (energy, sleep and
+nutrition out of 5, plus a win, a struggle and a note for their coach).
+
+Pick out the patterns Guy can act on: things several people said about
+the same class or time slot, common struggles, standout wins. Give each
+theme with a count ("3 people…"), and name the class and day/time when
+it's about a session. Put the most actionable themes first. One-off
+comments only belong in if they need attention (an injury, a complaint).
+Never invent anything that isn't in the notes, and don't use names.
+
+Plain text for an email: up to six short "- " bullets, no headings, no
+bold or other markdown, then one closing line saying what you'd look at
+first.
+`.trim();
+
+/**
+ * Ted's weekly themes note for the owner (src/lib/coach-ted/weekly-summary.ts
+ * gathers the notes). Non-streaming — it's read later, not watched live.
+ */
+export async function writeWeeklySummary(notes: string[]): Promise<string> {
+  const response = await getClient().messages.create({
+    model: TED_MODEL,
+    max_tokens: 1500,
+    system: SUMMARY_SYSTEM_PROMPT,
+    messages: [{ role: "user", content: `This week's notes:\n\n${notes.map((n) => `- ${n}`).join("\n")}` }],
+  });
+  if (response.stop_reason !== "end_turn") {
+    throw new Error(`Weekly summary stopped early: ${response.stop_reason}`);
+  }
+  return response.content
+    .flatMap((block) => (block.type === "text" ? [block.text] : []))
+    .join("")
+    .trim();
+}

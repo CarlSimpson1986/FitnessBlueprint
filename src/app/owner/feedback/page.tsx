@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireOwner } from "@/lib/auth";
 import { formatSessionDate, formatSessionTime } from "@/lib/format";
+import { WeeklySummaryCard } from "./WeeklySummaryCard";
 
 const RATING_LABELS = ["Class", "Effort", "Experience"] as const;
 
@@ -52,6 +53,8 @@ export default async function OwnerFeedbackPage() {
         <p className="text-xs text-blueprint-muted mb-10">
           Private to you — coaches and members can&apos;t see this.
         </p>
+
+        <WeeklySummaryCard />
 
         {rows.length === 0 ? (
           <p className="text-blueprint-muted text-sm">No feedback submitted yet.</p>

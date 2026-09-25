@@ -4,6 +4,7 @@ import { isInternalAddress, sendEmail } from "@/lib/email";
 import { publicEnv, serverEnv } from "@/lib/env";
 import { mondayOf, weekKey } from "@/lib/progress";
 import { toLocalDateKey } from "@/lib/format";
+import { buildWeeklySummary } from "@/lib/coach-ted/weekly-summary";
 import type { Database } from "@/types/database.types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -100,7 +101,7 @@ export async function GET(request: Request) {
   const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday
   const todayKey = toLocalDateKey(now);
 
-  const results = { programmesEnded: 0, goalCheckins: 0, sundayReminders: 0, quietAlerts: 0, failed: 0 };
+  const results = { programmesEnded: 0, goalCheckins: 0, sundayReminders: 0, quietAlerts: 0, weeklySummaries: 0, failed: 0 };
 
   // ---------------------------------------------------------------------
   // 0. Finished programmes — a 6-week programme (programme_length_days)
@@ -270,6 +271,47 @@ export async function GET(request: Request) {
           if (outcome === "failed") results.failed++;
         }
       }
+    }
+  }
+
+  // ---------------------------------------------------------------------
+  // 4. Ted's weekly summary to the owner — Mondays. Themes from the last
+  // 7 days of feedback comments and check-ins (src/lib/coach-ted/
+  // weekly-summary.ts); skipped when there are too few notes to be worth
+  // it. Also available on demand on /owner/feedback.
+  // ---------------------------------------------------------------------
+  if (dayOfWeek === 1) {
+    try {
+      const summary = await buildWeeklySummary(supabase);
+      if (summary.status === "ok") {
+        const { data: owners } = await supabase.from("profiles").select("id, email, full_name").eq("role", "owner");
+        const feedbackUrl = `${publicEnv.NEXT_PUBLIC_SITE_URL}/owner/feedback`;
+        const escape = (t: string) => t.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]!);
+        for (const owner of owners ?? []) {
+          if (!owner.email || isInternalAddress(owner.email)) continue;
+          const outcome = await sendOnce(
+            supabase,
+            { recipient_id: owner.id, email_type: "weekly_feedback_summary", reference_key: todayKey },
+            {
+              to: owner.email,
+              subject: "Ted's week: what members are saying",
+              html: `
+<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;color:#111">
+  <p style="font-size:16px">Hey ${escape(firstName(owner.full_name))}, here's what came up in feedback and check-ins this week:</p>
+  ${summary.averages ? `<p style="font-size:13px;color:#666">Average ratings: class ${summary.averages.class} · effort ${summary.averages.effort} · experience ${summary.averages.experience} (out of 5)</p>` : ""}
+  <div style="font-size:15px;line-height:1.6;white-space:pre-wrap">${escape(summary.text)}</div>
+  <p style="margin:24px 0"><a href="${feedbackUrl}" style="background:#2e9bf0;color:#000;text-decoration:none;font-weight:600;padding:10px 18px;border-radius:8px;display:inline-block">Read the feedback</a></p>
+  <p style="font-size:13px;color:#666">Coach Ted · Fitness Blueprint</p>
+</div>`.trim(),
+            }
+          );
+          if (outcome === "sent") results.weeklySummaries++;
+          if (outcome === "failed") results.failed++;
+        }
+      }
+    } catch (err) {
+      console.error("reminders: weekly summary failed —", err);
+      results.failed++;
     }
   }
 
