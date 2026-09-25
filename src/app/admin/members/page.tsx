@@ -3,6 +3,7 @@ import { requireOwner } from "@/lib/auth";
 import { AssignMembershipForm } from "./AssignMembershipForm";
 import { CreateMemberForm } from "./CreateMemberForm";
 import { ResetPasswordButton } from "./ResetPasswordButton";
+import { DeletePersonButton } from "./DeletePersonButton";
 
 export default async function OwnerMembersPage() {
   const { supabase } = await requireOwner();
@@ -68,7 +69,10 @@ export default async function OwnerMembersPage() {
                 </p>
                 <p className="text-xs text-blueprint-muted mt-1">{person.email}</p>
               </div>
-              <ResetPasswordButton memberId={person.id} />
+              <div className="flex items-center gap-2">
+                <ResetPasswordButton memberId={person.id} />
+                <DeletePersonButton personId={person.id} name={person.full_name} />
+              </div>
             </li>
           ))}
         </ul>
@@ -101,6 +105,7 @@ export default async function OwnerMembersPage() {
                 <div className="flex items-center gap-2">
                   <ResetPasswordButton memberId={member.id} />
                   <AssignMembershipForm memberId={member.id} plans={plans ?? []} />
+                  <DeletePersonButton personId={member.id} name={member.full_name} />
                 </div>
               </li>
             );

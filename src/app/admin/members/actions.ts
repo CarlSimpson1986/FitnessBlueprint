@@ -208,3 +208,64 @@ export async function assignMembership(
 
   return {};
 }
+
+/**
+ * Permanently deletes a person — their login, profile and everything
+ * that cascades from it (bookings, logs, goals, check-ins, Ted chats).
+ * Owner-only via requireOwner(); the admin client is needed because
+ * deleting a login is an auth-admin operation and the cleanup below
+ * touches other members' rows (a buddy invite this person sent).
+ *
+ * A handful of references to profiles don't cascade (0001/0014): those
+ * that only point at this person are cleared first. Staff who still
+ * coach sessions or authored shared content are refused instead — that
+ * content belongs to the gym, so it has to be reassigned first.
+ */
+export async function deletePerson(personId: string): Promise<ActionResult> {
+  const { user } = await requireOwner();
+  if (personId === user.id) {
+    return { error: "You can't delete your own account." };
+  }
+
+  const admin = createAdminClient();
+
+  const [sessions, templates, knowledge, challenges, plans, notes] = await Promise.all([
+    admin.from("sessions").select("id", { count: "exact", head: true }).eq("coach_id", personId),
+    admin.from("workout_templates").select("id", { count: "exact", head: true }).eq("created_by", personId),
+    admin.from("coach_ted_knowledge_base").select("id", { count: "exact", head: true }).eq("created_by", personId),
+    admin.from("challenges").select("id", { count: "exact", head: true }).eq("created_by", personId),
+    admin.from("session_plans").select("id", { count: "exact", head: true }).eq("created_by", personId),
+    admin.from("session_notes").select("id", { count: "exact", head: true }).eq("coach_id", personId),
+  ]);
+  const blockers = [
+    sessions.count ? `coaches ${sessions.count} session${sessions.count === 1 ? "" : "s"}` : "",
+    templates.count ? `wrote ${templates.count} workout template${templates.count === 1 ? "" : "s"}` : "",
+    knowledge.count ? "wrote Coach Ted knowledge entries" : "",
+    challenges.count ? "created challenges" : "",
+    plans.count ? "wrote session plans" : "",
+    notes.count ? "wrote notes on members" : "",
+  ].filter(Boolean);
+  if (blockers.length) {
+    return { error: `Can't delete yet — this person ${blockers.join(", ")}. Reassign those first.` };
+  }
+
+  // Buddy invites they sent: pending ones are withdrawn, accepted ones
+  // just lose the "invited by" link. Waitlist buddy pairings are unpaired.
+  const cleanup = await Promise.all([
+    admin.from("bookings").delete().eq("invited_by", personId).eq("status", "invited"),
+    admin.from("bookings").update({ invited_by: null }).eq("invited_by", personId),
+    admin.from("waitlist_entries").update({ buddy_member_id: null }).eq("buddy_member_id", personId),
+    admin.from("events").delete().eq("created_by", personId),
+    admin.from("credit_ledger").update({ created_by: null }).eq("created_by", personId),
+  ]);
+  const cleanupError = cleanup.find((r) => r.error)?.error;
+  if (cleanupError) {
+    return { error: cleanupError.message };
+  }
+
+  const { error } = await admin.auth.admin.deleteUser(personId);
+  if (error) {
+    return { error: error.message };
+  }
+  return {};
+}
