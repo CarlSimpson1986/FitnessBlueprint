@@ -59,8 +59,8 @@ Later 2026-09-25: owner desktop layout (collapsible sidebar, dashboard
 highlight tiles), Delete person, temp-password welcome email, coach time
 off with cover assignment (0032), Ted's weekly feedback summary (0033,
 Mondays + on /owner/feedback), calendar subscription feeds for members
-and the owner (0034, verified live). Test data still in: Test Coach
-holiday 28–30 Sep (now past), 18:00 GCP test session (deleted 2026-10-01).
+and the owner (0034, verified live). Test data cleared 2026-10-01 (test session, fb-test-member@example.com,
+and a forgotten Seed Coach owner account all deleted).
 App emails (src/lib/email.ts, Brevo API) had likely never sent in prod —
 only an SMTP key existed. Fixed 2026-09-25: Brevo API key (xkeysib) +
 BREVO_SENDER_EMAIL=hello@fitnessblueprint.co.uk in Vercel, confirmed
@@ -131,9 +131,6 @@ that far — src/lib/booking-window.ts).
 - **Guy's spec questions:** monthly check-in (replace or add to the weekly
   one?), leaderboard (ranked on what? opt-out?), refer a friend (how many
   free passes? does the guest take a space?).
-- **Seed Coach** (seed-coach@example.internal, role owner, created by an
-  earlier session 2026-09-17, never signed in): move its 3 past sessions
-  to Carl, then delete it on Members.
 - **Auto-setup for new 6-week challenge members — waiting on Guy.** Guy
   will create new Stripe Payment Links just for the 6-week challenge.
   Once he has, the Stripe webhook (checkout.session.completed) matches

@@ -35,6 +35,11 @@ to main, etc). The rest depend on you reading this file.
   See `supabase/migrations/README.md`.
 - **Never commit `.env.local` or print its contents.** Real secrets live
   only in Vercel's environment settings and the person's local machine.
+- **Never create a login without recording it.** Test/demo accounts use
+  the `.invalid` email domain (so they're skipped by emails and at-risk)
+  and never get the `owner` role. Any account created outside the app's
+  own flows goes in ROADMAP.md with why it exists. (A "Seed Coach" owner
+  account was once created by hand and forgotten.)
 - **`session_feedback` has no coach-read policy — this is deliberate.**
   Per the confirmed spec, only the owner sees individual ratings. Don't
   add one because it "seems useful."
