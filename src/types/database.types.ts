@@ -879,6 +879,24 @@ export type Database = {
         }
         Relationships: []
       }
+      coach_ted_usage: {
+        Row: {
+          id: number
+          member_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: never
+          member_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: never
+          member_id?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       coach_time_off: {
         Row: {
           id: string
@@ -1336,6 +1354,10 @@ export type Database = {
           cancelled_at: string | null
           credit_ledger_id: string | null
         }
+      }
+      claim_ted_question: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       lookup_member_by_email: {
         Args: {

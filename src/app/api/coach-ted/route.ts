@@ -7,6 +7,7 @@ import { searchPubMed } from "@/lib/coach-ted/pubmed";
 import { OWNER_ANSWER_THRESHOLD } from "@/lib/coach-ted/cache";
 import { buildMemberProfile, recentTedTurns } from "@/lib/coach-ted/member-context";
 
+// Shown to members; the limit itself is enforced in claim_ted_question() (0039).
 const DAILY_QUESTION_LIMIT = 20;
 
 
@@ -37,7 +38,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   }
 
-  const { question } = await request.json();
+  const body = await request.json().catch(() => null);
+  const question: unknown = body?.question;
   if (typeof question !== "string" || question.trim().length === 0) {
     return NextResponse.json({ error: "Missing question" }, { status: 400 });
   }
@@ -45,25 +47,30 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Question is too long" }, { status: 400 });
   }
 
-  // --- Rate limit: 20 questions per member per rolling 24h ---------------
-  // RLS-scoped client — this can only ever count the signed-in member's
-  // own rows, so there's no need for the admin client here.
-  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const { count, error: countError } = await supabase
-    .from("coach_ted_conversations")
-    .select("id", { count: "exact", head: true })
-    .eq("member_id", user.id)
-    .gte("created_at", since);
-
-  if (countError) {
-    console.error("Rate limit check failed:", countError);
+  // --- Rate limit (0039) ----------------------------------------------------
+  // Claims a slot before anything is generated, atomically, so questions
+  // fired in parallel can't all slip under the limit. The limits (20 per
+  // member, 300 gym-wide, per rolling 24h) live in the database function.
+  const { data: claim, error: claimError } = await supabase.rpc("claim_ted_question");
+  if (claimError) {
+    console.error("Coach Ted: claiming a question slot failed:", claimError);
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
-  if ((count ?? 0) >= DAILY_QUESTION_LIMIT) {
+  if (claim === "member_limit") {
     return NextResponse.json(
       { error: `Coach Ted has a daily limit of ${DAILY_QUESTION_LIMIT} questions per member. Try again tomorrow, or ask your coach directly.` },
       { status: 429 }
     );
+  }
+  if (claim === "gym_limit") {
+    console.error("Coach Ted: gym-wide daily limit reached");
+    return NextResponse.json(
+      { error: "Coach Ted is taking a breather — he's answered a lot today. Try again tomorrow, or ask your coach directly." },
+      { status: 429 }
+    );
+  }
+  if (claim !== "ok") {
+    return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   }
 
   const admin = createAdminClient();
