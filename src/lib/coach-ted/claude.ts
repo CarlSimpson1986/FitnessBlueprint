@@ -116,7 +116,10 @@ Rules you must always follow:
 export async function* streamTedAnswer(
   question: string,
   context: TedContext,
-  onModel?: (model: string) => void
+  onModel?: (model: string) => void,
+  // For the red-team eval (evals/coach-ted): its own API client, and the
+  // finished message for usage/stop_reason. The app passes neither.
+  options?: { client?: Anthropic; onFinal?: (message: Anthropic.Message) => void }
 ): AsyncGenerator<string> {
   const contextBlock = [
     context.memberProfile ? `About this member:\n${context.memberProfile}` : "",
@@ -146,7 +149,7 @@ export async function* streamTedAnswer(
     content: `<context>\n${contextBlock || "(nothing on file yet)"}\n</context>\n\n${question}`,
   });
 
-  const stream = getClient().messages.stream({
+  const stream = (options?.client ?? getClient()).messages.stream({
     model: TED_MODEL,
     max_tokens: 2000,
     system: TED_SYSTEM_PROMPT,
@@ -164,6 +167,7 @@ export async function* streamTedAnswer(
   // (it would be replayed to Ted next time); the route treats a throw as a
   // failed answer and skips saving it.
   const final = await stream.finalMessage();
+  options?.onFinal?.(final);
   if (final.stop_reason !== "end_turn") {
     throw new Error(`Coach Ted answer stopped early: ${final.stop_reason}`);
   }

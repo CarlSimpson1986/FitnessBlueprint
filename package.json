@@ -14,7 +14,8 @@
     "verify": "npm run typecheck && npm run lint",
     "db:types": "supabase gen types typescript --linked > src/types/database.types.ts",
     "db:push": "supabase db push",
-    "db:reset": "supabase db reset"
+    "db:reset": "supabase db reset",
+    "ted:eval": "tsx --tsconfig tsconfig.json evals/coach-ted/run.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",
@@ -37,6 +38,7 @@
     "eslint-config-next": "^16.3.8",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
+    "tsx": "^4.23.15",
     "typescript": "^5.6.3"
   }
 }

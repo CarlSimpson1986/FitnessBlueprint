@@ -43,3 +43,8 @@ npm-debug.log*
 
 .vercel
 .env*
+
+# Eval output (evals/coach-ted run.ts)
+.claude/hillclimb/**/traces/
+.claude/hillclimb/**/report.html
+.claude/hillclimb/**/errors.jsonl
