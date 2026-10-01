@@ -269,3 +269,27 @@ export async function deletePerson(personId: string): Promise<ActionResult> {
   }
   return {};
 }
+
+/**
+ * Owner-only: clears a coach's or owner's two-factor (0038) after a lost
+ * or replaced phone, so they set it up again at their next sign-in. Only
+ * the auth admin API can remove another user's factors. requireOwner()
+ * itself needs the owner's own two-factor session, so a stolen owner
+ * password can't be used to strip someone else's.
+ */
+export async function resetTwoFactor(personId: string): Promise<ActionResult> {
+  await requireOwner();
+  const admin = createAdminClient();
+
+  const { data, error } = await admin.auth.admin.mfa.listFactors({ userId: personId });
+  if (error) {
+    return { error: error.message };
+  }
+  for (const factor of data?.factors ?? []) {
+    const { error: deleteError } = await admin.auth.admin.mfa.deleteFactor({ id: factor.id, userId: personId });
+    if (deleteError) {
+      return { error: deleteError.message };
+    }
+  }
+  return {};
+}

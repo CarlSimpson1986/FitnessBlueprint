@@ -12,6 +12,16 @@ export default async function SetPasswordPage() {
     redirect("/login");
   }
 
+  // Staff with two-factor set up enter their code first — changing the
+  // password of an account that has it needs a two-factor session (0038).
+  const [{ data: aal }, { data: factors }] = await Promise.all([
+    supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+    supabase.auth.mfa.listFactors(),
+  ]);
+  if ((factors?.totp ?? []).length > 0 && aal?.currentLevel !== "aal2") {
+    redirect("/login/two-factor");
+  }
+
   return (
     <main className="min-h-screen flex items-center justify-center px-6 py-16">
       <div className="max-w-md w-full">

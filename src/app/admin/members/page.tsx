@@ -5,6 +5,7 @@ import { AssignMembershipForm } from "./AssignMembershipForm";
 import { CreateMemberForm } from "./CreateMemberForm";
 import { ResetPasswordButton } from "./ResetPasswordButton";
 import { DeletePersonButton } from "./DeletePersonButton";
+import { ResetTwoFactorButton } from "./ResetTwoFactorButton";
 
 export default async function OwnerMembersPage() {
   const { supabase } = await requireOwner();
@@ -84,6 +85,7 @@ export default async function OwnerMembersPage() {
               </div>
               <div className="flex items-center gap-2">
                 <ResetPasswordButton memberId={person.id} />
+                <ResetTwoFactorButton personId={person.id} name={person.full_name} />
                 <DeletePersonButton personId={person.id} name={person.full_name} />
               </div>
             </li>

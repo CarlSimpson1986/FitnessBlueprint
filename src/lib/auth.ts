@@ -28,6 +28,16 @@ export async function requireProfile() {
     redirect("/onboarding");
   }
 
+  // Coaches and the owner need two-factor this session (0038 enforces the
+  // same thing in RLS — without it, staff policies return nothing). The
+  // owner's View-as test accounts are exempt; see 0038.
+  if ((profile.role === "coach" || profile.role === "owner") && !user.app_metadata?.test_account) {
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal?.currentLevel !== "aal2") {
+      redirect("/login/two-factor");
+    }
+  }
+
   return { supabase, user, profile };
 }
 

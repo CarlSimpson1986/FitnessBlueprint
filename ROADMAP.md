@@ -101,6 +101,16 @@ that far — src/lib/booking-window.ts).
   spoken to within 30 days of finishing, or follow-up date reached),
   then not-training and not-checking-in. "Email me a Monday digest
   preview" on the /admin Email check card.
+- Security (2026-10-01): Next.js 16.3.8 (critical RCE advisories), npm
+  audit 0. **Two-factor for coaches and owners** (0038): is_owner() /
+  is_coach_or_owner() require an aal2 session (View-as test accounts
+  exempt), src/lib/auth.ts sends staff to /login/two-factor (set up with
+  "Add to this phone" / QR, then 6-digit code; iPhone autofills). Owner
+  can "Reset two-factor" on a staff row for a lost phone. Next: Ted
+  rate-limit race + global cap, prompt hardening (incl. weekly-summary
+  injection), LLM-judge eval suite, close open signup (Guy's call),
+  set-password links instead of emailed temp passwords, Gemini free-tier
+  data terms, privacy notice line.
 - Still to do from Guy's list: monthly check-in (replace or add to the
   weekly one?), workout board with class
   toggle + daily leaderboard (ranked on what? opt-out?), refer a friend
