@@ -2,7 +2,8 @@
 
 import { requireOwner } from "@/lib/auth";
 import { sendEmail } from "@/lib/email";
-import { serverEnv } from "@/lib/env";
+import { publicEnv, serverEnv } from "@/lib/env";
+import { buildMonthlyReport, monthlyReportHtml, monthlyReportSubject, previousMonth } from "@/lib/monthly-progress";
 
 export type ActionResult = { error?: string; sentTo?: string };
 
@@ -41,4 +42,59 @@ export async function sendTestEmail(): Promise<ActionResult> {
     html: `<p>This is a test from Fitness Blueprint. If you're reading it, Brevo is working.</p><p>Sent from: ${env.BREVO_SENDER_EMAIL}</p>`,
   });
   return result.error ? { error: result.error } : { sentTo: profile.email };
+}
+
+export type PreviewResult = { error?: string; sentTo?: string; memberName?: string };
+
+/**
+ * Owner-only: emails the owner last month's progress report for the
+ * member who trained most, so Guy sees exactly what members will get
+ * before the first real send (1 Nov). Reads through the owner's RLS
+ * client — "coaches and owner read all" bookings, sessions and exercise
+ * logs (0002/0015) — no admin client needed.
+ */
+export async function sendMonthlyReportPreview(): Promise<PreviewResult> {
+  const { supabase, profile } = await requireOwner();
+  if (!profile.email) {
+    return { error: "Your profile has no email address." };
+  }
+
+  const ukToday = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date());
+  const month = previousMonth(ukToday);
+
+  const { data: sessions } = await supabase
+    .from("sessions")
+    .select("id")
+    .gte("session_date", month.start)
+    .lte("session_date", month.end);
+  const sessionIds = (sessions ?? []).map((s) => s.id);
+
+  const countByMember = new Map<string, number>();
+  for (let i = 0; i < sessionIds.length; i += 100) {
+    const { data: bookings } = await supabase
+      .from("bookings")
+      .select("member_id")
+      .eq("status", "attended")
+      .in("session_id", sessionIds.slice(i, i + 100));
+    for (const b of bookings ?? []) countByMember.set(b.member_id, (countByMember.get(b.member_id) ?? 0) + 1);
+  }
+  const busiest = [...countByMember.entries()].sort((a, b) => b[1] - a[1])[0];
+  if (!busiest) {
+    return { error: `Nobody attended a session in ${month.label}, so there's nothing to preview.` };
+  }
+
+  const { data: member } = await supabase.from("profiles").select("full_name").eq("id", busiest[0]).single();
+  const memberName = member?.full_name ?? "Member";
+
+  try {
+    const report = await buildMonthlyReport(supabase, busiest[0], month);
+    const result = await sendEmail({
+      to: profile.email,
+      subject: `[Preview — ${memberName}] ${monthlyReportSubject(report)}`,
+      html: monthlyReportHtml(memberName, report, `${publicEnv.NEXT_PUBLIC_SITE_URL}/progress`),
+    });
+    return result.error ? { error: result.error } : { sentTo: profile.email, memberName };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Couldn't build the report." };
+  }
 }

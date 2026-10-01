@@ -1376,7 +1376,7 @@ export type Database = {
       exercise_metric_type: 'weight_kg' | 'weight_kg_and_reps' | 'reps_only' | 'time_seconds' | 'distance_m'
       goal_type: 'lose_weight' | 'build_muscle' | 'build_strength' | 'general_fitness' | 'event_prep'
       goal_status: 'active' | 'completed' | 'abandoned'
-      email_type: 'sunday_checkin_reminder' | 'goal_checkin_due' | 'coach_quiet_member_alert' | 'weekly_feedback_summary'
+      email_type: 'sunday_checkin_reminder' | 'goal_checkin_due' | 'coach_quiet_member_alert' | 'weekly_feedback_summary' | 'monthly_progress_report'
     }
     CompositeTypes: {
       [_ in never]: never

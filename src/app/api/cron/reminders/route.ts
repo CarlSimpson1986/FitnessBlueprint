@@ -6,9 +6,13 @@ import { mondayOf, weekKey } from "@/lib/progress";
 import { toLocalDateKey } from "@/lib/format";
 import { buildWeeklySummary } from "@/lib/coach-ted/weekly-summary";
 import { formatRatingAverages } from "@/lib/session-feedback";
+import { buildMonthlyReport, monthlyReportHtml, monthlyReportSubject, previousMonth } from "@/lib/monthly-progress";
 import type { Database } from "@/types/database.types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+// The monthly progress email starts with October 2026's (sent 1 Nov) so
+// Guy can see a preview first (Email check card on /admin).
+const FIRST_MONTHLY_REPORT = "2026-10";
 
 /**
  * Europe/London "now", represented as a Date whose local wall-clock parts
@@ -102,7 +106,7 @@ export async function GET(request: Request) {
   const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday
   const todayKey = toLocalDateKey(now);
 
-  const results = { programmesEnded: 0, goalCheckins: 0, sundayReminders: 0, quietAlerts: 0, weeklySummaries: 0, failed: 0 };
+  const results = { programmesEnded: 0, goalCheckins: 0, sundayReminders: 0, quietAlerts: 0, weeklySummaries: 0, monthlyReports: 0, failed: 0 };
 
   // ---------------------------------------------------------------------
   // 0. Finished programmes — a 6-week programme (programme_length_days)
@@ -313,6 +317,54 @@ export async function GET(request: Request) {
     } catch (err) {
       console.error("reminders: weekly summary failed —", err);
       results.failed++;
+    }
+  }
+
+  // ---------------------------------------------------------------------
+  // 5. Monthly progress email to each member — days 1–3 of the month, for
+  // the month just finished (src/lib/monthly-progress.ts). Three days so
+  // one failed run doesn't lose the month; email_log keyed by month keeps
+  // it to one each. Members who didn't train that month are skipped — a
+  // "0 sessions" email isn't encouragement, and /owner/at-risk covers them.
+  // ---------------------------------------------------------------------
+  const reportMonth = previousMonth(todayKey);
+  if (now.getDate() <= 3 && reportMonth.key >= FIRST_MONTHLY_REPORT) {
+    const progressUrl = `${publicEnv.NEXT_PUBLIC_SITE_URL}/progress`;
+    const { data: members } = await supabase.from("profiles").select("id, email, full_name").eq("role", "member");
+    const { data: alreadySent } = await supabase
+      .from("email_log")
+      .select("recipient_id")
+      .eq("email_type", "monthly_progress_report")
+      .eq("reference_key", reportMonth.key);
+    const sentIds = new Set((alreadySent ?? []).map((r) => r.recipient_id));
+    const toReport = (members ?? []).filter(
+      (m): m is typeof m & { email: string } => !!m.email && !isInternalAddress(m.email) && !sentIds.has(m.id)
+    );
+
+    // A few members at a time — each report is several queries.
+    for (let i = 0; i < toReport.length; i += 5) {
+      await Promise.all(
+        toReport.slice(i, i + 5).map(async (member) => {
+          try {
+            const report = await buildMonthlyReport(supabase, member.id, reportMonth);
+            if (report.sessions === 0) return;
+            const outcome = await sendOnce(
+              supabase,
+              { recipient_id: member.id, email_type: "monthly_progress_report", reference_key: reportMonth.key },
+              {
+                to: member.email,
+                subject: monthlyReportSubject(report),
+                html: monthlyReportHtml(member.full_name, report, progressUrl),
+              }
+            );
+            if (outcome === "sent") results.monthlyReports++;
+            if (outcome === "failed") results.failed++;
+          } catch (err) {
+            console.error(`reminders: monthly report for ${member.id} failed —`, err);
+            results.failed++;
+          }
+        })
+      );
     }
   }
 

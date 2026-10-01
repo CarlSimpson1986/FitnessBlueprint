@@ -8,7 +8,7 @@ spec lives in the shared Google Doc; this is status, not spec.
 
 Everything is **committed, pushed, and deployed** to
 `https://fitnessblueprints.vercel.app` (permanent URL; functions in `lhr1`).
-All migrations through **0035** have been applied (2026-09-25: 0031 was
+All migrations through **0035** have been applied (0036 pending) (2026-09-25: 0031 was
 run on its own — it carries 0030's book_session() changes too, and 0030
 only touched that function, so 0030 is covered).
 
@@ -78,8 +78,15 @@ that far — src/lib/booking-window.ts).
   how you performed / how you feel now (0035; src/lib/session-feedback.ts
   drives the forms, owner Feedback page and Ted's weekly averages). Still
   owner-only; no coach-read policy on session_feedback.
+- Monthly progress email (src/lib/monthly-progress.ts, cron step 5):
+  last month's sessions (vs the month before), week streak, kg lifted,
+  new bests (heaviest weight / reps / time / distance beaten). Days 1–3
+  of the month, skips members with 0 sessions, once per month via
+  email_log (0036). First real send 1 Nov for October
+  (FIRST_MONTHLY_REPORT); "Email me a monthly report preview" on the
+  /admin Email check card. **0036 must be applied before 1 Nov.**
 - Still to do from Guy's list: monthly check-in (replace or add to the
-  weekly one?), monthly progress stats email, workout board with class
+  weekly one?), workout board with class
   toggle + daily leaderboard (ranked on what? opt-out?), refer a friend
   (how many free passes, does the guest take a spot?). The open questions
   need answers from Guy before building.

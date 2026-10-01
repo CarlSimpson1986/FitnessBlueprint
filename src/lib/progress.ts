@@ -71,9 +71,9 @@ export type LoggedSet = {
  * [sessionId]/finish/page.tsx), just aggregated across every session
  * instead of one. weight_kg contributes as-is; weight_kg_and_reps
  * contributes weight x reps; every other metric contributes 0 (reps/time/
- * distance aren't weight).
+ * distance aren't weight). Also used by the monthly progress email.
  */
-function loggedKg(entry: Pick<LoggedSet, "metricType" | "weightKg" | "reps">): number {
+export function loggedKg(entry: Pick<LoggedSet, "metricType" | "weightKg" | "reps">): number {
   if (entry.metricType === "weight_kg" && entry.weightKg) return entry.weightKg;
   if (entry.metricType === "weight_kg_and_reps" && entry.weightKg && entry.reps) {
     return entry.weightKg * entry.reps;
