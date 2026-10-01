@@ -113,6 +113,8 @@ that far — src/lib/booking-window.ts).
   replies. Needs a mailbox or free forwarding (e.g. ImprovMX) to Guy's
   inbox — Guy to choose where replies go. Optional SPF:
   `v=spf1 include:spf.brevo.com ~all`.
+  Re-sent preview (with plain-text part, after "Not spam") went straight
+  to the Yahoo inbox. MX/forwarding still recommended, no longer urgent.
 - Guy's own account still to be created (Members -> Create account ->
   Owner).
 - Workout builder: per-exercise save needed or not? Still unanswered.
