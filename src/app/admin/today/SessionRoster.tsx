@@ -45,9 +45,11 @@ function ReadinessNote({ readiness }: { readiness: NonNullable<RosterEntry["read
 /**
  * "6-week · Day 23/42" next to the name, so the coach can spot who's on a
  * programme and check in with them. The last week is flagged — that's
- * when the "what next?" conversation needs to happen.
+ * when the "what next?" conversation needs to happen. Past the last day
+ * shows "finished" (the daily cron marks it expired the next morning).
  */
 function ProgrammeBadge({ programme }: { programme: ProgrammeTag }) {
+  const finished = programme.day > programme.lengthDays;
   const finalWeek = programme.day > programme.lengthDays - 7;
   return (
     <span
@@ -57,8 +59,14 @@ function ProgrammeBadge({ programme }: { programme: ProgrammeTag }) {
           : "ml-2 inline-block text-[10px] font-mono uppercase tracking-wide rounded px-1.5 py-0.5 border border-blueprint-accent/60 text-blueprint-accent"
       }
     >
-      {programme.label} · Day {programme.day}/{programme.lengthDays}
-      {finalWeek && " · final week"}
+      {finished ? (
+        `${programme.label} · finished`
+      ) : (
+        <>
+          {programme.label} · Day {programme.day}/{programme.lengthDays}
+          {finalWeek && " · final week"}
+        </>
+      )}
     </span>
   );
 }

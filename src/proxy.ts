@@ -38,8 +38,17 @@ export async function proxy(request: NextRequest) {
   // verifier cookie is per-host, so requesting a link on one alias and
   // landing on another fails the code exchange and bounces to /login.
   // Keep everyone on the one canonical host so that can't happen.
+  // /api/* is exempt: Vercel Cron calls the deployment's own URL and
+  // doesn't follow redirects, so redirecting it meant the daily cron
+  // got a 308 and never ran (2026-09-23 to 2026-10-01). Webhooks and
+  // calendar feeds are server-to-server too — no browser cookies involved.
   const canonicalHost = new URL(publicEnv.NEXT_PUBLIC_SITE_URL).host;
-  if (serverEnv().VERCEL_ENV === "production" && !isCoachHost && host !== canonicalHost) {
+  if (
+    serverEnv().VERCEL_ENV === "production" &&
+    !isCoachHost &&
+    host !== canonicalHost &&
+    !request.nextUrl.pathname.startsWith("/api/")
+  ) {
     const url = new URL(request.nextUrl.pathname + request.nextUrl.search, publicEnv.NEXT_PUBLIC_SITE_URL);
     return NextResponse.redirect(url, 308);
   }

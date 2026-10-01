@@ -88,8 +88,12 @@ that far — src/lib/booking-window.ts).
 - `gemini-embedding-001` no longer appears on Google's pricing page
   (Gemini Embedding 2 is current) — may be retired next; if so switch
   EMBEDDING_MODEL and press Re-index on /admin/ted-answers.
-- First Sunday check-in email goes out 2026-09-27 ~9am UK — confirm it
-  arrived and check /admin/check-ins on Monday.
+- **Daily cron was dead 2026-09-23 → 2026-10-01**: the canonical-host
+  redirect (src/proxy.ts) 308'd Vercel Cron's call to the deployment URL,
+  and cron doesn't follow redirects. So no reminder emails, no Sunday
+  check-in email (27 Sep never sent), no Monday summaries, no programme
+  expiry. Fixed 2026-10-01 (/api/* exempt from the redirect). Check the
+  next 09:00 UK run in `vercel logs` returns 200, not 308.
 - Brevo emails landing in spam: branded Supabase auth templates written
   (supabase/templates/, pasted into the dashboard 2026-09-25) and SMTP
   sender name set to "Fitness Blueprint". Tested 2026-09-25: magic link
