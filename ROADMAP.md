@@ -85,6 +85,13 @@ that far — src/lib/booking-window.ts).
   email_log (0036). First real send 1 Nov for October
   (FIRST_MONTHLY_REPORT); "Email me a monthly report preview" on the
   /admin Email check card. 0036 applied 2026-10-01.
+- Monday owner email is now ONE at-risk digest (cron step 3, src/lib/
+  at-risk.ts rules): not training 14+ days with nothing booked, with
+  phone numbers; "training but not checking in" listed underneath from
+  2026-10-19 (FIRST_CHECKIN_DIGEST) so the first weeks of Sunday emails
+  don't flag everyone. Replaces one email per quiet member. at-risk.ts
+  no longer loads every booking ever (1000-row cap) — recent sessions
+  only, chunked.
 - Still to do from Guy's list: monthly check-in (replace or add to the
   weekly one?), workout board with class
   toggle + daily leaderboard (ranked on what? opt-out?), refer a friend

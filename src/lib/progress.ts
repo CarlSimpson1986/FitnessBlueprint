@@ -3,10 +3,8 @@ import type { MetricType } from "@/lib/workout-content";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-// Exported for src/app/api/cron/reminders/route.ts — same Monday-start ISO
-// week bucketing used for the attendance streak, reused there for the
-// Sunday check-in reminder and quiet-member alert so both use one
-// definition of "week".
+// Monday-start ISO week bucketing, used for the attendance streak and
+// the weekly total-lifted chart.
 export function mondayOf(date: Date): Date {
   const d = new Date(date);
   const dayOfWeek = d.getDay(); // 0 = Sunday
