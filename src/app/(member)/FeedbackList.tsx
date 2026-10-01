@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { SessionRatingQuestions } from "@/components/SessionRatingQuestions";
 import { formatSessionDate, formatSessionTime } from "@/lib/format";
 import { loadRatedSessions, markSessionRated } from "@/lib/rated-sessions";
+import { EMPTY_RATINGS, allRated, type FeedbackRatings } from "@/lib/session-feedback";
 import { submitFeedback } from "./feedback-actions";
 
 type FeedbackItem = {
@@ -55,47 +57,14 @@ export function FeedbackList({ items }: { items: FeedbackItem[] }) {
   );
 }
 
-function RatingPicker({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  onChange: (value: number) => void;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="text-xs text-blueprint-muted">{label}</span>
-      <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map((n) => (
-          <button
-            key={n}
-            type="button"
-            onClick={() => onChange(n)}
-            className={
-              n <= value
-                ? "w-7 h-7 text-xs rounded border border-blueprint-accent bg-blueprint-accent text-black transition"
-                : "w-7 h-7 text-xs rounded border border-blueprint-line text-blueprint-muted hover:border-blueprint-accent transition"
-            }
-          >
-            {n}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function FeedbackCard({ item, onDone }: { item: FeedbackItem; onDone: () => void }) {
-  const [classRating, setClassRating] = useState(0);
-  const [effortRating, setEffortRating] = useState(0);
-  const [experienceRating, setExperienceRating] = useState(0);
+  const [ratings, setRatings] = useState<FeedbackRatings>(EMPTY_RATINGS);
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const canSubmit = classRating > 0 && effortRating > 0 && experienceRating > 0 && !isSubmitting;
+  const canSubmit = allRated(ratings) && !isSubmitting;
 
   async function handleSubmit() {
     setError(null);
@@ -104,9 +73,7 @@ function FeedbackCard({ item, onDone }: { item: FeedbackItem; onDone: () => void
     try {
       const result = await submitFeedback({
         sessionId: item.sessionId,
-        classRating,
-        effortRating,
-        experienceRating,
+        ratings,
         comment,
       });
 
@@ -129,10 +96,8 @@ function FeedbackCard({ item, onDone }: { item: FeedbackItem; onDone: () => void
         {item.templateName}
       </p>
 
-      <div className="space-y-2 mb-3">
-        <RatingPicker label="Class" value={classRating} onChange={setClassRating} />
-        <RatingPicker label="Effort" value={effortRating} onChange={setEffortRating} />
-        <RatingPicker label="Experience" value={experienceRating} onChange={setExperienceRating} />
+      <div className="mb-3">
+        <SessionRatingQuestions ratings={ratings} onChange={setRatings} />
       </div>
 
       <textarea

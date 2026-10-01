@@ -370,9 +370,10 @@ export async function seedDemoData(admin: AdminClient): Promise<{ error?: string
         feedbackRows.push({
           session_id: session.id,
           member_id: client.id,
+          coach_rating: 4 + Math.round(random()),
           class_rating: 4 + Math.round(random()),
           effort_rating: 3 + Math.round(random() * 2),
-          experience_rating: 4 + Math.round(random()),
+          feeling_rating: 3 + Math.round(random() * 2),
           comment: FEEDBACK_COMMENTS[Math.floor(random() * FEEDBACK_COMMENTS.length)] ?? null,
           created_at: loggedAt,
         });

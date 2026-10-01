@@ -399,8 +399,10 @@ export type Database = {
           session_id: string
           member_id: string
           class_rating: number
+          coach_rating: number | null
           effort_rating: number
-          experience_rating: number
+          experience_rating: number | null
+          feeling_rating: number | null
           comment: string | null
           created_at: string
         }
@@ -409,8 +411,10 @@ export type Database = {
           session_id: string
           member_id: string
           class_rating: number
+          coach_rating?: number | null
           effort_rating: number
-          experience_rating: number
+          experience_rating?: number | null
+          feeling_rating?: number | null
           comment?: string | null
           created_at?: string
         }
@@ -419,8 +423,10 @@ export type Database = {
           session_id?: string
           member_id?: string
           class_rating?: number
+          coach_rating?: number | null
           effort_rating?: number
-          experience_rating?: number
+          experience_rating?: number | null
+          feeling_rating?: number | null
           comment?: string | null
           created_at?: string
         }

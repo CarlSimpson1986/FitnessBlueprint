@@ -5,6 +5,7 @@ import { publicEnv, serverEnv } from "@/lib/env";
 import { mondayOf, weekKey } from "@/lib/progress";
 import { toLocalDateKey } from "@/lib/format";
 import { buildWeeklySummary } from "@/lib/coach-ted/weekly-summary";
+import { formatRatingAverages } from "@/lib/session-feedback";
 import type { Database } from "@/types/database.types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -298,7 +299,7 @@ export async function GET(request: Request) {
               html: `
 <div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;color:#111">
   <p style="font-size:16px">Hey ${escape(firstName(owner.full_name))}, here's what came up in feedback and check-ins this week:</p>
-  ${summary.averages ? `<p style="font-size:13px;color:#666">Average ratings: class ${summary.averages.class} · effort ${summary.averages.effort} · experience ${summary.averages.experience} (out of 5)</p>` : ""}
+  ${summary.averages ? `<p style="font-size:13px;color:#666">Average ratings: ${escape(formatRatingAverages(summary.averages))} (out of 5)</p>` : ""}
   <div style="font-size:15px;line-height:1.6;white-space:pre-wrap">${escape(summary.text)}</div>
   <p style="margin:24px 0"><a href="${feedbackUrl}" style="background:#2e9bf0;color:#000;text-decoration:none;font-weight:600;padding:10px 18px;border-radius:8px;display:inline-block">Read the feedback</a></p>
   <p style="font-size:13px;color:#666">Coach Ted · Fitness Blueprint</p>

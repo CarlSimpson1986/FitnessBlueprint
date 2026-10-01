@@ -1,6 +1,7 @@
 "use server";
 
 import { requireProfile } from "@/lib/auth";
+import { FEEDBACK_QUESTIONS, type FeedbackRatings } from "@/lib/session-feedback";
 
 export type SubmitFeedbackResult = { error?: string; alreadySubmitted?: boolean };
 
@@ -14,16 +15,15 @@ export type SubmitFeedbackResult = { error?: string; alreadySubmitted?: boolean 
  */
 export async function submitFeedback(input: {
   sessionId: string;
-  classRating: number;
-  effortRating: number;
-  experienceRating: number;
+  ratings: FeedbackRatings;
   comment: string;
 }): Promise<SubmitFeedbackResult> {
   const { supabase, user } = await requireProfile();
 
-  for (const rating of [input.classRating, input.effortRating, input.experienceRating]) {
+  for (const q of FEEDBACK_QUESTIONS) {
+    const rating = input.ratings[q.key];
     if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-      return { error: "Ratings must be between 1 and 5." };
+      return { error: "Please answer all four questions (1 to 5)." };
     }
   }
 
@@ -46,9 +46,10 @@ export async function submitFeedback(input: {
   const { error } = await supabase.from("session_feedback").insert({
     session_id: input.sessionId,
     member_id: user.id,
-    class_rating: input.classRating,
-    effort_rating: input.effortRating,
-    experience_rating: input.experienceRating,
+    coach_rating: input.ratings.coach,
+    class_rating: input.ratings.content,
+    effort_rating: input.ratings.performance,
+    feeling_rating: input.ratings.feeling,
     comment: input.comment.trim() || null,
   });
 

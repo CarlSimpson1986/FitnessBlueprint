@@ -1,16 +1,17 @@
 import Link from "next/link";
 import { requireOwner } from "@/lib/auth";
 import { formatSessionDate, formatSessionTime } from "@/lib/format";
+import { FEEDBACK_QUESTIONS } from "@/lib/session-feedback";
 import { WeeklySummaryCard } from "./WeeklySummaryCard";
-
-const RATING_LABELS = ["Class", "Effort", "Experience"] as const;
 
 export default async function OwnerFeedbackPage() {
   const { supabase } = await requireOwner();
 
   const { data: feedbackRows } = await supabase
     .from("session_feedback")
-    .select("id, session_id, member_id, class_rating, effort_rating, experience_rating, comment, created_at")
+    .select(
+      "id, session_id, member_id, coach_rating, class_rating, effort_rating, feeling_rating, experience_rating, comment, created_at"
+    )
     .order("created_at", { ascending: false })
     .limit(200);
 
@@ -64,7 +65,15 @@ export default async function OwnerFeedbackPage() {
               const session = sessionById.get(row.session_id);
               const templateName = session ? templateById.get(session.template_id) : null;
               const memberName = memberById.get(row.member_id) ?? "Unknown member";
-              const ratings = [row.class_rating, row.effort_rating, row.experience_rating];
+              // Feedback from before 0035 has no coach/feeling score but does
+              // have the old "experience" one — show whatever was asked.
+              const ratings: { label: string; value: number | null }[] = FEEDBACK_QUESTIONS.map((q) => ({
+                label: q.shortLabel,
+                value: row[q.column],
+              }));
+              if (row.experience_rating !== null) {
+                ratings.push({ label: "Experience", value: row.experience_rating });
+              }
 
               return (
                 <li
@@ -82,12 +91,14 @@ export default async function OwnerFeedbackPage() {
                     )}
                   </p>
 
-                  <div className="flex gap-4 mt-2">
-                    {RATING_LABELS.map((label, i) => (
-                      <span key={label} className="text-xs text-blueprint-muted">
-                        {label}: <span className="text-blueprint-ink">{ratings[i]}/5</span>
-                      </span>
-                    ))}
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+                    {ratings
+                      .filter((r) => r.value !== null)
+                      .map((r) => (
+                        <span key={r.label} className="text-xs text-blueprint-muted">
+                          {r.label}: <span className="text-blueprint-ink">{r.value}/5</span>
+                        </span>
+                      ))}
                   </div>
 
                   {row.comment && (

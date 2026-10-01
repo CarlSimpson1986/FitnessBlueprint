@@ -2,40 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { SessionRatingQuestions } from "@/components/SessionRatingQuestions";
 import { markSessionRated } from "@/lib/rated-sessions";
+import { EMPTY_RATINGS, allRated, type FeedbackRatings } from "@/lib/session-feedback";
 import { submitFeedback } from "../../../feedback-actions";
 
-function RatingPicker({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  onChange: (value: number) => void;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="text-xs text-blueprint-muted">{label}</span>
-      <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map((n) => (
-          <button
-            key={n}
-            type="button"
-            onClick={() => onChange(n)}
-            className={
-              n <= value
-                ? "w-7 h-7 text-xs rounded border border-blueprint-accent bg-blueprint-accent text-black transition"
-                : "w-7 h-7 text-xs rounded border border-blueprint-line text-blueprint-muted hover:border-blueprint-accent transition"
-            }
-          >
-            {n}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 export function FinishScreen({
   sessionId,
@@ -52,15 +23,13 @@ export function FinishScreen({
   totalKg: number;
   horses: number;
 }) {
-  const [classRating, setClassRating] = useState(0);
-  const [effortRating, setEffortRating] = useState(0);
-  const [experienceRating, setExperienceRating] = useState(0);
+  const [ratings, setRatings] = useState<FeedbackRatings>(EMPTY_RATINGS);
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
-  const canSubmit = classRating > 0 && effortRating > 0 && experienceRating > 0 && !isSubmitting;
+  const canSubmit = allRated(ratings) && !isSubmitting;
 
   async function handleSubmit() {
     setError(null);
@@ -68,9 +37,7 @@ export function FinishScreen({
 
     const result = await submitFeedback({
       sessionId,
-      classRating,
-      effortRating,
-      experienceRating,
+      ratings,
       comment,
     });
 
@@ -117,10 +84,8 @@ export function FinishScreen({
         ) : (
           <div className="fb-card">
             <p className="text-sm text-blueprint-muted text-center mb-3">How was it?</p>
-            <div className="space-y-2 mb-3">
-              <RatingPicker label="Class" value={classRating} onChange={setClassRating} />
-              <RatingPicker label="Effort" value={effortRating} onChange={setEffortRating} />
-              <RatingPicker label="Experience" value={experienceRating} onChange={setExperienceRating} />
+            <div className="mb-3">
+              <SessionRatingQuestions ratings={ratings} onChange={setRatings} />
             </div>
             <textarea
               value={comment}
@@ -130,7 +95,7 @@ export function FinishScreen({
               className="w-full text-sm bg-transparent border border-blueprint-line rounded px-3 py-2 text-blueprint-ink placeholder:text-blueprint-muted mb-3 resize-none"
             />
             {!canSubmit && (
-              <p className="text-xs text-blueprint-muted text-center mb-2">Tap a star to rate the session first</p>
+              <p className="text-xs text-blueprint-muted text-center mb-2">Answer all four to submit</p>
             )}
             <button
               type="button"

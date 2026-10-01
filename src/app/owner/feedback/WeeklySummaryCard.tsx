@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState, useTransition } from "react";
+import { formatRatingAverages } from "@/lib/session-feedback";
 import { summariseLastWeek } from "./actions";
 
 type Result = Awaited<ReturnType<typeof summariseLastWeek>>;
@@ -42,8 +43,8 @@ export function WeeklySummaryCard() {
         <div className="mt-4 border-t border-blueprint-line pt-4">
           {result.averages && (
             <p className="text-xs text-blueprint-muted mb-3">
-              Average ratings this week: class {result.averages.class} · effort {result.averages.effort} · experience{" "}
-              {result.averages.experience} (out of 5), from {result.noteCount} notes.
+              Average ratings this week: {formatRatingAverages(result.averages)} (out of 5), from {result.noteCount}{" "}
+              notes.
             </p>
           )}
           <p className="text-sm text-blueprint-ink whitespace-pre-wrap leading-relaxed">{result.text}</p>

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
+import { FEEDBACK_QUESTIONS, type FeedbackQuestionKey } from "@/lib/session-feedback";
 import { writeWeeklySummary } from "./claude";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -8,7 +9,7 @@ const MIN_NOTES = 3;
 const WEEKDAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export type WeeklySummary =
-  | { status: "ok"; text: string; noteCount: number; averages: { class: number; effort: number; experience: number } | null }
+  | { status: "ok"; text: string; noteCount: number; averages: Partial<Record<FeedbackQuestionKey, number>> | null }
   | { status: "too_little"; noteCount: number };
 
 function ukDateKey(date: Date) {
@@ -34,7 +35,7 @@ export async function buildWeeklySummary(supabase: SupabaseClient<Database>, now
   const [{ data: feedback }, { data: checkins }] = await Promise.all([
     supabase
       .from("session_feedback")
-      .select("session_id, class_rating, effort_rating, experience_rating, comment")
+      .select("session_id, coach_rating, class_rating, effort_rating, feeling_rating, comment")
       .gte("created_at", since.toISOString()),
     supabase
       .from("weekly_checkins")
@@ -63,7 +64,9 @@ export async function buildWeeklySummary(supabase: SupabaseClient<Database>, now
   for (const f of feedbackRows) {
     if (!f.comment?.trim()) continue;
     notes.push(
-      `Feedback on ${sessionLabel.get(f.session_id) ?? "a session"} (class ${f.class_rating}/5, effort ${f.effort_rating}/5, experience ${f.experience_rating}/5): "${f.comment.trim()}"`
+      `Feedback on ${sessionLabel.get(f.session_id) ?? "a session"} (${FEEDBACK_QUESTIONS.filter((q) => f[q.column] !== null)
+        .map((q) => `${q.shortLabel.toLowerCase()} ${f[q.column]}/5`)
+        .join(", ")}): "${f.comment.trim()}"`
     );
   }
   for (const c of checkins ?? []) {
@@ -78,13 +81,16 @@ export async function buildWeeklySummary(supabase: SupabaseClient<Database>, now
     return { status: "too_little", noteCount: notes.length };
   }
 
-  const averages = feedbackRows.length
-    ? {
-        class: avg(feedbackRows.map((f) => f.class_rating)),
-        effort: avg(feedbackRows.map((f) => f.effort_rating)),
-        experience: avg(feedbackRows.map((f) => f.experience_rating)),
-      }
-    : null;
+  // Per question, over the rows that answered it — coach/feeling are
+  // null on feedback from before 0035, so a week can straddle the change.
+  let averages: Partial<Record<FeedbackQuestionKey, number>> | null = null;
+  if (feedbackRows.length) {
+    averages = {};
+    for (const q of FEEDBACK_QUESTIONS) {
+      const values = feedbackRows.map((f) => f[q.column]).filter((v): v is number => v !== null);
+      if (values.length) averages[q.key] = avg(values);
+    }
+  }
 
   const text = await writeWeeklySummary(notes);
   return { status: "ok", text, noteCount: notes.length, averages };

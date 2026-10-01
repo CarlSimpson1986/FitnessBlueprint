@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getSessionRoster, markAttendance, type RosterEntry } from "./actions";
+import { getSessionRoster, markAttendance, type ProgrammeTag, type RosterEntry } from "./actions";
 
 const STATUS_LABEL: Record<RosterEntry["status"], string> = {
   booked: "Booked",
@@ -39,6 +39,27 @@ function ReadinessNote({ readiness }: { readiness: NonNullable<RosterEntry["read
         </p>
       )}
     </>
+  );
+}
+
+/**
+ * "6-week · Day 23/42" next to the name, so the coach can spot who's on a
+ * programme and check in with them. The last week is flagged — that's
+ * when the "what next?" conversation needs to happen.
+ */
+function ProgrammeBadge({ programme }: { programme: ProgrammeTag }) {
+  const finalWeek = programme.day > programme.lengthDays - 7;
+  return (
+    <span
+      className={
+        finalWeek
+          ? "ml-2 inline-block text-[10px] font-mono uppercase tracking-wide rounded px-1.5 py-0.5 border border-amber-300/60 text-amber-300"
+          : "ml-2 inline-block text-[10px] font-mono uppercase tracking-wide rounded px-1.5 py-0.5 border border-blueprint-accent/60 text-blueprint-accent"
+      }
+    >
+      {programme.label} · Day {programme.day}/{programme.lengthDays}
+      {finalWeek && " · final week"}
+    </span>
   );
 }
 
@@ -127,6 +148,7 @@ export function SessionRoster({ sessionId, canMark = true }: { sessionId: string
           >
             <span>
               <span className="text-sm text-blueprint-ink">{entry.memberName}</span>
+              {entry.programme && <ProgrammeBadge programme={entry.programme} />}
               {entry.readiness && <ReadinessNote readiness={entry.readiness} />}
             </span>
 

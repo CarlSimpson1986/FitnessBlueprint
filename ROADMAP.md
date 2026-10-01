@@ -4,11 +4,11 @@ Living record of what's built, what's known-broken, and what's next.
 Update this file as work lands — don't let it drift. Full product
 spec lives in the shared Google Doc; this is status, not spec.
 
-## Pick up here next session (as of 2026-09-25)
+## Pick up here next session (as of 2026-10-01)
 
 Everything is **committed, pushed, and deployed** to
 `https://fitnessblueprints.vercel.app` (permanent URL; functions in `lhr1`).
-All migrations through **0034** have been applied (2026-09-25: 0031 was
+All migrations through **0035** have been applied (2026-09-25: 0031 was
 run on its own — it carries 0030's book_session() changes too, and 0030
 only touched that function, so 0030 is covered).
 
@@ -68,6 +68,21 @@ with the Email check. sendEmail no longer reports success when
 unconfigured, and the Email check names the exact bad setting. Members can
 only book two weeks ahead (0031; Schedule tab lists only
 that far — src/lib/booking-window.ts).
+
+**Built 2026-10-01** (from Guy's voice-note additions at the end of the spec doc):
+- Programme tags on the coach roster (Today + programme calendar session
+  page): "6-week · Day 23/42", amber "final week" in the last 7 days.
+  Works for any plan with programme_length_days, so a 21-day starter
+  shows as "21-day" once that plan exists.
+- Rate the class is now Guy's four questions — coach / session content /
+  how you performed / how you feel now (0035; src/lib/session-feedback.ts
+  drives the forms, owner Feedback page and Ted's weekly averages). Still
+  owner-only; no coach-read policy on session_feedback.
+- Still to do from Guy's list: monthly check-in (replace or add to the
+  weekly one?), monthly progress stats email, workout board with class
+  toggle + daily leaderboard (ranked on what? opt-out?), refer a friend
+  (how many free passes, does the guest take a spot?). The open questions
+  need answers from Guy before building.
 
 **Open — needs a decision or action from the owner:**
 - `gemini-embedding-001` no longer appears on Google's pricing page
