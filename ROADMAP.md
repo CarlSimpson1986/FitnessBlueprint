@@ -60,7 +60,7 @@ highlight tiles), Delete person, temp-password welcome email, coach time
 off with cover assignment (0032), Ted's weekly feedback summary (0033,
 Mondays + on /owner/feedback), calendar subscription feeds for members
 and the owner (0034, verified live). Test data still in: Test Coach
-holiday 28–30 Sep, 18:00 GCP test session today.
+holiday 28–30 Sep (now past), 18:00 GCP test session (deleted 2026-10-01).
 App emails (src/lib/email.ts, Brevo API) had likely never sent in prod —
 only an SMTP key existed. Fixed 2026-09-25: Brevo API key (xkeysib) +
 BREVO_SENDER_EMAIL=hello@fitnessblueprint.co.uk in Vercel, confirmed
@@ -122,9 +122,18 @@ that far — src/lib/booking-window.ts).
   `v=spf1 include:spf.brevo.com ~all`.
   Re-sent preview (with plain-text part, after "Not spam") went straight
   to the Yahoo inbox. MX/forwarding still recommended, no longer urgent.
-- Guy's own account still to be created (Members -> Create account ->
-  Owner).
 - Workout builder: per-exercise save needed or not? Still unanswered.
+- **21-day starter — waiting on Guy:** name, one-off price, sessions/week
+  (or unlimited). Then: add the plan (migration, programme_length_days
+  = 21), rename /owner/conversions to "Programme conversions" with a
+  6-week / 21-day switch and the programme on every row. Roster tags and
+  the day-21 booking cut-off already work off programme_length_days.
+- **Guy's spec questions:** monthly check-in (replace or add to the weekly
+  one?), leaderboard (ranked on what? opt-out?), refer a friend (how many
+  free passes? does the guest take a space?).
+- **Seed Coach** (seed-coach@example.internal, role owner, created by an
+  earlier session 2026-09-17, never signed in): move its 3 past sessions
+  to Carl, then delete it on Members.
 - **Auto-setup for new 6-week challenge members — waiting on Guy.** Guy
   will create new Stripe Payment Links just for the 6-week challenge.
   Once he has, the Stripe webhook (checkout.session.completed) matches
