@@ -8,7 +8,7 @@ spec lives in the shared Google Doc; this is status, not spec.
 
 Everything is **committed, pushed, and deployed** to
 `https://fitnessblueprints.vercel.app` (permanent URL; functions in `lhr1`).
-All migrations through **0035** have been applied (0036 pending) (2026-09-25: 0031 was
+All migrations through **0036** have been applied (2026-09-25: 0031 was
 run on its own — it carries 0030's book_session() changes too, and 0030
 only touched that function, so 0030 is covered).
 
@@ -84,7 +84,7 @@ that far — src/lib/booking-window.ts).
   of the month, skips members with 0 sessions, once per month via
   email_log (0036). First real send 1 Nov for October
   (FIRST_MONTHLY_REPORT); "Email me a monthly report preview" on the
-  /admin Email check card. **0036 must be applied before 1 Nov.**
+  /admin Email check card. 0036 applied 2026-10-01.
 - Still to do from Guy's list: monthly check-in (replace or add to the
   weekly one?), workout board with class
   toggle + daily leaderboard (ranked on what? opt-out?), refer a friend
