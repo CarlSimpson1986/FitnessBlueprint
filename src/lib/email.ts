@@ -15,6 +15,25 @@ export function isInternalAddress(email: string) {
   return email.toLowerCase().endsWith(".invalid");
 }
 
+/** Rough plain-text version of our simple email HTML: links kept as "text (url)". */
+function htmlToText(html: string) {
+  return html
+    .replace(/<a [^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi, "$2 ($1)")
+    .replace(/<li[^>]*>/gi, "- ")
+    .replace(/<(br|\/p|\/li|\/h1|\/div|\/tr)[^>]*>/gi, "\n")
+    .replace(/<\/td>/gi, "  ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n\s*\n\s*/g, "\n\n")
+    .trim();
+}
+
 export async function sendEmail(input: { to: string; subject: string; html: string }): Promise<{ error?: string }> {
   const env = serverEnv();
 
@@ -47,6 +66,9 @@ export async function sendEmail(input: { to: string; subject: string; html: stri
       to: [{ email: input.to }],
       subject: input.subject,
       htmlContent: input.html,
+      // HTML-only mail is a spam signal (Yahoo especially) — always send a
+      // plain-text part alongside it.
+      textContent: htmlToText(input.html),
     }),
   });
 
