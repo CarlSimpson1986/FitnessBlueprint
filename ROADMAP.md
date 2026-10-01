@@ -92,6 +92,15 @@ that far — src/lib/booking-window.ts).
   don't flag everyone. Replaces one email per quiet member. at-risk.ts
   no longer loads every booking ever (1000-row cap) — recent sessions
   only, chunked.
+- Programme follow-ups (0037 programme_followups, owner-only RLS):
+  /owner/conversions renamed "Programme conversions" (src/lib/
+  conversions.ts) — each programme member gets a status: not spoken yet /
+  talked, staying / talked, not now / follow up on a date, plus a note.
+  The Monday digest (src/lib/monday-digest.ts) now leads with final-week
+  members nobody's spoken to and non-converters due a follow-up (never
+  spoken to within 30 days of finishing, or follow-up date reached),
+  then not-training and not-checking-in. "Email me a Monday digest
+  preview" on the /admin Email check card.
 - Still to do from Guy's list: monthly check-in (replace or add to the
   weekly one?), workout board with class
   toggle + daily leaderboard (ranked on what? opt-out?), refer a friend

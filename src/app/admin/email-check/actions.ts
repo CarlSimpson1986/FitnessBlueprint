@@ -3,6 +3,7 @@
 import { requireOwner } from "@/lib/auth";
 import { sendEmail } from "@/lib/email";
 import { publicEnv, serverEnv } from "@/lib/env";
+import { buildMondayDigest } from "@/lib/monday-digest";
 import { buildMonthlyReport, monthlyReportHtml, monthlyReportSubject, previousMonth } from "@/lib/monthly-progress";
 
 export type ActionResult = { error?: string; sentTo?: string };
@@ -96,5 +97,31 @@ export async function sendMonthlyReportPreview(): Promise<PreviewResult> {
     return result.error ? { error: result.error } : { sentTo: profile.email, memberName };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Couldn't build the report." };
+  }
+}
+
+/**
+ * Owner-only: emails the owner what Monday's digest would say right now
+ * (src/lib/monday-digest.ts), on the owner's RLS client — the at-risk
+ * and conversions tables all have owner read policies.
+ */
+export async function sendMondayDigestPreview(): Promise<ActionResult> {
+  const { supabase, profile } = await requireOwner();
+  if (!profile.email) {
+    return { error: "Your profile has no email address." };
+  }
+  try {
+    const digest = await buildMondayDigest(supabase, publicEnv.NEXT_PUBLIC_SITE_URL);
+    if (!digest) {
+      return { error: "Nobody would be listed right now, so Monday's email wouldn't go out." };
+    }
+    const result = await sendEmail({
+      to: profile.email,
+      subject: `[Preview] ${digest.subject}`,
+      html: digest.html(profile.full_name.split(" ")[0] ?? profile.full_name),
+    });
+    return result.error ? { error: result.error } : { sentTo: profile.email };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Couldn't build the digest." };
   }
 }

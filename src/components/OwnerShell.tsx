@@ -24,7 +24,7 @@ const NAV: (NavLink & { children: NavLink[] })[] = [
     children: [
       { href: "/admin/check-ins", label: "Check-ins" },
       { href: "/owner/at-risk", label: "At-risk" },
-      { href: "/owner/conversions", label: "6-week conversions" },
+      { href: "/owner/conversions", label: "Programme conversions" },
       { href: "/admin/challenges", label: "Challenges" },
       { href: "/admin/events", label: "Events" },
     ],

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { sendMonthlyReportPreview, sendTestEmail, type PreviewResult } from "./actions";
+import { sendMondayDigestPreview, sendMonthlyReportPreview, sendTestEmail, type ActionResult, type PreviewResult } from "./actions";
 
 /** Owner-only card on /admin: prove Brevo delivers with one click. */
 export function EmailCheckCard() {
@@ -9,6 +9,8 @@ export function EmailCheckCard() {
   const [result, setResult] = useState<{ error?: string; sentTo?: string } | null>(null);
   const [isPreviewPending, startPreview] = useTransition();
   const [preview, setPreview] = useState<PreviewResult | null>(null);
+  const [isDigestPending, startDigest] = useTransition();
+  const [digest, setDigest] = useState<ActionResult | null>(null);
 
   return (
     <div className="fb-card">
@@ -48,6 +50,20 @@ export function EmailCheckCard() {
         </p>
       )}
       {preview?.error && <p className="text-xs text-red-400 mt-2 break-words">{preview.error}</p>}
+
+      <p className="text-blueprint-muted text-sm leading-relaxed mt-5 mb-3">
+        Your Monday email lists who needs a personal message. See what it would say today.
+      </p>
+      <button
+        type="button"
+        onClick={() => startDigest(async () => setDigest(await sendMondayDigestPreview()))}
+        disabled={isDigestPending}
+        className="fb-btn-primary w-full text-xs disabled:opacity-50"
+      >
+        {isDigestPending ? "Sending…" : "Email me a Monday digest preview"}
+      </button>
+      {digest?.sentTo && <p className="text-xs text-blueprint-accent mt-2">Sent to {digest.sentTo}.</p>}
+      {digest?.error && <p className="text-xs text-red-400 mt-2 break-words">{digest.error}</p>}
     </div>
   );
 }

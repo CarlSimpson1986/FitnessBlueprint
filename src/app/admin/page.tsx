@@ -175,10 +175,10 @@ export default async function AdminPage() {
               className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
             >
               <p className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-2">
-                6-week conversions
+                Programme conversions
               </p>
               <p className="text-blueprint-muted text-sm leading-relaxed">
-                Programme members who haven&apos;t converted yet.
+                Programme members, who you&apos;ve spoken to, and who hasn&apos;t converted yet.
               </p>
             </Link>
           )}

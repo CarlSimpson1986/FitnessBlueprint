@@ -846,6 +846,39 @@ export type Database = {
         }
         Relationships: []
       }
+      programme_followups: {
+        Row: {
+          id: string
+          membership_id: string
+          member_id: string
+          status: string
+          follow_up_on: string | null
+          note: string | null
+          updated_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          membership_id: string
+          member_id: string
+          status: string
+          follow_up_on?: string | null
+          note?: string | null
+          updated_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          membership_id?: string
+          member_id?: string
+          status?: string
+          follow_up_on?: string | null
+          note?: string | null
+          updated_by?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       coach_time_off: {
         Row: {
           id: string

@@ -4,7 +4,7 @@ import { isInternalAddress, sendEmail } from "@/lib/email";
 import { publicEnv, serverEnv } from "@/lib/env";
 import { toLocalDateKey } from "@/lib/format";
 import { buildWeeklySummary } from "@/lib/coach-ted/weekly-summary";
-import { computeAtRisk, type AtRiskRow } from "@/lib/at-risk";
+import { buildMondayDigest } from "@/lib/monday-digest";
 import { formatRatingAverages } from "@/lib/session-feedback";
 import { buildMonthlyReport, monthlyReportHtml, monthlyReportSubject, previousMonth } from "@/lib/monthly-progress";
 import type { Database } from "@/types/database.types";
@@ -12,9 +12,6 @@ import type { Database } from "@/types/database.types";
 // The monthly progress email starts with October 2026's (sent 1 Nov) so
 // Guy can see a preview first (Email check card on /admin).
 const FIRST_MONTHLY_REPORT = "2026-10";
-// The at-risk digest's "not checking in" list starts once members have
-// had two Sunday check-in emails (the first goes out 4 Oct 2026).
-const FIRST_CHECKIN_DIGEST = "2026-10-19";
 
 /**
  * Europe/London "now", represented as a Date whose local wall-clock parts
@@ -81,49 +78,6 @@ function checkinEmailHtml(name: string, url: string) {
   <p style="margin:28px 0">
     <a href="${url}" style="background:#2e9bf0;color:#000;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:8px;display:inline-block">Do my check-in</a>
   </p>
-  <p style="font-size:13px;color:#666">Fitness Blueprint</p>
-</div>`.trim();
-}
-
-function escapeHtml(text: string) {
-  return text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
-}
-
-function atRiskDigestSubject(notTraining: number, notCheckingIn: number) {
-  if (notTraining === 0) return `${notCheckingIn} member${notCheckingIn === 1 ? "" : "s"} not checking in`;
-  return `${notTraining} member${notTraining === 1 ? "" : "s"} not training — worth a message`;
-}
-
-function atRiskDigestHtml(ownerName: string, notTraining: AtRiskRow[], notCheckingIn: AtRiskRow[]) {
-  const atRiskUrl = `${publicEnv.NEXT_PUBLIC_SITE_URL}/owner/at-risk`;
-  const away = (r: AtRiskRow) =>
-    r.daysAway === null ? "no sessions yet" : `last in ${r.daysAway} day${r.daysAway === 1 ? "" : "s"} ago`;
-  const phone = (r: AtRiskRow) =>
-    r.phone ? ` · <a href="tel:${escapeHtml(r.phone.replace(/\s+/g, ""))}" style="color:#2e9bf0">${escapeHtml(r.phone)}</a>` : "";
-
-  const trainingHtml = notTraining.length
-    ? `<p style="font-size:16px;font-weight:600;margin:24px 0 8px">Not training — nothing booked</p>
-  <ul style="font-size:15px;line-height:1.7;padding-left:20px;margin:0">
-    ${notTraining
-      .map(
-        (r) =>
-          `<li><strong>${escapeHtml(r.full_name)}</strong> <span style="color:#666">(${escapeHtml(r.plan)}) — ${away(r)}</span>${phone(r)}</li>`
-      )
-      .join("\n    ")}
-  </ul>`
-    : "";
-  const checkinHtml = notCheckingIn.length
-    ? `<p style="font-size:14px;font-weight:600;margin:24px 0 8px;color:#444">Training, but no check-in for 2 weeks</p>
-  <p style="font-size:14px;line-height:1.6;color:#444;margin:0">${notCheckingIn.map((r) => escapeHtml(r.full_name)).join(", ")}</p>`
-    : "";
-
-  return `
-<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px 16px;color:#111">
-  <p style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#2e9bf0;font-weight:700;margin:0 0 20px">Fitness Blueprint</p>
-  <p style="font-size:16px;line-height:1.5;margin:0">Morning ${escapeHtml(ownerName)} — here's who could do with a personal message this week.</p>
-  ${trainingHtml}
-  ${checkinHtml}
-  <p style="margin:28px 0"><a href="${atRiskUrl}" style="background:#2e9bf0;color:#000;text-decoration:none;font-weight:600;padding:10px 18px;border-radius:8px;display:inline-block">Open the at-risk list</a></p>
   <p style="font-size:13px;color:#666">Fitness Blueprint</p>
 </div>`.trim();
 }
@@ -258,38 +212,30 @@ export async function GET(request: Request) {
   }
 
   // ---------------------------------------------------------------------
-  // 3. At-risk digest to the owner — Mondays, ONE email listing who needs
-  // a personal nudge (src/lib/at-risk.ts, same rules as /owner/at-risk):
-  // not training (14+ days, nothing booked) first, with phone numbers;
-  // training but not checking in underneath. No email if nobody's listed.
-  // The check-in list is left out until FIRST_CHECKIN_DIGEST — the
-  // Sunday check-in email never went out before 4 Oct (cron fault), so
-  // before then almost everyone would be "not checking in".
+  // 3. Monday digest to the owner — ONE email of who needs a personal
+  // message: programme members in their final week nobody's spoken to,
+  // non-converters due a follow-up, members not training, and (from
+  // 19 Oct) members not checking in. src/lib/monday-digest.ts. No email
+  // if nobody's listed.
   // ---------------------------------------------------------------------
   if (dayOfWeek === 1) {
     try {
-      const { notTraining, notCheckingIn } = await computeAtRisk(supabase);
-      const checkinList = todayKey >= FIRST_CHECKIN_DIGEST ? notCheckingIn : [];
-
-      if (notTraining.length || checkinList.length) {
+      const digest = await buildMondayDigest(supabase, publicEnv.NEXT_PUBLIC_SITE_URL);
+      if (digest) {
         const { data: owners } = await supabase.from("profiles").select("id, email, full_name").eq("role", "owner");
         for (const owner of owners ?? []) {
           if (!owner.email || isInternalAddress(owner.email)) continue;
           const outcome = await sendOnce(
             supabase,
             { recipient_id: owner.id, email_type: "coach_quiet_member_alert", reference_key: `digest:${todayKey}` },
-            {
-              to: owner.email,
-              subject: atRiskDigestSubject(notTraining.length, checkinList.length),
-              html: atRiskDigestHtml(firstName(owner.full_name), notTraining, checkinList),
-            }
+            { to: owner.email, subject: digest.subject, html: digest.html(firstName(owner.full_name)) }
           );
           if (outcome === "sent") results.atRiskDigests++;
           if (outcome === "failed") results.failed++;
         }
       }
     } catch (err) {
-      console.error("reminders: at-risk digest failed —", err);
+      console.error("reminders: Monday digest failed —", err);
       results.failed++;
     }
   }
