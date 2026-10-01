@@ -106,6 +106,13 @@ that far — src/lib/booking-window.ts).
   sender name set to "Fitness Blueprint". Tested 2026-09-25: magic link
   landed in a Yahoo inbox, correct sender, link not rewritten, sign-in
   works. Optional: turn off Brevo click tracking; test Gmail/Outlook.
+  2026-10-01: monthly report preview (Brevo API) still landed in Yahoo
+  spam; links work once moved to inbox (Yahoo disables links in Spam).
+  Plain-text part now sent with every email. Main remaining cause:
+  fitnessblueprint.co.uk has **no MX record** — hello@ can't receive
+  replies. Needs a mailbox or free forwarding (e.g. ImprovMX) to Guy's
+  inbox — Guy to choose where replies go. Optional SPF:
+  `v=spf1 include:spf.brevo.com ~all`.
 - Guy's own account still to be created (Members -> Create account ->
   Owner).
 - Workout builder: per-exercise save needed or not? Still unanswered.
