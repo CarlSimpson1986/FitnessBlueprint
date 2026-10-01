@@ -4,11 +4,56 @@ Living record of what's built, what's known-broken, and what's next.
 Update this file as work lands — don't let it drift. Full product
 spec lives in the shared Google Doc; this is status, not spec.
 
-## Pick up here next session (as of 2026-10-01)
+## Pick up here next session (as of 2026-10-01, end of day)
+
+**Next up — in this order:**
+1. **Check the 09:00 UK cron (2026-10-02)** returned 200, not 308
+   (`npx vercel logs --environment production --since 12h --json`,
+   path /api/cron/reminders). It should also expire overdue 6-week
+   memberships. Fixed 2026-10-01 — see the cron note below.
+2. **Stripe payment → app access (build this).** Decided 2026-10-01:
+   do NOT connect the Stripe MCP/OAuth connector (security — least
+   privilege). Instead the webhook (src/app/api/webhooks/stripe/route.ts,
+   checkout.session.completed — currently all TODOs) reads the bought
+   line items with the app's own key and **matches the Stripe product
+   name** to a plan, then creates the account, assigns the plan and sends
+   the branded welcome email. Payment happens first; prices aren't needed
+   (don't ask Guy for them). Also handle customer.subscription.deleted
+   (cancel) and invoice.payment_failed for the monthly plans.
+   Guy's Stripe product names (2026-10-01 PDF):
+   - GCP - 1 per week → 1x_week · GCP - 2 per week → 2x_week ·
+     GCP - UNLIMITED → unlimited
+   - **GCP - Hyrox only → new plan** (Hyrox classes only? infer, flag it)
+   - **21 day starter program → new plan**, programme_length_days 21
+   - **6WP - 1 per week → new plan** (6-week, 1x/week)
+   - 6WP - 2 per week → 6wk_2x · 6WP - Unlimited → 6wk_unlimited
+   - GoCardless (GCP 1/2/Unlimited) — separate integration, later.
+   Hand-off steps for Carl at the end: swap Vercel STRIPE_SECRET_KEY for a
+   **restricted read-only key** (rk_live_: Checkout Sessions, Products,
+   Prices, Customers, Subscriptions — he pastes it into Vercel, never in
+   chat); add the webhook endpoint in Stripe; STRIPE_WEBHOOK_SECRET
+   already exists in Vercel (verify it matches the new endpoint).
+3. **Coach Ted hardening — 2 commits NOT pushed** (16ee3b7, 9091696)
+   plus uncommitted v1 prompt fixes in src/lib/coach-ted/claude.ts and
+   the judge fix in evals/coach-ted/run.ts. **Carl must run migration
+   0039 (claim_ted_question) before pushing** — the route calls it.
+   Red-team eval (`npm run ted:eval`, evals/coach-ted, Opus 5.5 judge +
+   hard checks, ~1p/case): baseline 28/33 (30/33 after a grader bug was
+   fixed), v1 30/33. Next: pass today's UK date into Ted's context (he
+   told a member a Mar-2027 target was "four years" away), add "never set
+   a faster weight-loss target to fit a deadline", then run v2 with each
+   case twice (~60p — ask Carl first). Then the weekly-summary injection
+   eval, Gemini free-tier data terms, privacy-notice line, swap emailed
+   temp passwords for set-password links, open signup (Guy's call).
+4. **Two-factor (0038 not yet run).** Code is live; Carl has enrolled.
+   Once Guy has set his up (he's prompted on next visit), Carl runs
+   0038 to enforce it in RLS.
+5. Waiting on Guy: monthly check-in (replace weekly?), leaderboard
+   (ranked on what? opt-out?), refer a friend (passes? takes a space?).
 
 Everything is **committed, pushed, and deployed** to
 `https://fitnessblueprints.vercel.app` (permanent URL; functions in `lhr1`).
-All migrations through **0037** have been applied (2026-09-25: 0031 was
+All migrations through **0037** have been applied (0038 and 0039 written, not yet run) (2026-09-25: 0031 was
 run on its own — it carries 0030's book_session() changes too, and 0030
 only touched that function, so 0030 is covered).
 
