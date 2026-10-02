@@ -15,6 +15,7 @@
  *   npm run ted:eval                     all cases
  *   npm run ted:eval -- --only id1,id2   just those
  *   --variant v1                         write to a new variant folder
+ *   --ted-model claude-sonnet-5-5        run Ted on another model (the app is unchanged)
  *
  * Output: .claude/hillclimb/coach-ted/<variant>/ — results.jsonl (one row
  * per case, written as each finishes; re-running skips finished cases),
@@ -193,7 +194,7 @@ async function main() {
       c.question,
       { memberProfile: profile, history: [], ownerAnswers: [], pubmedSources: [], knowledgeBase: [] },
       (m) => (tedModel = m),
-      { client, onFinal: (m) => (tedFinal = m), today: EVAL_TODAY }
+      { client, onFinal: (m) => (tedFinal = m), today: EVAL_TODAY, model: arg("--ted-model") }
     )) {
       answer += chunk;
     }

@@ -71,9 +71,21 @@ templates live in the dashboard; re-check after any Supabase project change.
    safe weekly loss rate are worked out in the profile, and he's told not
    to project totals ("kg lost by a date"). 62/70; protein maths fixed,
    but Haiku still projected totals against the instruction and invented
-   small facts. Next: same eval with Ted on Sonnet 5.5 (Carl approved the
-   test, ~£1-1.50; Sonnet is ~2-3x Haiku per answer, worst case ~$60-90/
-   month at the 300/day cap). Still open: weekly-summary injection
+   small facts. **Sonnet 5.5 tested same day: 70/70, ~3x Haiku's cost
+   (~$10 vs ~$3 per 1,000 answers). Carl decided to stay on Haiku** —
+   don't switch without asking him. (`npm run ted:eval -- --ted-model X`
+   runs the eval on another model; the app is unaffected.)
+   **v8 shipped (same day)** — prompt restructured: "Facts about them",
+   "Numbers" and "Pain and injury" sections with real failure examples,
+   plus a before-you-send checklist; crisis numbers each on their own line
+   (Samaritans is calls only — Ted once said "call or text"); steroids
+   named as Class C prescription drugs, never supplements; shift-work light
+   advice (he had it backwards). v6 66/70, v7 60, v8 62 — within noise;
+   v8 chosen as safest (crisis answers exact in both runs). **Rules have
+   hit diminishing returns on Haiku:** remaining failures are one-offs in
+   different cases each run, plus one persistent habit — he projects "kg
+   lost by a date" despite three instructions not to. Accepted as a known
+   Haiku limitation. Still open: weekly-summary injection
    eval, privacy-notice line (Gemini checked 2026-10-02: UK users get paid-tier data terms even on the free key, so nothing to do), open signup
    (Guy's call).
 4. **Two-factor (0038 not yet run).** Code is live; Carl has enrolled.

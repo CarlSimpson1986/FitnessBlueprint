@@ -39,7 +39,7 @@ export function describeDay(isoDate: string, today: Date = new Date()) {
 /** Fitness Blueprint's 1.6-2.2g/kg protein guidance, in grams, to the nearest 5g. */
 export function proteinRange(weightKg: number) {
   const g = (x: number) => Math.round((weightKg * x) / 5) * 5;
-  return `Protein for them (1.6-2.2g per kg a day): about ${g(1.6)}-${g(2.2)}g a day`;
+  return `Recommended protein for them (1.6-2.2g per kg a day; a target, not something they've logged): about ${g(1.6)}-${g(2.2)}g a day`;
 }
 
 /** The 0.5-1%-of-bodyweight-a-week fat-loss rate, worked out in kg. */
