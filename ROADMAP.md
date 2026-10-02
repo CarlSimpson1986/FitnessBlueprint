@@ -6,11 +6,6 @@ spec lives in the shared Google Doc; this is status, not spec.
 
 ## Pick up here next session (as of 2026-10-01, end of day)
 
-**Test accounts to delete (2026-10-02):** `carlossimpson83+fbtest@gmail.com`
-and `carlossimpson83+fbtest2@gmail.com`, members, created by the Stripe
-webhook from £0 test checkouts (promotion code TESTAPP). Delete them on the Members page, cancel their subscriptions in Stripe
-and archive the coupon once the Stripe flow is confirmed working.
-
 **Supabase email templates (2026-10-02):** Magic Link and Confirm signup
 must link to `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`
 (Supabase dashboard → Authentication → Emails), not `{{ .ConfirmationURL }}`.
@@ -21,8 +16,12 @@ templates live in the dashboard; re-check after any Supabase project change.
 **Next up — in this order:**
 1. ~~Check the 09:00 UK cron~~ — DONE 2026-10-02: /api/cron/reminders
    returned 200 (was 308).
-2. **Stripe payment → app access — BUILT and pushed 2026-10-02 (0039,
-   0040, 0041 all run); Stripe-side setup + a real test still to do.** `src/lib/stripe-checkout.ts` + webhook route +
+2. **Stripe payment → app access — LIVE and tested 2026-10-02.** Stripe
+   restricted key (Read: Charges, Checkout Sessions, Products, Prices),
+   webhook endpoint + STRIPE_WEBHOOK_SECRET set. Tested with £0 purchases:
+   account, welcome link, booking, and cancellation all worked; both test
+   accounts deleted. Only loose end: deactivate the TESTAPP promotion code
+   in Stripe if not done. `src/lib/stripe-checkout.ts` + webhook route +
    migration **0040** (run AFTER 0039). On checkout.session.completed
    (and async_payment_succeeded) it lists the line items, matches the
    product name to `membership_plans.stripe_product_name` (case/space-
