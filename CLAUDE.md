@@ -40,6 +40,10 @@ to main, etc). The rest depend on you reading this file.
   and never get the `owner` role. Any account created outside the app's
   own flows goes in ROADMAP.md with why it exists. (A "Seed Coach" owner
   account was once created by hand and forgotten.)
+- **Never email a password.** Account emails send a link that lets the
+  person set their own (`/auth/welcome`, see `src/lib/accounts.ts`). A
+  test member couldn't sign in with an emailed temporary password
+  (2026-10-02), and a paying client would have been locked out on day one.
 - **`session_feedback` has no coach-read policy — this is deliberate.**
   Per the confirmed spec, only the owner sees individual ratings. Don't
   add one because it "seems useful."

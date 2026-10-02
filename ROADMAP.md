@@ -6,9 +6,9 @@ spec lives in the shared Google Doc; this is status, not spec.
 
 ## Pick up here next session (as of 2026-10-01, end of day)
 
-**Test account to delete (2026-10-02):** `carlossimpson83+fbtest@gmail.com`,
-member, created by the Stripe webhook from a £0 test checkout (coupon
-TESTAPP). Delete it on the Members page, cancel its subscription in Stripe
+**Test accounts to delete (2026-10-02):** `carlossimpson83+fbtest@gmail.com`
+and `carlossimpson83+fbtest2@gmail.com`, members, created by the Stripe
+webhook from £0 test checkouts (promotion code TESTAPP). Delete them on the Members page, cancel their subscriptions in Stripe
 and archive the coupon once the Stripe flow is confirmed working.
 
 **Next up — in this order:**
