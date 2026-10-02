@@ -35,7 +35,11 @@ templates live in the dashboard; re-check after any Supabase project change.
    activation moved to `src/lib/accounts.ts` (Members page uses it too).
    **Confirmed 2026-10-02:** Hyrox only = Hyrox classes only
    (`allowed_template_codes`, 0040), 3 sessions/week (0041); 21-day
-   starter = 3/week for 3 weeks (0041). New plans' price_pence
+   starter = 3/week for 3 weeks (0041). Every other plan — GCP 1x/2x/
+   Unlimited, all 6-week programmes, the 21-day starter — is GCP and can
+   book every timetable class, Hyrox included (allowed_template_codes
+   null). Only Hyrox only is restricted. End-to-end tested 2026-10-02:
+   £0 purchase → account → welcome link → set password → booking. New plans' price_pence
    starts at 0 and fills from Stripe's price on first sale. GoCardless is a separate, later job.
    0040 also fixes a pre-existing gap: `accept_booking_invite` now
    applies the weekly limit and programme end date (buddy invites used to
