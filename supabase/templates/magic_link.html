@@ -3,7 +3,7 @@
   <h1 style="font-size:22px;margin:0 0 16px">Your sign-in link</h1>
   <p style="font-size:16px;line-height:1.5">Tap the button below to sign in to the Fitness Blueprint app. The link works once and expires shortly.</p>
   <p style="margin:28px 0">
-    <a href="{{ .ConfirmationURL }}" style="background:#2e9bf0;color:#000;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:8px;display:inline-block">Sign in</a>
+    <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email" style="background:#2e9bf0;color:#000;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:8px;display:inline-block">Sign in</a>
   </p>
   <p style="font-size:13px;line-height:1.5;color:#666">If you didn't ask to sign in, you can ignore this email. Your account is safe.</p>
   <p style="font-size:13px;color:#666;margin-top:28px">Fitness Blueprint</p>
