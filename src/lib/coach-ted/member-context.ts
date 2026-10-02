@@ -6,6 +6,49 @@ type Supabase = Awaited<ReturnType<typeof createClient>>;
 const RECENT_DAYS = 28;
 const HISTORY_TURNS = 6;
 const HISTORY_DAYS = 7;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** YYYY-MM-DD for a moment, in UK time. */
+function ukDate(d: Date) {
+  return d.toLocaleDateString("en-CA", { timeZone: "Europe/London" });
+}
+
+/**
+ * "24 Sept 2026, 8 days ago" / "1 Mar 2027, in 150 days, about 5 months".
+ * Ted kept getting gaps between dates wrong ("a couple of weeks" for 8
+ * days, "years" for 5 months), so the profile spells them out instead of
+ * leaving him to count. Exported for the red-team eval's fixed profile.
+ */
+export function describeDay(isoDate: string, today: Date = new Date()) {
+  const day = isoDate.slice(0, 10);
+  const label = new Date(`${day}T12:00:00Z`).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+  const diff = Math.round((Date.parse(`${day}T00:00:00Z`) - Date.parse(`${ukDate(today)}T00:00:00Z`)) / DAY_MS);
+  const n = Math.abs(diff);
+  if (n === 0) return `${label}, today`;
+  const count = n === 1 ? "1 day" : `${n} days`;
+  const approx =
+    n >= 60 ? `, about ${Math.round(n / 30.44)} months` : n >= 14 ? `, about ${Math.round(n / 7)} weeks` : "";
+  return diff < 0 ? `${label}, ${count} ago${approx}` : `${label}, in ${count}${approx}`;
+}
+
+/** The 0.5-1%-of-bodyweight-a-week fat-loss rate, worked out in kg. */
+export function safeLossRate(weightKg: number) {
+  const r = (x: number) => Math.round(x * 10) / 10;
+  const low = weightKg * 0.005;
+  const high = weightKg * 0.01;
+  return `If they ask about losing weight, the safe rate for them (0.5-1% of bodyweight a week): ${r(low)}-${r(high)}kg a week, about ${r(low * 4)}-${r(high * 4)}kg every 4 weeks`;
+}
+
+/** "8 weeks" / "10 days" between two dates. */
+function spanBetween(fromIso: string, toIso: string) {
+  const n = Math.round((Date.parse(toIso.slice(0, 10)) - Date.parse(fromIso.slice(0, 10))) / DAY_MS);
+  return n >= 14 ? `about ${Math.round(n / 7)} weeks` : `${n} day${n === 1 ? "" : "s"}`;
+}
 
 /**
  * What Coach Ted knows about the member he's talking to, as a short plain-
@@ -18,7 +61,7 @@ const HISTORY_DAYS = 7;
  * leaves its section out; Ted still answers.
  */
 export async function buildMemberProfile(supabase: Supabase, memberId: string): Promise<string> {
-  const since = new Date(Date.now() - RECENT_DAYS * 24 * 60 * 60 * 1000);
+  const since = new Date(Date.now() - RECENT_DAYS * DAY_MS);
   const sinceDate = since.toISOString().slice(0, 10);
 
   const [profile, goals, checkins, metrics, attended, readiness, membership, logs] = await Promise.all([
@@ -72,8 +115,10 @@ export async function buildMemberProfile(supabase: Supabase, memberId: string): 
 
   for (const g of goals.data ?? []) {
     const parts = [
-      `Goal (${g.type.replace(/_/g, " ")}): ${g.metric} — long-term target ${g.long_target}${g.long_date ? ` by ${g.long_date}` : ""}`,
-      `6-week target ${g.micro_target} by ${g.checkin_date}`,
+      // Target values are stored without units; naming the metric next to
+      // each stops a lift target being read as a bodyweight one.
+      `Goal (${g.type.replace(/_/g, " ")}), measured by ${g.metric}: long-term target ${g.metric} ${g.long_target}${g.long_date ? ` by ${describeDay(g.long_date)}` : ""}`,
+      `6-week target ${g.metric} ${g.micro_target} by ${describeDay(g.checkin_date)}`,
     ];
     if (g.habits?.length) parts.push(`habits they chose: ${g.habits.join(", ")}`);
     if (g.barriers) parts.push(`barriers: ${g.barriers}`);
@@ -87,10 +132,21 @@ export async function buildMemberProfile(supabase: Supabase, memberId: string): 
     if (!series.length) return;
     const first = series[0]!;
     const last = series[series.length - 1]!;
-    const latest = `${label}: ${last[key]}${unit} (${last.recorded_at.slice(0, 10)})`;
-    lines.push(series.length > 1 ? `${latest}, started at ${first[key]}${unit} (${first.recorded_at.slice(0, 10)})` : latest);
+    const latest = `${label}: ${last[key]}${unit} (${describeDay(last.recorded_at)})`;
+    if (series.length === 1) {
+      lines.push(latest);
+      return;
+    }
+    const change = Math.round((Number(last[key]) - Number(first[key])) * 10) / 10;
+    const direction = change === 0 ? "no change" : `${change < 0 ? "down" : "up"} ${Math.abs(change)}${unit}`;
+    lines.push(
+      `${latest}, started at ${first[key]}${unit} (${describeDay(first.recorded_at)}): ${direction} over ${spanBetween(first.recorded_at, last.recorded_at)}`
+    );
   };
   describeMetric("weight_kg", "Weight", "kg");
+  // Ted got kg-per-week sums wrong; give him the safe rate worked out.
+  const latestWeight = [...metricRows].reverse().find((r) => r.weight_kg !== null)?.weight_kg;
+  if (latestWeight) lines.push(safeLossRate(Number(latestWeight)));
   describeMetric("waist_cm", "Waist", "cm");
   describeMetric("body_fat_pct", "Body fat", "%");
 
@@ -107,14 +163,16 @@ export async function buildMemberProfile(supabase: Supabase, memberId: string): 
   }
 
   for (const c of checkins.data ?? []) {
-    const parts = [`Weekly check-in ${c.week_of}: energy ${c.energy}/5, sleep ${c.sleep}/5, nutrition ${c.nutrition}/5`];
+    const parts = [
+      `Weekly check-in (${describeDay(c.week_of)}): their own ratings out of 5 (1 = poor, 5 = great; not hours) — energy ${c.energy}/5, sleep ${c.sleep}/5, nutrition ${c.nutrition}/5`,
+    ];
     if (c.win) parts.push(`win: ${c.win}`);
     if (c.struggle) parts.push(`struggle: ${c.struggle}`);
     lines.push(parts.join("; "));
   }
 
   for (const r of readiness.data ?? []) {
-    if (r.pain_area) lines.push(`Reported pain before a session on ${r.submitted_at.slice(0, 10)}: ${r.pain_area}`);
+    if (r.pain_area) lines.push(`Reported pain before a session (${describeDay(ukDate(new Date(r.submitted_at)))}): ${r.pain_area}`);
   }
 
   // Heaviest logged set per exercise (weight x reps), not the volume-based
@@ -149,7 +207,7 @@ export type TedTurn = { question: string; answer: string };
  * read own ted conversations" policy as the chat page.
  */
 export async function recentTedTurns(supabase: Supabase, memberId: string): Promise<TedTurn[]> {
-  const since = new Date(Date.now() - HISTORY_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const since = new Date(Date.now() - HISTORY_DAYS * DAY_MS).toISOString();
   const { data } = await supabase
     .from("coach_ted_conversations")
     .select("question, answer")

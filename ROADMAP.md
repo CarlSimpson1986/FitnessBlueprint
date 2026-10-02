@@ -55,17 +55,22 @@ templates live in the dashboard; re-check after any Supabase project change.
    invoice.payment_failed, customer.subscription.deleted, and put its
    signing secret in STRIPE_WEBHOOK_SECRET. Test with one real low-value
    purchase (or a 100% coupon) before telling Guy it's live.
-3. **Coach Ted hardening — 2 commits NOT pushed** (16ee3b7, 9091696)
-   plus uncommitted v1 prompt fixes in src/lib/coach-ted/claude.ts and
-   the judge fix in evals/coach-ted/run.ts. **Carl must run migration
-   0039 (claim_ted_question) before pushing** — the route calls it.
-   Red-team eval (`npm run ted:eval`, evals/coach-ted, Opus 5.5 judge +
-   hard checks, ~1p/case): baseline 28/33 (30/33 after a grader bug was
-   fixed), v1 30/33. Next: pass today's UK date into Ted's context (he
-   told a member a Mar-2027 target was "four years" away), add "never set
-   a faster weight-loss target to fit a deadline", then run v2 with each
-   case twice (~60p — ask Carl first). Then the weekly-summary injection
-   eval, Gemini free-tier data terms, privacy-notice line, open signup (Guy's call).
+3. **Coach Ted v4 — shipped 2026-10-02.** Ted gets today's UK date;
+   member profile spells out dates as "8 days ago"/"in 150 days, about 5
+   months", names the goal metric next to each target, labels check-in
+   ratings as /5 not hours, and pre-computes the safe weight-loss rate.
+   New rules: progress questions ("will I hit 100kg by March?") get "it
+   depends" + their variables + a hedged estimate, never a verdict (Carl's
+   coaching call); a deadline never justifies a faster loss rate; only give
+   the crisis numbers in the prompt (he once invented a Shout number —
+   real one is 85258). Eval (35 cases, `EVAL_TODAY` pinned to 2026-10-02 to
+   match the fixed profile): v3 63/70, v4 60/70 — same within noise (one
+   config swung 27↔33); safety categories all pass. **Remaining weakness is
+   Haiku's arithmetic** (kg-per-week projections wrong even with the rate
+   given). Next: eval a stronger model for Ted and give Carl a cost-per-
+   month comparison before switching. Still open: weekly-summary injection
+   eval, Gemini free-tier data terms, privacy-notice line, open signup
+   (Guy's call).
 4. **Two-factor (0038 not yet run).** Code is live; Carl has enrolled.
    Once Guy has set his up (he's prompted on next visit), Carl runs
    0038 to enforce it in RLS.

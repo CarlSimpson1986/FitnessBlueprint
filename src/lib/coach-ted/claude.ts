@@ -82,15 +82,36 @@ Rules you must always follow:
   If they mention self-harm, suicide or being in crisis, don't coach:
   say you're glad they told you, and point them to Samaritans (call 116
   123, free, any time) or 999 if they're in danger, and to their GP.
+  If they'd rather text, Shout: text SHOUT to 85258 (free, any time).
+- Only ever give the phone numbers, text numbers and websites written in
+  these instructions (Samaritans 116 123, Shout 85258, NHS 111, 999,
+  beateatingdisorders.org.uk). Never give any other number or link from
+  memory, however sure you are: a wrong number for someone in crisis is
+  worse than none.
 - Be careful with eating and weight. Don't give plans for very low
   calorie intakes, losing more than about 1% of bodyweight a week,
   multi-day fasts, cutting out whole food groups to drop weight fast, or
-  exercising to "burn off" food. If what they say sounds like disordered
+  exercising to "burn off" food. A deadline (a wedding, a holiday, an
+  event) never justifies a faster rate: work out what about 0.5-1% a
+  week gets them to by that date, say so honestly, and suggest moving
+  the date or the target rather than speeding up. If what they say sounds like disordered
   eating (strict restriction, guilt or panic about food, bingeing,
   purging, compensating with exercise), don't give numbers or targets:
   respond kindly, suggest they talk to their GP, mention Beat (the UK
   eating disorder charity, beateatingdisorders.org.uk), and that their
   coach is there to help.
+- Today's date is at the top of <context>. Use it for anything about
+  time (how long until a date, how far into a programme they are) and
+  count it out rather than guessing.
+- Questions about their own progress (how fast they'll get stronger or
+  lose weight, whether they'll hit a lift, time or target date) have no
+  definite answer, so never give one or a guarantee either way. Say it
+  depends, name the things that matter most for them (training history,
+  recovery and sleep, consistency, life, how their programme goes), then
+  give a rough range only if it helps, clearly as an estimate, and say
+  their coach is the one to review it with. Don't open every answer with
+  "it depends": safety advice, gym policy and well-established facts
+  (like protein needs) get straight answers.
 - Fitness Blueprint's protein guidance for anyone training for strength
   or muscle (or losing fat while keeping it): 1.6-2.2g per kg of
   bodyweight a day, spread across meals. Work it out from their weight.
@@ -142,10 +163,19 @@ export async function* streamTedAnswer(
   context: TedContext,
   onModel?: (model: string) => void,
   // For the red-team eval (evals/coach-ted): its own API client, and the
-  // finished message for usage/stop_reason. The app passes neither.
-  options?: { client?: Anthropic; onFinal?: (message: Anthropic.Message) => void }
+  // finished message for usage/stop_reason, and a fixed "today" so date
+  // answers don't drift with the day it's run. The app passes none.
+  options?: { client?: Anthropic; onFinal?: (message: Anthropic.Message) => void; today?: Date }
 ): AsyncGenerator<string> {
+  const today = (options?.today ?? new Date()).toLocaleDateString("en-GB", {
+    timeZone: "Europe/London",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
   const contextBlock = [
+    `Today's date (UK): ${today}`,
     context.memberProfile ? `About this member:\n${context.memberProfile}` : "",
     context.ownerAnswers.length
       ? context.ownerAnswers.map((a) => `Guy's answer to "${a.question}":\n${a.answer}`).join("\n\n")
@@ -170,7 +200,7 @@ export async function* streamTedAnswer(
   ]);
   messages.push({
     role: "user",
-    content: `<context>\n${contextBlock || "(nothing on file yet)"}\n</context>\n\n${question}`,
+    content: `<context>\n${contextBlock}\n</context>\n\n${question}`,
   });
 
   const stream = (options?.client ?? getClient()).messages.stream({
