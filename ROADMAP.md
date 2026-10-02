@@ -60,7 +60,7 @@ spec lives in the shared Google Doc; this is status, not spec.
 
 Everything is **committed, pushed, and deployed** to
 `https://fitnessblueprints.vercel.app` (permanent URL; functions in `lhr1`).
-All migrations through **0037** have been applied (0038 and 0039 written, not yet run) (2026-09-25: 0031 was
+All migrations through **0041** have been applied except **0038** (waits for Guy's two-factor) (2026-09-25: 0031 was
 run on its own — it carries 0030's book_session() changes too, and 0030
 only touched that function, so 0030 is covered).
 
