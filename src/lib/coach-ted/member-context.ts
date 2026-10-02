@@ -36,12 +36,18 @@ export function describeDay(isoDate: string, today: Date = new Date()) {
   return diff < 0 ? `${label}, ${count} ago${approx}` : `${label}, in ${count}${approx}`;
 }
 
+/** Fitness Blueprint's 1.6-2.2g/kg protein guidance, in grams, to the nearest 5g. */
+export function proteinRange(weightKg: number) {
+  const g = (x: number) => Math.round((weightKg * x) / 5) * 5;
+  return `Protein for them (1.6-2.2g per kg a day): about ${g(1.6)}-${g(2.2)}g a day`;
+}
+
 /** The 0.5-1%-of-bodyweight-a-week fat-loss rate, worked out in kg. */
 export function safeLossRate(weightKg: number) {
   const r = (x: number) => Math.round(x * 10) / 10;
   const low = weightKg * 0.005;
   const high = weightKg * 0.01;
-  return `If they ask about losing weight, the safe rate for them (0.5-1% of bodyweight a week): ${r(low)}-${r(high)}kg a week, about ${r(low * 4)}-${r(high * 4)}kg every 4 weeks`;
+  return `If they ask about losing weight, the safe rate for them (0.5-1% of bodyweight a week): ${r(low)}-${r(high)}kg a week`;
 }
 
 /** "8 weeks" / "10 days" between two dates. */
@@ -144,9 +150,10 @@ export async function buildMemberProfile(supabase: Supabase, memberId: string): 
     );
   };
   describeMetric("weight_kg", "Weight", "kg");
-  // Ted got kg-per-week sums wrong; give him the safe rate worked out.
+  // Ted got sums wrong, so he no longer does any: protein and the safe
+  // loss rate are worked out here (see the rules in claude.ts).
   const latestWeight = [...metricRows].reverse().find((r) => r.weight_kg !== null)?.weight_kg;
-  if (latestWeight) lines.push(safeLossRate(Number(latestWeight)));
+  if (latestWeight) lines.push(proteinRange(Number(latestWeight)), safeLossRate(Number(latestWeight)));
   describeMetric("waist_cm", "Waist", "cm");
   describeMetric("body_fat_pct", "Body fat", "%");
 

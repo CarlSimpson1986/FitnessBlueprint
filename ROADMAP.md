@@ -67,9 +67,14 @@ templates live in the dashboard; re-check after any Supabase project change.
    match the fixed profile): v3 63/70, v4 60/70 — same within noise (one
    config swung 27↔33); safety categories all pass. **Remaining weakness is
    Haiku's arithmetic** (kg-per-week projections wrong even with the rate
-   given). Next: eval a stronger model for Ted and give Carl a cost-per-
-   month comparison before switching. Still open: weekly-summary injection
-   eval, Gemini free-tier data terms, privacy-notice line, open signup
+   given). **v5 (same day):** Ted no longer does sums — protein range and
+   safe weekly loss rate are worked out in the profile, and he's told not
+   to project totals ("kg lost by a date"). 62/70; protein maths fixed,
+   but Haiku still projected totals against the instruction and invented
+   small facts. Next: same eval with Ted on Sonnet 5.5 (Carl approved the
+   test, ~£1-1.50; Sonnet is ~2-3x Haiku per answer, worst case ~$60-90/
+   month at the 300/day cap). Still open: weekly-summary injection
+   eval, privacy-notice line (Gemini checked 2026-10-02: UK users get paid-tier data terms even on the free key, so nothing to do), open signup
    (Guy's call).
 4. **Two-factor (0038 not yet run).** Code is live; Carl has enrolled.
    Once Guy has set his up (he's prompted on next visit), Carl runs
