@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { serverEnv } from "@/lib/env";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { handleCheckoutCompleted, handlePaymentFailed, handleSubscriptionDeleted } from "@/lib/stripe-checkout";
 
 /**
  * Stripe webhook handler.
@@ -45,38 +45,35 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  // Past this point the event is verified as genuinely from Stripe.
-  // Admin client is appropriate here — this is exactly the "reconciling
-  // payment state" case documented in lib/supabase/admin.ts.
-  const supabase = createAdminClient();
+  // Past this point the event is verified as genuinely from Stripe. The
+  // handlers use the admin client — this is exactly the "reconciling
+  // payment state" case documented in lib/supabase/admin.ts. A thrown
+  // error returns 500 so Stripe retries the event; handlers are
+  // idempotent (0040's unique stripe_checkout_session_id).
+  try {
+    switch (event.type) {
+      case "checkout.session.completed":
+      case "checkout.session.async_payment_succeeded":
+        await handleCheckoutCompleted(stripe, event.data.object);
+        break;
 
-  switch (event.type) {
-    case "checkout.session.completed": {
-      // TODO: mark the relevant member_memberships row active, or
-      // create it if this was a first-time signup via payment link.
-      // const session = event.data.object as Stripe.Checkout.Session;
-      break;
+      case "invoice.payment_failed":
+        await handlePaymentFailed(event.data.object);
+        break;
+
+      case "customer.subscription.deleted":
+        await handleSubscriptionDeleted(event.data.object);
+        break;
+
+      default:
+        // Unhandled event types are fine to ignore — Stripe sends many
+        // more event types than this app currently cares about.
+        break;
     }
-
-    case "invoice.payment_failed": {
-      // TODO: flag the membership, trigger a member notification.
-      break;
-    }
-
-    case "customer.subscription.deleted": {
-      // TODO: set member_memberships.status = 'cancelled'.
-      break;
-    }
-
-    default:
-      // Unhandled event types are fine to ignore — Stripe sends many
-      // more event types than this app currently cares about.
-      break;
+  } catch (err) {
+    console.error(`Stripe webhook ${event.type} (${event.id}) failed:`, err);
+    return NextResponse.json({ error: "Handler failed" }, { status: 500 });
   }
-
-  // Reference so the unused-var lint doesn't fire before the TODOs above
-  // are filled in with real Supabase writes.
-  void supabase;
 
   return NextResponse.json({ received: true });
 }

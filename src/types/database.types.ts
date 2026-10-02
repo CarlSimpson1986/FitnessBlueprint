@@ -71,6 +71,8 @@ export type Database = {
           credit_pack_size: number | null
           programme_length_days: number | null
           is_active: boolean
+          stripe_product_name: string | null
+          allowed_template_codes: string[] | null
         }
         Insert: {
           id?: string
@@ -82,6 +84,8 @@ export type Database = {
           credit_pack_size?: number | null
           programme_length_days?: number | null
           is_active?: boolean
+          stripe_product_name?: string | null
+          allowed_template_codes?: string[] | null
         }
         Update: {
           id?: string
@@ -93,6 +97,8 @@ export type Database = {
           credit_pack_size?: number | null
           programme_length_days?: number | null
           is_active?: boolean
+          stripe_product_name?: string | null
+          allowed_template_codes?: string[] | null
         }
         Relationships: []
       }
@@ -105,6 +111,8 @@ export type Database = {
           started_at: string
           current_period_end: string | null
           stripe_subscription_id: string | null
+          stripe_checkout_session_id: string | null
+          stripe_customer_id: string | null
           gocardless_subscription_id: string | null
           created_at: string
         }
@@ -116,6 +124,8 @@ export type Database = {
           started_at?: string
           current_period_end?: string | null
           stripe_subscription_id?: string | null
+          stripe_checkout_session_id?: string | null
+          stripe_customer_id?: string | null
           gocardless_subscription_id?: string | null
           created_at?: string
         }
@@ -127,6 +137,8 @@ export type Database = {
           started_at?: string
           current_period_end?: string | null
           stripe_subscription_id?: string | null
+          stripe_checkout_session_id?: string | null
+          stripe_customer_id?: string | null
           gocardless_subscription_id?: string | null
           created_at?: string
         }
