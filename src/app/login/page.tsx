@@ -117,9 +117,8 @@ function LoginForm() {
 
         {callbackFailed && status === "idle" && (
           <p role="alert" className="mb-6 text-sm text-red-400 leading-relaxed">
-            That sign-in link didn&apos;t work — it may have expired, or been opened in a different
-            browser from the one you requested it in. Send yourself a new one below, or sign in with
-            your password.
+            That sign-in link didn&apos;t work — it may have expired or already been used. Send
+            yourself a new one below, or sign in with your password.
           </p>
         )}
 

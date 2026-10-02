@@ -11,6 +11,13 @@ and `carlossimpson83+fbtest2@gmail.com`, members, created by the Stripe
 webhook from £0 test checkouts (promotion code TESTAPP). Delete them on the Members page, cancel their subscriptions in Stripe
 and archive the coupon once the Stripe flow is confirmed working.
 
+**Supabase email templates (2026-10-02):** Magic Link and Confirm signup
+must link to `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`
+(Supabase dashboard → Authentication → Emails), not `{{ .ConfirmationURL }}`.
+The old ?code= links only worked in the browser that requested them (PKCE),
+so a link asked for on a laptop failed on a phone. Not in a migration —
+templates live in the dashboard; re-check after any Supabase project change.
+
 **Next up — in this order:**
 1. ~~Check the 09:00 UK cron~~ — DONE 2026-10-02: /api/cron/reminders
    returned 200 (was 308).
