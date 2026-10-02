@@ -138,8 +138,11 @@ export async function fetchGoCardlessIncome(startDate: Date, endDate: Date): Pro
     return { transactions: [], totalPence: 0, configured: false };
   }
 
-  const baseUrl =
-    env.GOCARDLESS_ENVIRONMENT === "live" ? "https://api.gocardless.com" : "https://api-sandbox.gocardless.com";
+  // GoCardless tokens say which environment they belong to (live_… or
+  // sandbox_…), so there's no separate setting to get out of step.
+  const baseUrl = env.GOCARDLESS_ACCESS_TOKEN.startsWith("sandbox_")
+    ? "https://api-sandbox.gocardless.com"
+    : "https://api.gocardless.com";
   const transactions: IncomeTransaction[] = [];
   const subscriptionNames = new Map<string, string | null>();
   let after: string | undefined;
