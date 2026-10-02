@@ -4,7 +4,20 @@ Living record of what's built, what's known-broken, and what's next.
 Update this file as work lands — don't let it drift. Full product
 spec lives in the shared Google Doc; this is status, not spec.
 
-## Pick up here next session (as of 2026-10-01, end of day)
+## Pick up here next session (as of 2026-10-02, end of day)
+
+**Done 2026-10-02:** cron fixed (200); Stripe payment → account → plan
+live and tested end to end; welcome email sends a set-password link (no
+passwords emailed — CLAUDE.md rule); emailed sign-in links work in any
+browser (/auth/confirm + Supabase templates); buddy invites respect
+weekly limits/programme end; GoCardless env var removed; Coach Ted v8
+shipped (stays on Haiku — Carl's call).
+
+**Next, in order:** (1) privacy page — the app has none and holds health
+data; draft at /privacy for Guy to approve (needs: ICO registration?
+contact email for data requests); (2) migration 0038 once Guy has
+two-factor; (3) weekly-summary injection eval. Loose ends for Carl:
+deactivate TESTAPP promo code in Stripe if not done.
 
 **Supabase email templates (2026-10-02):** Magic Link and Confirm signup
 must link to `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`
