@@ -221,7 +221,7 @@ function LoginForm() {
           onClick={toggleMode}
           className="mt-6 text-xs font-mono uppercase tracking-wide text-blueprint-muted hover:text-blueprint-accent transition"
         >
-          {mode === "magic-link" ? "Have a password instead?" : "Use magic link instead"}
+          {mode === "magic-link" ? "Have a password instead?" : "Email me a sign-in link instead"}
         </button>
 
         <a

@@ -1,5 +1,5 @@
 import "server-only";
-import { randomBytes } from "crypto";
+import { createHash, randomBytes, timingSafeEqual } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email";
 import { publicEnv } from "@/lib/env";
@@ -22,9 +22,22 @@ export type CreatedAccount = {
   emailError?: string;
 };
 
+/** How long the "Set your password" link in the welcome email works. */
+const WELCOME_LINK_DAYS = 7;
+
+function hashToken(token: string) {
+  return createHash("sha256").update(token).digest("hex");
+}
+
 /**
- * Creates the login + profile with a one-time password (forced change on
- * first sign-in via app_metadata.must_change_password) and emails it.
+ * Creates the login + profile and emails a "Set your password" link
+ * (/auth/welcome). The email never contains a password: copying one out
+ * of an email was too easy to get wrong (2026-10-02). The generated
+ * password is still returned so the owner's Members page can show it for
+ * an in-person handover; must_change_password forces a new one either way.
+ *
+ * Only a hash of the link token is stored, in app_metadata (which users
+ * can't edit). It works until it expires or a password is set.
  */
 export async function createAccountWithWelcome(
   fullName: string,
@@ -34,12 +47,17 @@ export async function createAccountWithWelcome(
 ): Promise<CreatedAccount> {
   const admin = createAdminClient();
   const password = randomBytes(9).toString("base64url");
+  const welcomeToken = randomBytes(32).toString("base64url");
 
   const { data, error: createError } = await admin.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
-    app_metadata: { must_change_password: true },
+    app_metadata: {
+      must_change_password: true,
+      welcome_token_hash: hashToken(welcomeToken),
+      welcome_token_expires_at: new Date(Date.now() + WELCOME_LINK_DAYS * 86_400_000).toISOString(),
+    },
   });
 
   if (createError || !data.user) {
@@ -58,12 +76,11 @@ export async function createAccountWithWelcome(
     return { error: `Account created but profile setup failed: ${profileError.message}`, userId: data.user.id };
   }
 
-  // Email them their temporary password (owner's call, 2026-09-25). It
-  // only works once — they're forced to choose their own on first sign-in.
+  const welcomeUrl = `${publicEnv.NEXT_PUBLIC_SITE_URL}/auth/welcome?u=${data.user.id}&t=${welcomeToken}`;
   const { error: emailError } = await sendEmail({
     to: email,
     subject: "Your Fitness Blueprint account",
-    html: welcomeEmailHtml(fullName, email, password, role, welcomeLine),
+    html: welcomeEmailHtml(fullName, email, welcomeUrl, role, welcomeLine),
   });
   if (emailError) console.error("createAccountWithWelcome: welcome email failed —", emailError);
 
@@ -136,13 +153,27 @@ export async function activateMembership(
   return {};
 }
 
+/**
+ * True if `token` is the live welcome-link token for this user. Only
+ * meaningful while they still have to set a password.
+ */
+export function isValidWelcomeToken(appMetadata: Record<string, unknown> | undefined, token: string) {
+  const storedHash = appMetadata?.welcome_token_hash;
+  const expiresAt = appMetadata?.welcome_token_expires_at;
+  if (appMetadata?.must_change_password !== true) return false;
+  if (typeof storedHash !== "string" || typeof expiresAt !== "string") return false;
+  if (Date.parse(expiresAt) < Date.now()) return false;
+  const given = Buffer.from(hashToken(token), "hex");
+  const stored = Buffer.from(storedHash, "hex");
+  return given.length === stored.length && timingSafeEqual(given, stored);
+}
+
 export function escapeHtml(text: string) {
   return text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 }
 
-function welcomeEmailHtml(fullName: string, email: string, password: string, role: Role, welcomeLine?: string) {
+function welcomeEmailHtml(fullName: string, email: string, welcomeUrl: string, role: Role, welcomeLine?: string) {
   const firstName = escapeHtml(fullName.split(" ")[0] ?? fullName);
-  const loginUrl = `${publicEnv.NEXT_PUBLIC_SITE_URL}/login`;
   const intro =
     role === "member"
       ? "Your Fitness Blueprint account is ready. You can book sessions, log your workouts and chat with Coach Ted."
@@ -153,15 +184,11 @@ function welcomeEmailHtml(fullName: string, email: string, password: string, rol
   <p style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#2e9bf0;font-weight:700;margin:0 0 20px">Fitness Blueprint</p>
   <h1 style="font-size:22px;margin:0 0 16px">Welcome, ${firstName}</h1>
   ${extra}
-  <p style="font-size:16px;line-height:1.5">${intro} Sign in with:</p>
-  <p style="font-size:16px;line-height:1.7;background:#f3f5f7;border-radius:8px;padding:12px 16px">
-    Email: <strong>${escapeHtml(email)}</strong><br>
-    Temporary password: <strong style="font-family:Menlo,Consolas,monospace">${escapeHtml(password)}</strong>
-  </p>
+  <p style="font-size:16px;line-height:1.5">${intro} Tap below to choose your password and you're in.</p>
   <p style="margin:28px 0">
-    <a href="${loginUrl}" style="background:#2e9bf0;color:#000;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:8px;display:inline-block">Sign in</a>
+    <a href="${welcomeUrl}" style="background:#2e9bf0;color:#000;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:8px;display:inline-block">Set your password</a>
   </p>
-  <p style="font-size:13px;line-height:1.5;color:#666">You'll be asked to choose your own password the first time you sign in, and this temporary one stops working.</p>
+  <p style="font-size:13px;line-height:1.5;color:#666">Your sign-in email is <strong>${escapeHtml(email)}</strong>. This button works for ${WELCOME_LINK_DAYS} days. After that, choose "Email me a sign-in link" on the sign-in page instead.</p>
   <p style="font-size:13px;color:#666;margin-top:28px">Fitness Blueprint</p>
 </div>`.trim();
 }

@@ -56,8 +56,8 @@ export function CreateMemberForm() {
       </h2>
       <p className="text-xs text-blueprint-muted mb-4 leading-relaxed">
         For staff (coaches, owners) or a member whose email isn&apos;t working. They&apos;re emailed
-        a temporary password and will be forced to set their own on first login. It&apos;s also
-        shown below once, in case the email doesn&apos;t arrive.
+        a &ldquo;Set your password&rdquo; link. A temporary password is also shown below once, to
+        hand over in person if the email doesn&apos;t arrive.
       </p>
       <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2">
         <input
@@ -98,7 +98,7 @@ export function CreateMemberForm() {
         <div className="mt-4 bg-blueprint-raised border border-blueprint-accent rounded p-3">
           <p className="text-xs text-blueprint-muted mb-1">
             {emailedTo
-              ? `Emailed to ${emailedTo}. Password, in case it doesn't arrive (shown once):`
+              ? `Set-password link emailed to ${emailedTo}. Temporary password, in case it doesn't arrive (shown once):`
               : `The email didn't send${emailError ? ` (${emailError})` : ""} — give them this password yourself (shown once):`}
           </p>
           <p className="font-mono text-sm text-blueprint-ink select-all">{generatedPassword}</p>

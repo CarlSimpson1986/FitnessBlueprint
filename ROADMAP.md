@@ -6,6 +6,11 @@ spec lives in the shared Google Doc; this is status, not spec.
 
 ## Pick up here next session (as of 2026-10-01, end of day)
 
+**Test account to delete (2026-10-02):** `carlossimpson83+fbtest@gmail.com`,
+member, created by the Stripe webhook from a £0 test checkout (coupon
+TESTAPP). Delete it on the Members page, cancel its subscription in Stripe
+and archive the coupon once the Stripe flow is confirmed working.
+
 **Next up — in this order:**
 1. ~~Check the 09:00 UK cron~~ — DONE 2026-10-02: /api/cron/reminders
    returned 200 (was 308).
@@ -50,8 +55,7 @@ spec lives in the shared Google Doc; this is status, not spec.
    told a member a Mar-2027 target was "four years" away), add "never set
    a faster weight-loss target to fit a deadline", then run v2 with each
    case twice (~60p — ask Carl first). Then the weekly-summary injection
-   eval, Gemini free-tier data terms, privacy-notice line, swap emailed
-   temp passwords for set-password links, open signup (Guy's call).
+   eval, Gemini free-tier data terms, privacy-notice line, open signup (Guy's call).
 4. **Two-factor (0038 not yet run).** Code is live; Carl has enrolled.
    Once Guy has set his up (he's prompted on next visit), Carl runs
    0038 to enforce it in RLS.
@@ -161,7 +165,8 @@ that far — src/lib/booking-window.ts).
   can "Reset two-factor" on a staff row for a lost phone. Next: Ted
   rate-limit race + global cap, prompt hardening (incl. weekly-summary
   injection), LLM-judge eval suite, close open signup (Guy's call),
-  set-password links instead of emailed temp passwords, Gemini free-tier
+  ~~set-password links instead of emailed temp passwords~~ (done
+  2026-10-02: /auth/welcome, 7-day single-use link), Gemini free-tier
   data terms, privacy notice line.
 - Still to do from Guy's list: monthly check-in (replace or add to the
   weekly one?), workout board with class

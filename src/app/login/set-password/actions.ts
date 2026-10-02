@@ -22,7 +22,8 @@ export async function clearMustChangePasswordFlag(): Promise<ActionResult> {
 
   const admin = createAdminClient();
   const { error } = await admin.auth.admin.updateUserById(user.id, {
-    app_metadata: { must_change_password: false },
+    // Also retires the welcome link (src/lib/accounts.ts).
+    app_metadata: { must_change_password: false, welcome_token_hash: null, welcome_token_expires_at: null },
   });
 
   if (error) {

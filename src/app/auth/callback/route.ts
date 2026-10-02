@@ -30,6 +30,13 @@ export async function GET(request: Request) {
         if (!profile) {
           return NextResponse.redirect(`${origin}/onboarding`);
         }
+
+        // Accounts made by the owner or the Stripe webhook still need a
+        // password — e.g. a member whose welcome link expired and who
+        // signed in with an emailed link instead.
+        if (user.app_metadata?.must_change_password) {
+          return NextResponse.redirect(`${origin}/login/set-password`);
+        }
       }
 
       return NextResponse.redirect(`${origin}${next}`);
