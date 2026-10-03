@@ -32,13 +32,19 @@ export default async function TodayPage() {
   const coachIds = [...new Set(sessionRows.map((s) => s.coach_id))];
 
   const [{ data: templates }, { data: coaches }] = await Promise.all([
-    supabase.from("session_templates").select("id, name").in("id", templateIds.length > 0 ? templateIds : [""]),
-    supabase.from("profiles").select("id, full_name").in("id", coachIds.length > 0 ? coachIds : [""]),
+    supabase
+      .from("session_templates")
+      .select("id, name")
+      .in("id", templateIds.length > 0 ? templateIds : [""]),
+    supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", coachIds.length > 0 ? coachIds : [""]),
   ]);
 
   const templateNameById = new Map((templates ?? []).map((t) => [t.id, t.name]));
   const workouts = await Promise.all(
-    sessionRows.map(async (s) => [s.id, await loadSessionWorkout(supabase, s.id)] as const)
+    sessionRows.map(async (s) => [s.id, await loadSessionWorkout(supabase, s.id)] as const),
   );
   const workoutBySession = new Map(workouts);
   const coachNameById = new Map((coaches ?? []).map((c) => [c.id, c.full_name]));
@@ -55,7 +61,8 @@ export default async function TodayPage() {
         <p className="fb-eyebrow mb-1">Coach</p>
         <h1 className="text-2xl font-semibold text-blueprint-ink mb-2">Today</h1>
         <p className="text-blueprint-muted mb-10 text-sm leading-relaxed">
-          Mark attendance, add notes, and see the workout and readiness check-ins for {profile.role === "coach" ? "your" : "today's"} sessions.
+          Mark attendance, add notes, and see the workout and readiness check-ins for{" "}
+          {profile.role === "coach" ? "your" : "today's"} sessions.
         </p>
 
         {sessionRows.length === 0 ? (
@@ -74,21 +81,22 @@ export default async function TodayPage() {
                     {coachNameById.get(session.coach_id) ?? "Coach TBC"}
                   </p>
                 </div>
-                <SessionRoster sessionId={session.id} />
-                {/* The session plan, as members see it — below the roster, per the spec's Today screen. */}
-                <details className="border-t border-blueprint-line/60 px-4 py-3">
-                  <summary className="cursor-pointer text-xs font-mono uppercase tracking-wide text-blueprint-muted hover:text-blueprint-accent">
-                    {(workoutBySession.get(session.id) ?? []).length > 0 ? "Workout" : "Workout — none added yet"}
-                  </summary>
-                  {(workoutBySession.get(session.id) ?? []).length > 0 && (
-                    <div className="mt-3">
-                      <MemberWorkoutPreview
-                        title={templateNameById.get(session.template_id) ?? "Session"}
-                        segments={workoutBySession.get(session.id) ?? []}
-                      />
-                    </div>
-                  )}
-                </details>
+                <SessionRoster sessionId={session.id}>
+                  {/* The session plan, as members see it — below the roster, per the spec's Today screen. */}
+                  <details className="border-t border-blueprint-line/60 px-4 py-3">
+                    <summary className="cursor-pointer text-xs font-mono uppercase tracking-wide text-blueprint-muted hover:text-blueprint-accent">
+                      {(workoutBySession.get(session.id) ?? []).length > 0 ? "Workout" : "Workout — none added yet"}
+                    </summary>
+                    {(workoutBySession.get(session.id) ?? []).length > 0 && (
+                      <div className="mt-3">
+                        <MemberWorkoutPreview
+                          title={templateNameById.get(session.template_id) ?? "Session"}
+                          segments={workoutBySession.get(session.id) ?? []}
+                        />
+                      </div>
+                    )}
+                  </details>
+                </SessionRoster>
               </li>
             ))}
           </ul>

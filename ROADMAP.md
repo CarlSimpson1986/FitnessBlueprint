@@ -70,7 +70,7 @@ runs as in v8.
 
 **Session notes (2026-10-03, migration 0047 — run):** spec's
 post-session coach notes. Today roster: "+ Note" under each booked
-member → tap tags (list in src/lib/session-notes.ts — Great session,
+member marked Attended → tap tags (list in src/lib/session-notes.ts — Great session,
 Progressed, Struggled, Form to work on, Niggle / injury, Low energy,
 Check in with them) and/or type a line; "Last time (date): …" shows the
 member's previous note. Coach on own session or Guy writes (Carl's call;
