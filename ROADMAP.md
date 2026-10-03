@@ -68,7 +68,7 @@ about session length and air con instead of answering). New eval case
 control-water passes; squat-plateau / missed-week still flip between
 runs as in v8.
 
-**Session notes (2026-10-03, migration 0047 — Carl runs it):** spec's
+**Session notes (2026-10-03, migration 0047 — run):** spec's
 post-session coach notes. Today roster: "+ Note" under each booked
 member → tap tags (list in src/lib/session-notes.ts — Great session,
 Progressed, Struggled, Form to work on, Niggle / injury, Low energy,
@@ -184,7 +184,7 @@ templates live in the dashboard; re-check after any Supabase project change.
 
 Everything is **committed, pushed, and deployed** to
 `https://fitnessblueprints.vercel.app` (permanent URL; functions in `lhr1`).
-All migrations through **0041** have been applied except **0038** (waits for Guy's two-factor) (2026-09-25: 0031 was
+All migrations through **0047** have been applied except **0038** (waits for Guy's two-factor) (2026-09-25: 0031 was
 run on its own — it carries 0030's book_session() changes too, and 0030
 only touched that function, so 0030 is covered).
 
