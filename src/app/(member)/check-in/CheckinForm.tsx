@@ -17,7 +17,16 @@ const RATING_QUESTIONS: { key: RatingKey; question: string }[] = [
 const textareaClass =
   "w-full bg-blueprint-raised border border-blueprint-line rounded-lg px-4 py-3 text-sm text-blueprint-ink placeholder:text-blueprint-muted focus:outline-none focus:border-blueprint-accent";
 
-export function CheckinForm({ firstName, lastWeightKg }: { firstName: string; lastWeightKg: number | null }) {
+export function CheckinForm({
+  firstName,
+  lastWeightKg,
+  askWeight,
+}: {
+  firstName: string;
+  lastWeightKg: number | null;
+  /** False when the member has opted out of body measurements (0043). */
+  askWeight: boolean;
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -64,6 +73,7 @@ export function CheckinForm({ firstName, lastWeightKg }: { firstName: string; la
         </p>
       </div>
 
+      {askWeight && (
       <div>
         <p className="text-sm text-blueprint-ink font-medium mb-2">
           This week&apos;s weight <span className="text-blueprint-muted font-normal">(optional)</span>
@@ -80,6 +90,7 @@ export function CheckinForm({ firstName, lastWeightKg }: { firstName: string; la
           <span className="text-sm text-blueprint-muted">kg</span>
         </div>
       </div>
+      )}
 
       {RATING_QUESTIONS.map(({ key, question }) => (
         <div key={key}>

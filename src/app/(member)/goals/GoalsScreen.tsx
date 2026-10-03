@@ -28,11 +28,13 @@ export function GoalsScreen({
   weightBaseline,
   bodyFatBaseline,
   habitOptions,
+  bodyMetricsOn,
 }: {
   activeGoal: ActiveGoal | null;
   weightBaseline: number | null;
   bodyFatBaseline: number | null;
   habitOptions: { id: string; name: string }[];
+  bodyMetricsOn: boolean;
 }) {
   const [showWizard, setShowWizard] = useState(!activeGoal);
 
@@ -44,6 +46,7 @@ export function GoalsScreen({
         weightBaseline={weightBaseline}
         bodyFatBaseline={bodyFatBaseline}
         habitOptions={habitOptions}
+        bodyMetricsOn={bodyMetricsOn}
       />
     );
   }

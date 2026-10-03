@@ -23,8 +23,15 @@ const isRating = (n: number) => Number.isInteger(n) && n >= 1 && n <= 5;
  * if given, also goes into body_metrics ("members log own body metrics",
  * 0017) so Progress charts pick it up.
  */
-export async function submitWeeklyCheckin(input: WeeklyCheckinInput): Promise<ActionResult> {
-  const { supabase, user } = await requireProfile();
+export async function submitWeeklyCheckin(rawInput: WeeklyCheckinInput): Promise<ActionResult> {
+  const { supabase, user, profile } = await requireProfile();
+
+  // Health consent and the body-measurements opt-out (0043) are enforced in
+  // RLS too; dropping the weight here just stops it failing the whole check-in.
+  if (!profile.health_consent) {
+    return { error: "Turn on health tracking to check in." };
+  }
+  const input = profile.track_body_metrics ? rawInput : { ...rawInput, weightKg: null };
 
   const weekOf = openCheckinWeek();
   if (!weekOf) {
@@ -56,6 +63,7 @@ export async function submitWeeklyCheckin(input: WeeklyCheckinInput): Promise<Ac
   }
 
   if (input.weightKg !== null) {
+    // RLS (0043) refuses this if they've opted out of body measurements.
     await supabase.from("body_metrics").insert({ member_id: user.id, weight_kg: input.weightKg });
   }
 

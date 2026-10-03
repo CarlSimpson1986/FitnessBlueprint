@@ -159,7 +159,12 @@ export async function GET(request: Request) {
 
   if (dueGoals && dueGoals.length > 0) {
     const memberIds = [...new Set(dueGoals.map((g) => g.member_id))];
-    const { data: members } = await supabase.from("profiles").select("id, email, full_name").in("id", memberIds);
+    // Goals stay switched off for members who've said no to health info (0043).
+    const { data: members } = await supabase
+      .from("profiles")
+      .select("id, email, full_name")
+      .in("id", memberIds)
+      .eq("health_consent", true);
     const memberById = new Map((members ?? []).map((m) => [m.id, m]));
 
     for (const goal of dueGoals) {
@@ -189,7 +194,8 @@ export async function GET(request: Request) {
     const weekOf = toLocalDateKey(now); // the Sunday this check-in is for
     const checkinUrl = `${publicEnv.NEXT_PUBLIC_SITE_URL}/check-in`;
     const [{ data: members }, { data: doneRows }] = await Promise.all([
-      supabase.from("profiles").select("id, email, full_name").eq("role", "member"),
+      // Not members who said no to health info (0043) — they can't check in.
+      supabase.from("profiles").select("id, email, full_name").eq("role", "member").or("health_consent.is.null,health_consent.eq.true"),
       supabase.from("weekly_checkins").select("member_id").eq("week_of", weekOf),
     ]);
     const doneMemberIds = new Set((doneRows ?? []).map((r) => r.member_id));

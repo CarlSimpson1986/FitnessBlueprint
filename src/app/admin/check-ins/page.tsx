@@ -28,12 +28,15 @@ export default async function CheckinsPage({ searchParams }: { searchParams: Pro
       .select("member_id, weight_kg, energy, sleep, nutrition, win, struggle, note_for_coach, created_at")
       .eq("week_of", weekOf)
       .order("created_at", { ascending: false }),
-    supabase.from("profiles").select("id, full_name").eq("role", "member").order("full_name"),
+    supabase.from("profiles").select("id, full_name, health_consent, track_body_metrics").eq("role", "member").order("full_name"),
   ]);
 
   const nameById = new Map((members ?? []).map((m) => [m.id, m.full_name]));
   const doneIds = new Set((checkins ?? []).map((c) => c.member_id));
-  const notYet = (members ?? []).filter((m) => !doneIds.has(m.id));
+  // 0043: members who said no to health info can't check in, so aren't "not yet".
+  const notYet = (members ?? []).filter((m) => !doneIds.has(m.id) && m.health_consent !== false);
+  // A weight saved before they opted out of body measurements stays hidden.
+  const showsWeight = new Set((members ?? []).filter((m) => m.track_body_metrics).map((m) => m.id));
   const label = new Date(`${weekOf}T12:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "long" });
 
   return (
@@ -75,7 +78,7 @@ export default async function CheckinsPage({ searchParams }: { searchParams: Pro
               <li key={c.member_id} className="fb-card">
                 <div className="flex items-baseline justify-between gap-3 mb-2">
                   <p className="text-blueprint-ink font-medium">{nameById.get(c.member_id) ?? "Member"}</p>
-                  {c.weight_kg !== null && <p className="text-sm text-blueprint-muted">{c.weight_kg}kg</p>}
+                  {c.weight_kg !== null && showsWeight.has(c.member_id) && <p className="text-sm text-blueprint-muted">{c.weight_kg}kg</p>}
                 </div>
                 <p className="text-xs flex gap-3 mb-2">
                   <Rating label="Energy" value={c.energy} />

@@ -28,6 +28,9 @@ export type Database = {
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
           has_seen_ted_tour: boolean
+          health_consent: boolean | null
+          health_consent_at: string | null
+          track_body_metrics: boolean
           created_at: string
           updated_at: string
         }
@@ -40,6 +43,9 @@ export type Database = {
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
           has_seen_ted_tour?: boolean
+          health_consent?: boolean | null
+          health_consent_at?: string | null
+          track_body_metrics?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -52,6 +58,9 @@ export type Database = {
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
           has_seen_ted_tour?: boolean
+          health_consent?: boolean | null
+          health_consent_at?: string | null
+          track_body_metrics?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -1235,6 +1244,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      set_health_choices: {
+        Args: {
+          p_consent: boolean
+          p_track_body_metrics: boolean
+        }
+        Returns: undefined
+      }
       staff_can_view: {
         Args: {
           area: string

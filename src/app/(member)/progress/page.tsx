@@ -10,6 +10,7 @@ import {
 } from "@/lib/progress";
 import { computeChallengeProgress } from "@/lib/challenges";
 import { HabitChecklist } from "./HabitChecklist";
+import { HealthLocked } from "@/components/HealthLocked";
 import { HabitStreakGrid } from "./HabitStreakGrid";
 import { BodyMetricsCard, type MetricPoint } from "./BodyMetricsCard";
 import { TotalLiftedChart } from "./TotalLiftedChart";
@@ -17,7 +18,10 @@ import { PersonalRecords } from "./PersonalRecords";
 import { ChallengesList, type ChallengeItem } from "./ChallengesList";
 
 export default async function ProgressPage() {
-  const { supabase, user } = await requireProfile();
+  const { supabase, user, profile } = await requireProfile();
+  // 0043: no health consent hides habits; the body-measurements opt-out hides weight.
+  const healthOn = profile.health_consent === true;
+  const metricsOn = healthOn && profile.track_body_metrics;
   const today = toLocalDateKey(new Date());
 
   const [
@@ -183,7 +187,8 @@ export default async function ProgressPage() {
         </div>
         <h1 className="text-2xl font-semibold text-blueprint-ink mb-6">Progress</h1>
 
-        <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className={(metricsOn ? "grid-cols-2" : "grid-cols-1") + " grid gap-3 mb-4"}>
+          {metricsOn && (
           <div className="fb-card text-center">
             <p className="text-lg font-semibold text-blueprint-ink">
               {weightDelta === null
@@ -192,6 +197,7 @@ export default async function ProgressPage() {
             </p>
             <p className="text-xs text-blueprint-muted mt-1">Weight change</p>
           </div>
+          )}
           <div className="fb-card text-center">
             <p className="text-lg font-semibold text-blueprint-ink">{streak}</p>
             <p className="text-xs text-blueprint-muted mt-1">
@@ -201,13 +207,17 @@ export default async function ProgressPage() {
         </div>
 
         <div className="space-y-4 mb-4">
-          <BodyMetricsCard weight={weightSeries} waist={waistSeries} bodyFat={bodyFatSeries} />
+          {metricsOn && <BodyMetricsCard weight={weightSeries} waist={waistSeries} bodyFat={bodyFatSeries} />}
           <TotalLiftedChart weeks={weeklyTotals} />
-          <HabitStreakGrid days={habitStreakGrid} habitCount={habits.length} />
+          {healthOn && <HabitStreakGrid days={habitStreakGrid} habitCount={habits.length} />}
           <PersonalRecords records={personalRecords} />
         </div>
 
-        <HabitChecklist habits={habits} />
+        {healthOn ? (
+          <HabitChecklist habits={habits} />
+        ) : (
+          <HealthLocked body="Habits, check-ins, goals and Coach Ted need your OK to keep your health info." />
+        )}
 
         <p className="fb-eyebrow mb-2 mt-6">Challenges</p>
         <ChallengesList challenges={challenges} />

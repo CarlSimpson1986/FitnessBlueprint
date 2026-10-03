@@ -38,6 +38,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   }
 
+  // Ted is built on their health info, so he needs their consent (0043).
+  const { data: consentRow } = await supabase.from("profiles").select("health_consent").eq("id", user.id).maybeSingle();
+  if (!consentRow?.health_consent) {
+    return NextResponse.json({ error: "Turn on health tracking to use Coach Ted." }, { status: 403 });
+  }
+
   const body = await request.json().catch(() => null);
   const question: unknown = body?.question;
   if (typeof question !== "string" || question.trim().length === 0) {

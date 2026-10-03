@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
 import { GoalsScreen } from "./GoalsScreen";
+import { HealthLocked } from "@/components/HealthLocked";
 
 export default async function GoalsPage() {
-  const { supabase, user } = await requireProfile();
+  const { supabase, user, profile } = await requireProfile();
 
   const [{ data: activeGoalRow }, { data: bodyMetricRows }, { data: habitDefinitions }] = await Promise.all([
     supabase
@@ -46,12 +47,17 @@ export default async function GoalsPage() {
         </Link>
         <h1 className="text-2xl font-semibold text-blueprint-ink mt-2 mb-6">Goals</h1>
 
-        <GoalsScreen
-          activeGoal={activeGoal}
-          weightBaseline={weightBaseline}
-          bodyFatBaseline={bodyFatBaseline}
-          habitOptions={habitDefinitions ?? []}
-        />
+        {profile.health_consent ? (
+          <GoalsScreen
+            activeGoal={activeGoal}
+            weightBaseline={weightBaseline}
+            bodyFatBaseline={bodyFatBaseline}
+            habitOptions={habitDefinitions ?? []}
+            bodyMetricsOn={profile.track_body_metrics}
+          />
+        ) : (
+          <HealthLocked />
+        )}
       </div>
     </main>
   );

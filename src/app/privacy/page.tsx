@@ -95,9 +95,11 @@ export default function PrivacyPage() {
               This is in our legitimate interests and yours.
             </li>
             <li>
-              Health and fitness information is a special category of data under UK law. We only use it
-              because you choose to give it to us for coaching, and you can stop at any time. Leaving
-              check-ins blank, or not using Coach Ted, does not affect your membership.
+              Health and fitness information is a special category of data under UK law, so the app asks
+              for your explicit consent before keeping any. Saying no does not affect your membership or
+              booking. You can also say yes but opt out of body measurements (weight, waist, body fat).
+              Change either answer any time in Account settings: once you turn it off, your coaches stop
+              seeing that information.
             </li>
           </ul>
           <p>We never sell your data and we do not use it for advertising.</p>

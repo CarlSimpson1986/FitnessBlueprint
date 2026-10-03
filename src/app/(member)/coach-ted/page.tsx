@@ -1,11 +1,12 @@
 import { requireProfile } from "@/lib/auth";
 import { HomeLink } from "@/components/HomeLink";
 import { TedChat } from "./TedChat";
+import { HealthLocked } from "@/components/HealthLocked";
 
 const HISTORY_LIMIT = 20;
 
 export default async function CoachTedPage() {
-  const { supabase, user } = await requireProfile();
+  const { supabase, user, profile } = await requireProfile();
 
   const { data: conversations } = await supabase
     .from("coach_ted_conversations")
@@ -26,7 +27,11 @@ export default async function CoachTedPage() {
         <HomeLink />
       </div>
       <h1 className="text-2xl font-semibold text-blueprint-ink mb-6">Coach Ted</h1>
-      <TedChat initialMessages={initialMessages} />
+      {profile.health_consent ? (
+        <TedChat initialMessages={initialMessages} />
+      ) : (
+        <HealthLocked body="Coach Ted tailors his answers to your goals and check-ins, so he needs your OK to use your health info." />
+      )}
     </main>
   );
 }

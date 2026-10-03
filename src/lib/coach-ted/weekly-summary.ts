@@ -32,16 +32,25 @@ const avg = (values: number[]) => Math.round((values.reduce((a, b) => a + b, 0) 
 export async function buildWeeklySummary(supabase: SupabaseClient<Database>, now = new Date()): Promise<WeeklySummary> {
   const since = new Date(now.getTime() - 7 * DAY_MS);
 
-  const [{ data: feedback }, { data: checkins }] = await Promise.all([
+  const [{ data: feedback }, { data: checkinRows }] = await Promise.all([
     supabase
       .from("session_feedback")
       .select("session_id, coach_rating, class_rating, effort_rating, feeling_rating, comment")
       .gte("created_at", since.toISOString()),
     supabase
       .from("weekly_checkins")
-      .select("energy, sleep, nutrition, win, struggle, note_for_coach")
+      .select("member_id, energy, sleep, nutrition, win, struggle, note_for_coach")
       .gte("week_of", ukDateKey(since)),
   ]);
+
+  // The Monday cron uses the admin client, which skips RLS — so leave out
+  // anyone who has since said no to health info (0043) here too.
+  const checkinMemberIds = [...new Set((checkinRows ?? []).map((c) => c.member_id))];
+  const { data: consenting } = checkinMemberIds.length
+    ? await supabase.from("profiles").select("id").in("id", checkinMemberIds).eq("health_consent", true)
+    : { data: [] };
+  const consentingIds = new Set((consenting ?? []).map((p) => p.id));
+  const checkins = (checkinRows ?? []).filter((c) => consentingIds.has(c.member_id));
 
   const feedbackRows = feedback ?? [];
   const sessionIds = [...new Set(feedbackRows.map((f) => f.session_id))];

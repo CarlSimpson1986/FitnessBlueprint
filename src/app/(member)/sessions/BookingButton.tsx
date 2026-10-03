@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { bookSession, cancelBooking } from "./actions";
+import { HealthConsentDialog } from "@/components/HealthConsentDialog";
 
 export function BookingButton({
   sessionId,
@@ -19,6 +20,7 @@ export function BookingButton({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [askingHealth, setAskingHealth] = useState(false);
 
   function handleClick() {
     setError(null);
@@ -30,7 +32,9 @@ export function BookingButton({
           ? await cancelBooking(bookingId)
           : await bookSession(sessionId);
 
-        if (result.error) {
+        if ("needsHealthAnswer" in result && result.needsHealthAnswer) {
+          setAskingHealth(true);
+        } else if (result.error) {
           setError(result.error);
         } else {
           succeeded = true;
@@ -83,6 +87,16 @@ export function BookingButton({
         {isPending ? "…" : bookingId ? "Cancel" : "Book"}
       </button>
       {error && <p className="text-xs text-red-400 max-w-[16rem] text-right">{error}</p>}
+      {askingHealth && (
+        <HealthConsentDialog
+          reason="One quick question before your first booking."
+          onClose={() => setAskingHealth(false)}
+          onAnswered={() => {
+            setAskingHealth(false);
+            handleClick();
+          }}
+        />
+      )}
     </div>
   );
 }

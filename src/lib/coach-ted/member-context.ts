@@ -71,7 +71,7 @@ export async function buildMemberProfile(supabase: Supabase, memberId: string): 
   const sinceDate = since.toISOString().slice(0, 10);
 
   const [profile, goals, checkins, metrics, attended, readiness, membership, logs] = await Promise.all([
-    supabase.from("profiles").select("full_name").eq("id", memberId).maybeSingle(),
+    supabase.from("profiles").select("full_name, track_body_metrics").eq("id", memberId).maybeSingle(),
     supabase
       .from("goals")
       .select("type, metric, long_target, long_date, micro_target, checkin_date, barriers, habits, why")
@@ -132,7 +132,9 @@ export async function buildMemberProfile(supabase: Supabase, memberId: string): 
     lines.push(parts.join("; "));
   }
 
-  const metricRows = metrics.data ?? [];
+  // Opted out of body measurements (0043): Ted gets none, including old ones.
+  const metricsOn = profile.data?.track_body_metrics === true;
+  const metricRows = metricsOn ? (metrics.data ?? []) : [];
   const describeMetric = (key: "weight_kg" | "waist_cm" | "body_fat_pct", label: string, unit: string) => {
     const series = metricRows.filter((r) => r[key] !== null);
     if (!series.length) return;

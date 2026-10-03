@@ -23,6 +23,7 @@ Run in order — the filenames are numbered deliberately, don't reorder.
 | `0040_stripe_checkout.sql` | Stripe product name -> plan mapping, 3 new plans (Hyrox only, 21-day starter, 6WP 1x), checkout-session idempotency, class-restricted plans enforced in `book_session`/`accept_booking_invite` |
 | `0041_plan_weekly_limits.sql` | Hyrox only and the 21-day starter are 3 sessions a week |
 | `0042_coach_permissions.sql` | Per-coach on/off for Today / Programme / Check-ins (`coach_permissions`, `staff_can_view()`); coach reads of check-ins, health data and bookings follow the switches. Drops the never-enforced `coach_access_level` |
+| `0043_health_consent.sql` | Explicit health-info consent + body-measurements opt-out on `profiles` (`set_health_choices()`); members' health writes need a yes, staff stop seeing a member's health data when they say no |
 
 ## Adding a new migration
 

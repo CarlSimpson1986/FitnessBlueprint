@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
 import { HomeLink } from "@/components/HomeLink";
 import { openCheckinWeek } from "@/lib/weekly-checkin";
+import { HealthLocked } from "@/components/HealthLocked";
 import { CheckinForm } from "./CheckinForm";
 
 export default async function WeeklyCheckinPage() {
@@ -33,7 +34,9 @@ export default async function WeeklyCheckinPage() {
         </div>
         <h1 className="text-2xl font-semibold text-blueprint-ink mb-6">How was your week?</h1>
 
-        {!weekOf ? (
+        {!profile.health_consent ? (
+          <HealthLocked />
+        ) : !weekOf ? (
           <p className="text-sm text-blueprint-muted">
             Check-ins open on Sunday — Ted will remind you on the home page and by email.
           </p>
@@ -50,7 +53,11 @@ export default async function WeeklyCheckinPage() {
             </div>
           </div>
         ) : (
-          <CheckinForm firstName={firstName} lastWeightKg={lastWeight?.weight_kg ?? null} />
+          <CheckinForm
+            firstName={firstName}
+            lastWeightKg={lastWeight?.weight_kg ?? null}
+            askWeight={profile.track_body_metrics}
+          />
         )}
       </div>
     </main>

@@ -26,6 +26,16 @@ const METRICS_BY_TYPE: Record<Exclude<GoalType, "build_strength">, string[]> = {
   event_prep: ["Sessions/week", "Total lifted (kg)", "Weight (kg)", SOMETHING_ELSE],
 };
 
+// Measured on the body — hidden for members who've opted out of body
+// measurements (0043). A type left with nothing falls back to "Something else".
+const BODY_METRICS = new Set(["Weight (kg)", "Body fat %", "Waist (cm)"]);
+
+function metricOptions(type: Exclude<GoalType, "build_strength">, bodyMetricsOn: boolean) {
+  if (bodyMetricsOn) return METRICS_BY_TYPE[type];
+  const options = METRICS_BY_TYPE[type].filter((m) => !BODY_METRICS.has(m));
+  return options.length ? options : [SOMETHING_ELSE];
+}
+
 type Step =
   | "type"
   | "metric"
@@ -85,12 +95,14 @@ export function GoalWizard({
   weightBaseline,
   bodyFatBaseline,
   habitOptions,
+  bodyMetricsOn,
 }: {
   mode: "full" | "checkin";
   previousGoal?: { type: GoalType; metric: string; longTarget: string; longDate: string | null };
   weightBaseline: number | null;
   bodyFatBaseline: number | null;
   habitOptions: { id: string; name: string }[];
+  bodyMetricsOn: boolean;
 }) {
   const [step, setStep] = useState<Step>(mode === "checkin" ? "microTarget" : "type");
   const [messages, setMessages] = useState<WizardMessage[]>([
@@ -361,7 +373,7 @@ export function GoalWizard({
 
       {step === "metric" && (
         <div className="flex flex-wrap gap-1.5">
-          {(type === "build_strength" ? [] : METRICS_BY_TYPE[type]).map((option) => (
+          {(type === "build_strength" ? [] : metricOptions(type, bodyMetricsOn)).map((option) => (
             <button
               key={option}
               type="button"

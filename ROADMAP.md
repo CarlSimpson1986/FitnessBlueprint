@@ -20,9 +20,18 @@ linked from signup and Account; per-coach switches for Today / Programme
 (the Members page and coach pages read `coach_permissions`). No row = everything on, so coaches keep today's
 access until Guy changes it; Tommy is not pre-restricted.
 
-**Next, in order:** (1) Guy reads and approves /privacy; it says health
-data is used because members choose to give it, but nothing in the app
-records explicit consent yet; (2) migration 0038 once Guy has
+**Health consent (2026-10-03, migration 0043):** after sign-in (and
+after Ted's tour) members are asked whether we can keep their health
+info, with a "include body measurements" tick. "Not now" is allowed, but
+booking asks again and needs an answer; either answer books (consent
+can't be a condition of membership). No = check-ins, readiness, habits,
+goals and Coach Ted locked; staff stop seeing their health data (RLS),
+crons/at-risk/weekly summary skip them. Measurements off = no weight
+anywhere (forms, goal metrics, Progress, Ted's profile, coach view).
+Change any time in Account settings. Every existing member starts
+unanswered, so Ted and check-ins are locked for them until they answer.
+
+**Next, in order:** (1) Guy reads and approves /privacy; (2) migration 0038 once Guy has
 two-factor; (3) weekly-summary injection eval. Loose ends for Carl:
 deactivate TESTAPP promo code in Stripe if not done.
 

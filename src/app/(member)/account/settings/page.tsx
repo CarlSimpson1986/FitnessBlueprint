@@ -3,6 +3,7 @@ import { requireProfile } from "@/lib/auth";
 import { HomeLink } from "@/components/HomeLink";
 import { SetPasswordForm } from "../SetPasswordForm";
 import { CalendarFeedCard } from "./CalendarFeedCard";
+import { HealthSettingsCard } from "./HealthSettingsCard";
 
 export default async function AccountSettingsPage() {
   const { profile } = await requireProfile();
@@ -25,6 +26,9 @@ export default async function AccountSettingsPage() {
           you&apos;d rather use one.
         </p>
         <SetPasswordForm />
+
+        <p className="fb-eyebrow mt-10 mb-3">Health info</p>
+        <HealthSettingsCard consent={profile.health_consent} trackBodyMetrics={profile.track_body_metrics} />
 
         {/* Members get their bookings, the owner the whole gym. Not coaches (owner's call). */}
         {(profile.role === "member" || profile.role === "owner") && (

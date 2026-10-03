@@ -49,7 +49,7 @@ export async function computeAtRisk(supabase: Supabase) {
   const twoWeeksAgoKey = ukDateKey(new Date(now.getTime() - NO_SHOW_DAYS * DAY_MS));
 
   const [{ data: members }, { data: activeMemberships }, { data: plans }] = await Promise.all([
-    supabase.from("profiles").select("id, full_name, email, phone").eq("role", "member"),
+    supabase.from("profiles").select("id, full_name, email, phone, health_consent").eq("role", "member"),
     supabase.from("member_memberships").select("member_id, plan_id").eq("status", "active"),
     supabase.from("membership_plans").select("id, name"),
   ]);
@@ -128,7 +128,8 @@ export async function computeAtRisk(supabase: Supabase) {
     .filter((r) => !r.hasUpcoming && (r.daysAway === null || r.daysAway >= NO_SHOW_DAYS))
     .sort((a, b) => (b.daysAway ?? 100000) - (a.daysAway ?? 100000));
   const notTrainingIds = new Set(notTraining.map((r) => r.id));
-  const notCheckingIn = rows.filter((r) => !notTrainingIds.has(r.id) && !r.checkedIn);
+  // Members who said no to health info (0043) can't check in, so they're never "not checking in".
+  const notCheckingIn = rows.filter((r) => !notTrainingIds.has(r.id) && !r.checkedIn && r.health_consent !== false);
 
   return { notTraining, notCheckingIn };
 }

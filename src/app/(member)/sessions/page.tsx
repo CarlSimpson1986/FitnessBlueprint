@@ -11,7 +11,7 @@ import { BookingsTabs } from "./BookingsTabs";
 import { BOOKING_WINDOW_DAYS, lastBookableDate } from "@/lib/booking-window";
 
 export default async function SessionsPage() {
-  const { supabase, user } = await requireProfile();
+  const { supabase, user, profile } = await requireProfile();
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -255,7 +255,10 @@ export default async function SessionsPage() {
                   {coach ? coach.full_name : "Coach TBC"} · {taken}/{session.capacity} spots
                 </p>
                 {/* Check in first (how you're feeling), then start the session. */}
-                <ReadinessCheckin sessionId={session.id} hasCheckedIn={checkedInSessionIds.has(session.id)} />
+                {/* Needs health consent (0043). */}
+                {profile.health_consent && (
+                  <ReadinessCheckin sessionId={session.id} hasCheckedIn={checkedInSessionIds.has(session.id)} />
+                )}
                 <div className="flex items-center gap-2 mt-3">
                   <Link
                     href={`/sessions/${session.id}/live`}

@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 
 export type ActionResult = { error?: string };
+export type BookResult = ActionResult & { needsHealthAnswer?: boolean };
 
 /**
  * Deliberately no revalidatePath() here — these are called directly from
@@ -11,8 +12,21 @@ export type ActionResult = { error?: string };
  * indefinitely on success. The client calls router.refresh() itself after
  * a successful result instead, which isn't coupled to this promise.
  */
-export async function bookSession(sessionId: string): Promise<ActionResult> {
+export async function bookSession(sessionId: string): Promise<BookResult> {
   const supabase = await createClient();
+
+  // They must answer the health-info question before booking (0043). Either
+  // answer books — consent can't be a condition of membership.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) {
+    const { data: profile } = await supabase.from("profiles").select("health_consent").eq("id", user.id).maybeSingle();
+    if (profile && profile.health_consent === null) {
+      return { needsHealthAnswer: true };
+    }
+  }
+
   const { error } = await supabase.rpc("book_session", { p_session_id: sessionId });
 
   if (error) {

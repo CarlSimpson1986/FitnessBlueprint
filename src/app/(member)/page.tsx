@@ -167,9 +167,13 @@ export default async function HomePage() {
     : { data: null };
   const weeklyCheckinOpen = checkinWeek !== null && !thisWeeksCheckin;
 
+  // 0043: health prompts only for members who've said yes; the
+  // measurements step only if they track body measurements.
+  const healthOn = profile.health_consent === true;
+  const metricsOn = healthOn && profile.track_body_metrics;
   const hasSetGoals = !!anyGoalRow;
   const hasLoggedMetrics = !!anyBodyMetricRow;
-  const showOnboarding = !hasSetGoals || !hasLoggedMetrics;
+  const showOnboarding = healthOn && (!hasSetGoals || (metricsOn && !hasLoggedMetrics));
   const checkinDue = activeGoalRow ? new Date(`${activeGoalRow.checkin_date}T00:00:00`) <= new Date() : false;
 
   return (
@@ -200,6 +204,7 @@ export default async function HomePage() {
                 </span>
                 <span className="text-blueprint-muted text-xs">›</span>
               </Link>
+              {metricsOn && (
               <Link href="/progress/log-metrics" className="flex items-center justify-between py-2">
                 <span className="flex items-center gap-2 text-sm text-blueprint-ink">
                   <span
@@ -213,11 +218,12 @@ export default async function HomePage() {
                 </span>
                 <span className="text-blueprint-muted text-xs">›</span>
               </Link>
+              )}
             </div>
           </div>
         )}
 
-        {weeklyCheckinOpen && (
+        {healthOn && weeklyCheckinOpen && (
           <Link href="/check-in" className="fb-card-accent mb-4 flex items-center gap-3">
             <Image
               src="/coach-ted.png"
@@ -234,7 +240,7 @@ export default async function HomePage() {
           </Link>
         )}
 
-        {checkinDue && (
+        {healthOn && checkinDue && (
           <Link href="/goals" className="fb-card-accent mb-4 flex items-center justify-between gap-3">
             <p className="text-sm text-blueprint-ink">Your 6-week goal check-in is due.</p>
             <span className="text-xs text-blueprint-accent whitespace-nowrap">Check in →</span>
@@ -256,7 +262,7 @@ export default async function HomePage() {
               </div>
               <BookingButton sessionId={nextSession.id} bookingId={nextBookingId} isFull={false} />
             </div>
-            <ReadinessCheckin sessionId={nextSession.id} hasCheckedIn={!!existingCheckin} />
+            {healthOn && <ReadinessCheckin sessionId={nextSession.id} hasCheckedIn={!!existingCheckin} />}
             <Link
               href={`/sessions/${nextSession.id}/live`}
               className="fb-btn-primary block text-center mt-3"
