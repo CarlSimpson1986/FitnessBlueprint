@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { ensureInternalAccount, ensureTestAccount } from "@/lib/test-accounts-server";
 import type { Database } from "@/types/database.types";
+import { latestCheckinWeek, shiftWeek } from "@/lib/weekly-checkin";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 type MetricType = Database["public"]["Enums"]["exercise_metric_type"];
@@ -28,6 +29,15 @@ const DEMO_CLIENTS = [
   { n: 4, name: "Tom Wilson", startKg: 84, goalKg: 80 },
   { n: 5, name: "Emma Brooks", startKg: 68, goalKg: 64 },
 ];
+// Sunday check-ins for the demo clients: ratings out of 5 plus the free text.
+const DEMO_CHECKINS = [
+  { energy: 4, sleep: 4, nutrition: 3, win: "Got all 3 sessions in", struggle: "Weekend snacking", note_for_coach: null },
+  { energy: 3, sleep: 2, nutrition: 3, win: "Hit my step goal 5 days", struggle: "Night shifts wrecked my sleep", note_for_coach: "Can I swap Thursday for Saturday next week?" },
+  { energy: 5, sleep: 4, nutrition: 4, win: "New PB on deadlift", struggle: null, note_for_coach: null },
+  { energy: 2, sleep: 3, nutrition: 2, win: null, struggle: "Busy week at work, only made one session", note_for_coach: "Lower back a bit tight after Tuesday" },
+  { energy: 4, sleep: 3, nutrition: 4, win: "Meal prepped every day", struggle: "Still finding mornings hard", note_for_coach: null },
+  { energy: 3, sleep: 4, nutrition: 5, win: "Protein with every meal all week", struggle: "Knees a bit sore on lunges", note_for_coach: null },
+] as const;
 const demoEmail = (n: number) => `demo-${n}@${DEMO_EMAIL_DOMAIN}`;
 export const DEMO_EMAIL_PATTERN = `demo-%@${DEMO_EMAIL_DOMAIN}`;
 
@@ -419,6 +429,26 @@ export async function seedDemoData(admin: AdminClient): Promise<{ error?: string
   }
   const { error: metricsError } = await admin.from("body_metrics").insert(metricRows);
   if (metricsError) return { error: `body_metrics: ${metricsError.message}` };
+
+  // --- Weekly check-ins (last 4 Sundays) ----------------------------------
+  // A missed week here and there so "Not checked in" isn't empty either.
+  const latestWeek = latestCheckinWeek();
+  const checkinRows: Database["public"]["Tables"]["weekly_checkins"]["Insert"][] = [];
+  for (const client of clients) {
+    for (let w = 3; w >= 0; w--) {
+      if ((client.n + w) % 5 === 0) continue;
+      const story = DEMO_CHECKINS[(client.n + w) % DEMO_CHECKINS.length]!;
+      const latestKg = metricRows.filter((m) => m.member_id === client.id).at(-1 - w)?.weight_kg ?? null;
+      checkinRows.push({
+        member_id: client.id,
+        week_of: shiftWeek(latestWeek, -w),
+        weight_kg: w % 2 === 0 ? latestKg : null,
+        ...story,
+      });
+    }
+  }
+  const { error: checkinsError } = await admin.from("weekly_checkins").insert(checkinRows);
+  if (checkinsError) return { error: `weekly_checkins: ${checkinsError.message}` };
 
   const goalTypes = ["lose_weight", "build_strength", "general_fitness", "lose_weight", "event_prep"] as const;
   const { error: goalsError } = await admin.from("goals").insert(
