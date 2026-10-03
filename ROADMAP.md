@@ -68,6 +68,17 @@ about session length and air con instead of answering). New eval case
 control-water passes; squat-plateau / missed-week still flip between
 runs as in v8.
 
+**Session notes (2026-10-03, migration 0047 — Carl runs it):** spec's
+post-session coach notes. Today roster: "+ Note" under each booked
+member → tap tags (list in src/lib/session-notes.ts — Great session,
+Progressed, Struggled, Form to work on, Niggle / injury, Low energy,
+Check in with them) and/or type a line; "Last time (date): …" shows the
+member's previous note. Coach on own session or Guy writes (Carl's call;
+CLAUDE.md updated); staff read only with Check-ins on and the member's
+health consent; members don't see notes about them. Not yet: notes on a
+member's profile page (there isn't a member detail page yet), offline
+sync.
+
 **Ted answer check (2026-10-03):** every finished answer goes through
 src/lib/coach-ted/answer-check.ts — phone numbers and links not on the
 approved list (999, 111, 116 123, 85258; beateatingdisorders.org.uk,

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getSessionRoster, markAttendance, type ProgrammeTag, type RosterEntry } from "./actions";
+import { SESSION_NOTE_MAX_LENGTH, SESSION_NOTE_TAGS, type SessionNote } from "@/lib/session-notes";
+import { getSessionRoster, markAttendance, saveSessionNote, type ProgrammeTag, type RosterEntry } from "./actions";
 
 const STATUS_LABEL: Record<RosterEntry["status"], string> = {
   booked: "Booked",
@@ -71,6 +72,102 @@ function ProgrammeBadge({ programme }: { programme: ProgrammeTag }) {
   );
 }
 
+function noteSummary(note: SessionNote) {
+  return [...note.tags, ...(note.text ? [`“${note.text}”`] : [])].join(" · ");
+}
+
+function shortDate(dateKey: string) {
+  return new Date(`${dateKey}T12:00:00`).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+  });
+}
+
+/**
+ * After the session the coach taps tags and/or types a line (phone
+ * keyboards' mic button covers dictation). One note per member per
+ * session; saving with nothing selected clears it.
+ */
+function NoteEditor({
+  sessionId,
+  entry,
+  onSaved,
+  onCancel,
+}: {
+  sessionId: string;
+  entry: RosterEntry;
+  onSaved: (note: SessionNote | null) => void;
+  onCancel: () => void;
+}) {
+  const [tags, setTags] = useState<string[]>(entry.note?.tags ?? []);
+  const [text, setText] = useState(entry.note?.text ?? "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function toggle(tag: string) {
+    setTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
+  }
+
+  async function save() {
+    setSaving(true);
+    setError(null);
+    const result = await saveSessionNote(sessionId, entry.memberId, tags, text);
+    setSaving(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    const trimmed = text.trim();
+    onSaved(tags.length === 0 && !trimmed ? null : { tags, text: trimmed || null });
+  }
+
+  return (
+    <div className="mt-2 space-y-2">
+      <div className="flex flex-wrap gap-1.5">
+        {SESSION_NOTE_TAGS.map((tag) => {
+          const on = tags.includes(tag);
+          return (
+            <button
+              key={tag}
+              type="button"
+              onClick={() => toggle(tag)}
+              className={
+                on
+                  ? "text-[11px] rounded-full px-2.5 py-1 border border-blueprint-accent bg-blueprint-accent/15 text-blueprint-accent"
+                  : "text-[11px] rounded-full px-2.5 py-1 border border-blueprint-line text-blueprint-muted hover:text-blueprint-ink"
+              }
+            >
+              {tag}
+            </button>
+          );
+        })}
+      </div>
+      <textarea
+        rows={2}
+        maxLength={SESSION_NOTE_MAX_LENGTH}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="e.g. progressed deadlift to 80kg, left shoulder still restricted"
+        className="w-full bg-blueprint-bg border border-blueprint-line rounded text-sm text-blueprint-ink px-2 py-1.5 focus:outline-none focus:border-blueprint-accent"
+      />
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={save}
+          disabled={saving}
+          className="fb-btn-primary text-xs px-3 py-1 disabled:opacity-50"
+        >
+          {saving ? "Saving…" : "Save note"}
+        </button>
+        <button type="button" onClick={onCancel} className="text-xs text-blueprint-muted hover:text-blueprint-ink">
+          Cancel
+        </button>
+      </div>
+      {error && <p className="text-xs text-red-400">{error}</p>}
+    </div>
+  );
+}
+
 /** One-line picture of the whole class before it starts. */
 function ClassReadinessSummary({ roster }: { roster: RosterEntry[] }) {
   const active = roster.filter((e) => e.status !== "cancelled");
@@ -99,6 +196,7 @@ export function SessionRoster({ sessionId, canMark = true }: { sessionId: string
   const [roster, setRoster] = useState<RosterEntry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendingBookingId, setPendingBookingId] = useState<string | null>(null);
+  const [editingNoteFor, setEditingNoteFor] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -150,34 +248,64 @@ export function SessionRoster({ sessionId, canMark = true }: { sessionId: string
       <ClassReadinessSummary roster={roster} />
       <ul className="space-y-2">
         {roster.map((entry) => (
-          <li
-            key={entry.bookingId}
-            className="flex items-center justify-between gap-3 border-t border-blueprint-line/60 pt-2 first:border-t-0 first:pt-0"
-          >
-            <span>
-              <span className="text-sm text-blueprint-ink">{entry.memberName}</span>
-              {entry.programme && <ProgrammeBadge programme={entry.programme} />}
-              {entry.readiness && <ReadinessNote readiness={entry.readiness} />}
-            </span>
-
-            {entry.status === "booked" && canMark ? (
-              <div className="flex gap-1.5">
-                {(["attended", "no_show", "excused"] as const).map((status) => (
-                  <button
-                    key={status}
-                    type="button"
-                    disabled={pendingBookingId === entry.bookingId}
-                    onClick={() => handleMark(entry.bookingId, status)}
-                    className="text-[10px] font-mono uppercase tracking-wide text-blueprint-muted border border-blueprint-line rounded px-2 py-1 hover:border-blueprint-accent hover:text-blueprint-accent disabled:opacity-50 transition"
-                  >
-                    {STATUS_LABEL[status]}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <span className="text-[10px] font-mono uppercase tracking-wide text-blueprint-muted">
-                {STATUS_LABEL[entry.status]}
+          <li key={entry.bookingId} className="border-t border-blueprint-line/60 pt-2 first:border-t-0 first:pt-0">
+            <div className="flex items-center justify-between gap-3">
+              <span>
+                <span className="text-sm text-blueprint-ink">{entry.memberName}</span>
+                {entry.programme && <ProgrammeBadge programme={entry.programme} />}
+                {entry.readiness && <ReadinessNote readiness={entry.readiness} />}
               </span>
+
+              {entry.status === "booked" && canMark ? (
+                <div className="flex gap-1.5">
+                  {(["attended", "no_show", "excused"] as const).map((status) => (
+                    <button
+                      key={status}
+                      type="button"
+                      disabled={pendingBookingId === entry.bookingId}
+                      onClick={() => handleMark(entry.bookingId, status)}
+                      className="text-[10px] font-mono uppercase tracking-wide text-blueprint-muted border border-blueprint-line rounded px-2 py-1 hover:border-blueprint-accent hover:text-blueprint-accent disabled:opacity-50 transition"
+                    >
+                      {STATUS_LABEL[status]}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <span className="text-[10px] font-mono uppercase tracking-wide text-blueprint-muted">
+                  {STATUS_LABEL[entry.status]}
+                </span>
+              )}
+            </div>
+
+            {entry.lastNote?.sessionDate && (
+              <p className="text-[11px] text-blueprint-muted mt-1">
+                Last time ({shortDate(entry.lastNote.sessionDate)}): {noteSummary(entry.lastNote)}
+              </p>
+            )}
+
+            {editingNoteFor === entry.bookingId ? (
+              <NoteEditor
+                sessionId={sessionId}
+                entry={entry}
+                onCancel={() => setEditingNoteFor(null)}
+                onSaved={(note) => {
+                  setRoster((prev) => prev?.map((e) => (e.bookingId === entry.bookingId ? { ...e, note } : e)) ?? null);
+                  setEditingNoteFor(null);
+                }}
+              />
+            ) : (
+              <>
+                {entry.note && <p className="text-xs text-blueprint-ink mt-1">Note: {noteSummary(entry.note)}</p>}
+                {canMark && entry.canNote && entry.status !== "cancelled" && entry.status !== "invited" && (
+                  <button
+                    type="button"
+                    onClick={() => setEditingNoteFor(entry.bookingId)}
+                    className="mt-1 text-[10px] font-mono uppercase tracking-wide text-blueprint-muted hover:text-blueprint-accent"
+                  >
+                    {entry.note ? "Edit note" : "+ Note"}
+                  </button>
+                )}
+              </>
             )}
           </li>
         ))}

@@ -20,9 +20,10 @@ Google Doc — this file is build rules only, not feature context.
   data goes through `staff_can_view('checkins')` in RLS, not
   `is_coach_or_owner()`.
 - **Only the owner (Guy) creates or edits anything.** Coaches are
-  view-only for the programme and mark attendance on their own sessions
-  (migration 0024). Any new create/edit feature is `requireOwner()` plus
-  an owner-only RLS write policy by default — never `requireCoachOrOwner()`.
+  view-only for the programme; they mark attendance (migration 0024)
+  and write post-session notes (0047) on their own sessions only. Any
+  new create/edit feature is `requireOwner()` plus an owner-only RLS
+  write policy by default — never `requireCoachOrOwner()`.
 
 ## IMPORTANT: security rules that block on violation
 
