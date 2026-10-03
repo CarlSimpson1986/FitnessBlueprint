@@ -363,7 +363,7 @@ export function SegmentExerciseEditor({
                               />
                               <div className="flex gap-1 min-w-0">
                                 <select
-                                  className={inputClass() + " w-[4.25rem] shrink-0 px-1"}
+                                  className={inputClass().replace("w-full", "w-[4.25rem]") + " shrink-0 px-1"}
                                   value={set.intensityType ?? ""}
                                   onChange={(e) => {
                                     const type = (e.target.value || null) as IntensityType | null;
