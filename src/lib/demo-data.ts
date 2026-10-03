@@ -199,6 +199,17 @@ export async function seedDemoData(admin: AdminClient): Promise<{ error?: string
     clients.push({ id: result.id, ...c });
   }
 
+  // Demo clients have said yes to health info (0043), or their check-ins,
+  // goals and weigh-ins would be hidden from staff and the demo looks empty.
+  const { error: consentError } = await admin
+    .from("profiles")
+    .update({ health_consent: true, health_consent_at: new Date().toISOString(), track_body_metrics: true })
+    .in(
+      "id",
+      clients.map((c) => c.id)
+    );
+  if (consentError) return { error: consentError.message };
+
   const { data: plans } = await admin
     .from("membership_plans")
     .select("id")
