@@ -775,6 +775,13 @@ that far — src/lib/booking-window.ts).
 
 ## Infra notes worth remembering
 
+- Supabase Performance Advisor (2026-10-03): ~39 "Auth RLS Initialization
+  Plan" (policies call auth.uid() per row — fix is `(select auth.uid())`
+  in every policy) and ~120 "Multiple Permissive Policies" (deliberate:
+  one simple policy per audience). Negligible at this gym's size; left
+  alone on purpose because the fix rewrites nearly every security policy.
+  Revisit at hundreds of members or if pages feel slow.
+
 - Free-tier Supabase project auto-pauses after ~1 week of no API
   traffic (data isn't lost, just needs restoring from the dashboard).
 - Migrations `0011` and `0013`/`0014` had never been applied to the live
