@@ -792,6 +792,9 @@ that far — src/lib/booking-window.ts).
   the generator's view matched the Advisor's list exactly. Signed-out
   probe afterwards: 0 rows from all 38 tables. See CLAUDE.md for how to
   change a policy now.
+  Remaining Advisor items are INFO only (25 unindexed foreign keys, 3
+  unused indexes) — left alone on purpose at this data size; revisit
+  with hundreds of members / a year of bookings.
 
 - Free-tier Supabase project auto-pauses after ~1 week of no API
   traffic (data isn't lost, just needs restoring from the dashboard).
