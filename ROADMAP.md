@@ -4,7 +4,7 @@ Living record of what's built, what's known-broken, and what's next.
 Update this file as work lands — don't let it drift. Full product
 spec lives in the shared Google Doc; this is status, not spec.
 
-## Pick up here next session (as of 2026-10-02, end of day)
+## Pick up here next session (as of 2026-10-03)
 
 **Done 2026-10-02:** cron fixed (200); Stripe payment → account → plan
 live and tested end to end; welcome email sends a set-password link (no
