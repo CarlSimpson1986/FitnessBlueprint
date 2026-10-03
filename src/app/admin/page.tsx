@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireCoachOrOwner } from "@/lib/auth";
+import { requireStaffAccess } from "@/lib/coach-permissions";
 import { signOut } from "@/app/(member)/account/actions";
 import { TestAccountSwitcher } from "@/components/TestAccountSwitcher";
 import { DEMO_EMAIL_PATTERN } from "@/lib/demo-data";
@@ -9,7 +9,7 @@ import { OwnerHighlights } from "./OwnerHighlights";
 import { fetchOwnerHighlights } from "@/lib/owner-highlights";
 
 export default async function AdminPage() {
-  const { supabase, profile } = await requireCoachOrOwner();
+  const { supabase, profile, access } = await requireStaffAccess();
   const { count: demoProfileCount } =
     profile.role === "owner"
       ? await supabase.from("profiles").select("id", { count: "exact", head: true }).like("email", DEMO_EMAIL_PATTERN)
@@ -47,17 +47,19 @@ export default async function AdminPage() {
         {/* Page links — on a laptop the owner's sidebar already has every
             one of these, so the grid is phone-only for the owner. */}
         <div className={(isOwner ? "lg:hidden " : "") + "grid gap-4 sm:grid-cols-2"}>
-          <Link
-            href="/admin/today"
-            className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
-          >
-            <p className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-2">
-              Today
-            </p>
-            <p className="text-blueprint-muted text-sm leading-relaxed">
-              Mark attendance and see readiness for today&apos;s sessions.
-            </p>
-          </Link>
+          {access.today && (
+            <Link
+              href="/admin/today"
+              className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
+            >
+              <p className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-2">
+                Today
+              </p>
+              <p className="text-blueprint-muted text-sm leading-relaxed">
+                Mark attendance and see readiness for today&apos;s sessions.
+              </p>
+            </Link>
+          )}
 
           {profile.role === "owner" && (
             <Link
@@ -73,31 +75,35 @@ export default async function AdminPage() {
             </Link>
           )}
 
-          <Link
-            href="/admin/check-ins"
-            className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
-          >
-            <p className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-2">
-              Weekly check-ins
-            </p>
-            <p className="text-blueprint-muted text-sm leading-relaxed">
-              How members&apos; weeks went — ratings, wins, struggles, notes for the coach.
-            </p>
-          </Link>
+          {access.checkins && (
+            <Link
+              href="/admin/check-ins"
+              className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
+            >
+              <p className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-2">
+                Weekly check-ins
+              </p>
+              <p className="text-blueprint-muted text-sm leading-relaxed">
+                How members&apos; weeks went — ratings, wins, struggles, notes for the coach.
+              </p>
+            </Link>
+          )}
 
-          <Link
-            href="/admin/program-calendar"
-            className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
-          >
-            <p className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-2">
-              Program calendar
-            </p>
-            <p className="text-blueprint-muted text-sm leading-relaxed">
-              {profile.role === "owner"
-                ? "Classes, scheduling, and templates — everything for the timetable in one place."
-                : "The whole programme, view-only — open your sessions to see the workout and who's coming."}
-            </p>
-          </Link>
+          {access.programme && (
+            <Link
+              href="/admin/program-calendar"
+              className="block border-l-2 border-blueprint-line bg-blueprint-raised/40 rounded px-5 py-5 hover:border-blueprint-accent transition"
+            >
+              <p className="font-mono text-xs tracking-[0.15em] text-blueprint-accent uppercase mb-2">
+                Program calendar
+              </p>
+              <p className="text-blueprint-muted text-sm leading-relaxed">
+                {profile.role === "owner"
+                  ? "Classes, scheduling, and templates — everything for the timetable in one place."
+                  : "The whole programme, view-only — open your sessions to see the workout and who's coming."}
+              </p>
+            </Link>
+          )}
 
           {profile.role === "owner" && (
             <Link

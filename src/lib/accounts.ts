@@ -69,7 +69,6 @@ export async function createAccountWithWelcome(
     email,
     full_name: fullName,
     role,
-    coach_access_level: role === "coach" ? "full" : null,
   });
 
   if (profileError) {

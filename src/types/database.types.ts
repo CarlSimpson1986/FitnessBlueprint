@@ -22,7 +22,6 @@ export type Database = {
         Row: {
           id: string
           role: Database['public']['Enums']['member_role']
-          coach_access_level: Database['public']['Enums']['coach_access_level'] | null
           full_name: string
           email: string
           phone: string | null
@@ -35,7 +34,6 @@ export type Database = {
         Insert: {
           id: string
           role?: Database['public']['Enums']['member_role']
-          coach_access_level?: Database['public']['Enums']['coach_access_level'] | null
           full_name: string
           email: string
           phone?: string | null
@@ -48,7 +46,6 @@ export type Database = {
         Update: {
           id?: string
           role?: Database['public']['Enums']['member_role']
-          coach_access_level?: Database['public']['Enums']['coach_access_level'] | null
           full_name?: string
           email?: string
           phone?: string | null
@@ -909,6 +906,30 @@ export type Database = {
         }
         Relationships: []
       }
+      coach_permissions: {
+        Row: {
+          coach_id: string
+          can_view_today: boolean
+          can_view_programme: boolean
+          can_view_checkins: boolean
+          updated_at: string
+        }
+        Insert: {
+          coach_id: string
+          can_view_today?: boolean
+          can_view_programme?: boolean
+          can_view_checkins?: boolean
+          updated_at?: string
+        }
+        Update: {
+          coach_id?: string
+          can_view_today?: boolean
+          can_view_programme?: boolean
+          can_view_checkins?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       coach_time_off: {
         Row: {
           id: string
@@ -1214,6 +1235,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      staff_can_view: {
+        Args: {
+          area: string
+        }
+        Returns: boolean
+      }
       book_session: {
         Args: {
           p_session_id: string
@@ -1432,7 +1459,6 @@ export type Database = {
     }
     Enums: {
       member_role: 'member' | 'coach' | 'owner'
-      coach_access_level: 'full' | 'cover_and_kids_only'
       membership_status: 'active' | 'paused' | 'cancelled' | 'expired'
       session_status: 'scheduled' | 'cancelled' | 'completed'
       booking_status: 'booked' | 'cancelled' | 'attended' | 'no_show' | 'excused' | 'invited'

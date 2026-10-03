@@ -148,6 +148,14 @@ export function SignupForm() {
       >
         Already have an account? Sign in
       </a>
+
+      <p className="mt-4 text-xs text-blueprint-muted leading-relaxed">
+        See how we use your data in our{" "}
+        <a href="/privacy" className="underline hover:text-blueprint-accent">
+          privacy notice
+        </a>
+        .
+      </p>
     </div>
   );
 }

@@ -52,6 +52,7 @@ export default async function AccountPage() {
           <MenuRow href="/goals" label="Goals" />
           <MenuRow href="/account/settings" label="Account settings" />
           <MenuRow href="/account/purchases" label="Purchases & credits" />
+          <MenuRow href="/privacy" label="Privacy notice" />
         </div>
 
         <form action={signOut} className="mt-6">

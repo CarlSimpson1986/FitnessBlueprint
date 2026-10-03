@@ -22,6 +22,7 @@ Run in order — the filenames are numbered deliberately, don't reorder.
 | `0029_ted_cache_curation.sql` | HNSW vector indexes (IVFFlat built on empty tables can miss matches) + owner insert/delete on Coach Ted's answer cache |
 | `0040_stripe_checkout.sql` | Stripe product name -> plan mapping, 3 new plans (Hyrox only, 21-day starter, 6WP 1x), checkout-session idempotency, class-restricted plans enforced in `book_session`/`accept_booking_invite` |
 | `0041_plan_weekly_limits.sql` | Hyrox only and the 21-day starter are 3 sessions a week |
+| `0042_coach_permissions.sql` | Per-coach on/off for Today / Programme / Check-ins (`coach_permissions`, `staff_can_view()`); coach reads of check-ins, health data and bookings follow the switches. Drops the never-enforced `coach_access_level` |
 
 ## Adding a new migration
 

@@ -38,7 +38,6 @@ export async function ensureInternalAccount(
     email: input.email,
     full_name: input.fullName,
     role: input.role,
-    coach_access_level: input.role === "coach" ? "full" : null,
   });
   if (profileError) {
     return { error: `${input.fullName} created but profile setup failed: ${profileError.message}` };

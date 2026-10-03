@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { requireCoachOrOwner } from "@/lib/auth";
+import { requireCoachArea } from "@/lib/coach-permissions";
 import { formatSessionTime, toLocalDateKey } from "@/lib/format";
 import { SessionRoster } from "./SessionRoster";
 
 export default async function TodayPage() {
-  const { supabase, profile } = await requireCoachOrOwner();
+  const { supabase, profile } = await requireCoachArea("today");
 
   const today = toLocalDateKey(new Date());
 

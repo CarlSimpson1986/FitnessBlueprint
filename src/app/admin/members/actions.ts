@@ -4,6 +4,7 @@ import { randomBytes } from "crypto";
 import { requireOwner } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { activateMembership, createAccountWithWelcome } from "@/lib/accounts";
+import { COACH_AREAS, type CoachArea } from "@/lib/coach-permissions";
 
 // Deliberately no revalidatePath() in these — they're called directly
 // from a client startTransition (not a <form action>), and pairing that
@@ -182,6 +183,44 @@ export async function resetTwoFactor(personId: string): Promise<ActionResult> {
     if (deleteError) {
       return { error: deleteError.message };
     }
+  }
+  return {};
+}
+
+/**
+ * Owner-only: turns one area of the coach app on or off for a coach
+ * (0042). Uses the RLS-respecting client — "owner manages coach
+ * permissions" is what allows the write, and staff_can_view() enforces
+ * the switch on the coach's reads. No row yet = all on, so the first
+ * change creates the row with the other areas left on.
+ */
+export async function setCoachArea(coachId: string, area: CoachArea, enabled: boolean): Promise<ActionResult> {
+  const { supabase } = await requireOwner();
+
+  const column = COACH_AREAS.find((a) => a.key === area)?.column;
+  if (!column) {
+    return { error: "Unknown area." };
+  }
+
+  const { data: coach } = await supabase.from("profiles").select("role").eq("id", coachId).maybeSingle();
+  if (coach?.role !== "coach") {
+    return { error: "Only coaches have these settings." };
+  }
+
+  const { data: existing } = await supabase
+    .from("coach_permissions")
+    .select("can_view_today, can_view_programme, can_view_checkins")
+    .eq("coach_id", coachId)
+    .maybeSingle();
+
+  const { error } = await supabase.from("coach_permissions").upsert({
+    ...(existing ?? { can_view_today: true, can_view_programme: true, can_view_checkins: true }),
+    coach_id: coachId,
+    [column]: enabled,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) {
+    return { error: error.message };
   }
   return {};
 }

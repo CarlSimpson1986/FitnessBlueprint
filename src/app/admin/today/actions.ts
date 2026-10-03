@@ -1,6 +1,6 @@
 "use server";
 
-import { requireCoachOrOwner } from "@/lib/auth";
+import { requireStaffAccess } from "@/lib/coach-permissions";
 
 export type ActionResult = { error?: string };
 
@@ -40,14 +40,18 @@ function programmeLabel(lengthDays: number) {
 /**
  * Roster is read via the RLS-respecting client — "coaches and owner read
  * all bookings", "coaches and owner read all profiles", and "coaches and
- * owner read all checkins" (0002) already cover this, so there's nothing
+ * owner read all checkins" (0002, per-coach switches since 0042) cover this, so there's nothing
  * to bypass here. Programme tags come from "coaches and owner read all
  * memberships" and "authenticated users read plans" (0002): any active
  * membership on a plan with programme_length_days set — the same test
  * book_session() uses for the programme's last day (0030).
  */
+const NO_TODAY_ACCESS = "Guy has turned off Today for your account.";
+
 export async function getSessionRoster(sessionId: string): Promise<{ roster?: RosterEntry[]; error?: string }> {
-  const { supabase } = await requireCoachOrOwner();
+  // Called from a client component, so return an error rather than redirect.
+  const { supabase, access } = await requireStaffAccess();
+  if (!access.today) return { error: NO_TODAY_ACCESS };
 
   const [{ data: bookings, error }, { data: checkins }] = await Promise.all([
     supabase
@@ -122,7 +126,9 @@ type MarkableStatus = (typeof MARKABLE_STATUSES)[number];
  * gets the "no longer booked" error below. No admin client.
  */
 export async function markAttendance(bookingId: string, status: MarkableStatus): Promise<ActionResult> {
-  const { supabase } = await requireCoachOrOwner();
+  // Called from a client component, so return an error rather than redirect.
+  const { supabase, access } = await requireStaffAccess();
+  if (!access.today) return { error: NO_TODAY_ACCESS };
 
   if (!MARKABLE_STATUSES.includes(status)) {
     return { error: "Invalid attendance status." };

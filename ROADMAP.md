@@ -13,9 +13,17 @@ browser (/auth/confirm + Supabase templates); buddy invites respect
 weekly limits/programme end; GoCardless env var removed; Coach Ted v8
 shipped (stays on Haiku — Carl's call).
 
-**Next, in order:** (1) privacy page — the app has none and holds health
-data; draft at /privacy for Guy to approve (needs: ICO registration?
-contact email for data requests); (2) migration 0038 once Guy has
+**Done 2026-10-03 (not yet deployed):** /privacy page (facts match the
+website policy: Fitness Blueprint Ltd, ICO-registered, gmail contact),
+linked from signup and Account; per-coach switches for Today / Programme
+/ Check-ins on the Members page, enforced in RLS by **migration 0042**
+(run it before deploying — the Members page and coach pages read
+`coach_permissions`). No row = everything on, so coaches keep today's
+access until Guy changes it; Tommy is not pre-restricted.
+
+**Next, in order:** (1) Guy reads and approves /privacy; it says health
+data is used because members choose to give it, but nothing in the app
+records explicit consent yet; (2) migration 0038 once Guy has
 two-factor; (3) weekly-summary injection eval. Loose ends for Carl:
 deactivate TESTAPP promo code in Stripe if not done.
 
@@ -39,7 +47,7 @@ templates live in the dashboard; re-check after any Supabase project change.
    (and async_payment_succeeded) it lists the line items, matches the
    product name to `membership_plans.stripe_product_name` (case/space-
    insensitive), finds the member by email or creates the account (welcome
-   email with temp password), and activates the plan. Idempotent on
+   email with a set-password link), and activates the plan. Idempotent on
    `stripe_checkout_session_id`. Unknown product / no email / staff email
    → owner gets an email, nothing is guessed. subscription.deleted →
    membership cancelled. invoice.payment_failed → owner emailed, access
@@ -684,29 +692,6 @@ that far — src/lib/booking-window.ts).
 
 ## Known gaps / not started
 
-- **Stripe billing is not wired up.** (2026-09-25: first use decided —
-  auto-setup for the 6-week challenge links only, waiting on Guy to
-  create those links; see "Pick up here".) `src/app/api/webhooks/stripe/route.ts`
-  verifies signatures correctly but every event type (`checkout.session.completed`,
-  `invoice.payment_failed`, `customer.subscription.deleted`) is a TODO stub.
-  There's also no code anywhere that *creates* a Checkout Session or Payment
-  Link, so there's no established metadata contract (e.g. how a Stripe
-  session maps back to a `member_id`/`plan_id`) to build the handler against
-  yet — that needs deciding before the TODOs can be filled in for real.
-  **Explicitly raised and deferred (2026-09-20)**: since first sale is
-  always an owner-sent payment link, not in-app self-serve, the question
-  is how a Stripe customer/subscription maps back to a `member_id` when
-  webhooks fire — options discussed were the owner setting
-  `client_reference_id`/metadata when creating the link vs. matching by
-  email. Owner chose not to decide this yet rather than guess — pick this
-  up by asking directly, don't re-derive an answer from this note.
-- **`coach_access_level` is not enforced anywhere.** The column and enum
-  exist (`cover_and_kids_only` vs `full`), and the schema comment says
-  Tommy is the only `cover_and_kids_only` coach — but no RLS policy or
-  app-code check actually restricts what a `cover_and_kids_only` coach
-  can see or do. Right now Tommy has identical access to a full coach.
-  `0001_init_core_schema.sql` even flags this in a comment on the
-  `sessions` table (`valid_coach` constraint is a no-op placeholder).
 - **No local/CI Supabase.** This project has no `supabase start` (Docker)
   workflow verified working in this environment — migrations were applied
   by hand via the hosted project's SQL Editor because the `supabase` CLI's

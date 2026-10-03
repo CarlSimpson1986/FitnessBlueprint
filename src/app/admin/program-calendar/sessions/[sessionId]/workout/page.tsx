@@ -1,7 +1,7 @@
 import { toIntensityType } from "@/lib/workout-content";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireCoachOrOwner } from "@/lib/auth";
+import { requireCoachArea } from "@/lib/coach-permissions";
 import { formatSessionDate, formatSessionTime } from "@/lib/format";
 import { WorkoutBuilder, type SegmentDraft } from "./WorkoutBuilder";
 import { MemberWorkoutPreview } from "@/components/MemberWorkoutPreview";
@@ -13,7 +13,7 @@ export default async function SessionWorkoutPage({
   params: Promise<{ sessionId: string }>;
 }) {
   const { sessionId } = await params;
-  const { supabase, profile } = await requireCoachOrOwner();
+  const { supabase, profile, access } = await requireCoachArea("programme");
 
   const { data: session } = await supabase
     .from("sessions")
@@ -116,10 +116,13 @@ export default async function SessionWorkoutPage({
           </p>
 
           <div className="flex flex-col-reverse md:flex-row gap-8 items-start">
-            <div className="flex-1 w-full fb-card !p-0">
-              <p className="fb-eyebrow px-4 pt-4 mb-3">Who&apos;s coming</p>
-              <SessionRoster sessionId={sessionId} canMark={isMine} />
-            </div>
+            {/* The roster is part of Today — hidden if Guy has turned that off for this coach. */}
+            {access.today && (
+              <div className="flex-1 w-full fb-card !p-0">
+                <p className="fb-eyebrow px-4 pt-4 mb-3">Who&apos;s coming</p>
+                <SessionRoster sessionId={sessionId} canMark={isMine} />
+              </div>
+            )}
             <MemberWorkoutPreview title={template?.name ?? "Session"} segments={initialSegments} />
           </div>
         </div>

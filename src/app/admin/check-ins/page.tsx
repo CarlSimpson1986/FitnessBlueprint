@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireCoachOrOwner } from "@/lib/auth";
+import { requireCoachArea } from "@/lib/coach-permissions";
 import { latestCheckinWeek, shiftWeek } from "@/lib/weekly-checkin";
 
 function Rating({ label, value }: { label: string; value: number }) {
@@ -17,7 +17,7 @@ function Rating({ label, value }: { label: string; value: number }) {
  * write them.
  */
 export default async function CheckinsPage({ searchParams }: { searchParams: Promise<{ week?: string }> }) {
-  const { supabase } = await requireCoachOrOwner();
+  const { supabase } = await requireCoachArea("checkins");
   const { week } = await searchParams;
   const latest = latestCheckinWeek();
   const weekOf = week && /^\d{4}-\d{2}-\d{2}$/.test(week) && week <= latest ? week : latest;

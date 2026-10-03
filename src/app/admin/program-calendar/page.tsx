@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireCoachOrOwner } from "@/lib/auth";
+import { requireCoachArea } from "@/lib/coach-permissions";
 import { toLocalDateKey } from "@/lib/format";
 import { fetchTimeOff, isOff } from "@/lib/time-off";
 import { ProgramCalendarClient, type DayCard } from "./ProgramCalendarClient";
@@ -25,7 +25,7 @@ export default async function ProgramCalendarPage({
 }: {
   searchParams: Promise<{ weeks?: string; start?: string }>;
 }) {
-  const { supabase, profile } = await requireCoachOrOwner();
+  const { supabase, profile } = await requireCoachArea("programme");
   const isOwner = profile.role === "owner";
   const params = await searchParams;
 

@@ -6,6 +6,8 @@ import { CreateMemberForm } from "./CreateMemberForm";
 import { ResetPasswordButton } from "./ResetPasswordButton";
 import { DeletePersonButton } from "./DeletePersonButton";
 import { ResetTwoFactorButton } from "./ResetTwoFactorButton";
+import { CoachAccessSwitches } from "./CoachAccessSwitches";
+import { COACH_AREAS, toAreaAccess } from "@/lib/coach-permissions";
 
 export default async function OwnerMembersPage() {
   const { supabase } = await requireOwner();
@@ -36,10 +38,12 @@ export default async function OwnerMembersPage() {
 
   // "Teaches" on each staff row — derived from the classes they're
   // scheduled on (src/lib/time-off.ts), not a list to maintain.
-  const [classesByCoach, { data: classTypes }] = await Promise.all([
+  const [classesByCoach, { data: classTypes }, { data: coachPermissions }] = await Promise.all([
     fetchClassesByCoach(supabase),
     supabase.from("session_templates").select("id, name").order("name"),
+    supabase.from("coach_permissions").select("coach_id, can_view_today, can_view_programme, can_view_checkins"),
   ]);
+  const permissionsByCoach = new Map((coachPermissions ?? []).map((p) => [p.coach_id, p]));
   const teaches = (personId: string) =>
     (classTypes ?? []).filter((c) => classesByCoach.get(personId)?.has(c.id)).map((c) => c.name);
   const activeMembershipByMember = new Map((memberships ?? []).map((m) => [m.member_id, m]));
@@ -82,6 +86,13 @@ export default async function OwnerMembersPage() {
                 <p className="text-xs text-blueprint-muted mt-1">
                   {teaches(person.id).length ? `Teaches: ${teaches(person.id).join(", ")}` : "Not scheduled on any classes yet"}
                 </p>
+                {person.role === "coach" && (
+                  <CoachAccessSwitches
+                    coachId={person.id}
+                    areas={COACH_AREAS}
+                    initial={toAreaAccess(permissionsByCoach.get(person.id))}
+                  />
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <ResetPasswordButton memberId={person.id} />
