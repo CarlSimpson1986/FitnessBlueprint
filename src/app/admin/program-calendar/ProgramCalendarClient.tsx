@@ -436,6 +436,82 @@ export function ProgramCalendarClient({
     });
   }
 
+  function renderDay(dateKey: string, globalIndex: number, layout: "grid" | "list") {
+    const cards = cardsByDate[dateKey] ?? [];
+    const isToday = dateKey === todayIso;
+    const canPasteHere = copySource !== null && dateKey !== copySource.dateKey;
+    const pendingPaste = pasting.find((p) => p.dateKey === dateKey);
+    const isHoverTarget = canPasteHere && hoverDate === dateKey;
+
+    return (
+      <div
+        key={dateKey}
+        onMouseEnter={() => setHoverDate(dateKey)}
+        onMouseLeave={() => setHoverDate((current) => (current === dateKey ? null : current))}
+        className={
+          "relative rounded border p-1.5 space-y-1.5 " +
+          (layout === "grid" ? "min-h-[110px] " : "") +
+          (isHoverTarget || pendingPaste
+            ? "border-blueprint-accent bg-blueprint-accent/5"
+            : isToday
+              ? "border-blueprint-accent"
+              : "border-blueprint-line/60")
+        }
+      >
+        <p className="text-[10px] text-blueprint-muted px-0.5">
+          {layout === "list"
+            ? new Date(`${dateKey}T00:00:00`).toLocaleDateString("en-GB", {
+                weekday: "short",
+                day: "numeric",
+                month: "short",
+              })
+            : isFirstOfMonth(dateKey, globalIndex, dayKeys)
+              ? new Date(`${dateKey}T00:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short" })
+              : formatDayNumber(dateKey)}
+        </p>
+        {cards.map((card) => (
+          <SessionCard
+            key={card.sessionId}
+            card={card}
+            dateKey={dateKey}
+            templates={templates}
+            isCopySource={copySource?.sessionId === card.sessionId}
+            readOnly={readOnly}
+            onCopy={(source) => {
+              setPasteError(null);
+              setCopySource(source);
+            }}
+          />
+        ))}
+        {pendingPaste ? (
+          <GhostCard source={pendingPaste.source} label="Pasting…" />
+        ) : (
+          isHoverTarget && copySource && <GhostCard source={copySource} label="Click to paste here" />
+        )}
+        {!copySource && !readOnly && (
+          <button
+            type="button"
+            onClick={() => setAddingDate(dateKey)}
+            className="w-full text-[10px] font-mono uppercase tracking-wide text-blueprint-muted hover:text-blueprint-accent border border-dashed border-blueprint-line rounded py-1"
+          >
+            + Add
+          </button>
+        )}
+
+        {/* In copy mode the whole day cell is the paste target —
+            this overlay stops clicks reaching the cards underneath. */}
+        {canPasteHere && (
+          <button
+            type="button"
+            aria-label={`Paste onto ${dateKey}`}
+            onClick={(event) => handlePaste(dateKey, event.shiftKey)}
+            className="absolute inset-0 z-10 cursor-copy rounded"
+          />
+        )}
+      </div>
+    );
+  }
+
   return (
     <div>
       {copySource && (
@@ -456,87 +532,31 @@ export function ProgramCalendarClient({
         </p>
       )}
 
-      <div className="grid grid-cols-7 gap-2 mb-1">
-        {WEEKDAY_LABELS.map((label) => (
-          <p key={label} className="text-[10px] font-mono uppercase tracking-wide text-blueprint-muted px-1">
-            {label}
-          </p>
+      {/* Laptop/tablet: the 7-day grid. */}
+      <div className="hidden md:block">
+        <div className="grid grid-cols-7 gap-2 mb-1">
+          {WEEKDAY_LABELS.map((label) => (
+            <p key={label} className="text-[10px] font-mono uppercase tracking-wide text-blueprint-muted px-1">
+              {label}
+            </p>
+          ))}
+        </div>
+
+        {weeks.map((week, weekIndex) => (
+          <div key={weekIndex} className="grid grid-cols-7 gap-2 mb-2">
+            {week.map((dateKey, dayIndex) => renderDay(dateKey, weekIndex * 7 + dayIndex, "grid"))}
+          </div>
         ))}
       </div>
 
-      {weeks.map((week, weekIndex) => (
-        <div key={weekIndex} className="grid grid-cols-7 gap-2 mb-2">
-          {week.map((dateKey, dayIndex) => {
-            const globalIndex = weekIndex * 7 + dayIndex;
-            const cards = cardsByDate[dateKey] ?? [];
-            const isToday = dateKey === todayIso;
-            const canPasteHere = copySource !== null && dateKey !== copySource.dateKey;
-            const pendingPaste = pasting.find((p) => p.dateKey === dateKey);
-            const isHoverTarget = canPasteHere && hoverDate === dateKey;
-
-            return (
-              <div
-                key={dateKey}
-                onMouseEnter={() => setHoverDate(dateKey)}
-                onMouseLeave={() => setHoverDate((current) => (current === dateKey ? null : current))}
-                className={
-                  "relative min-h-[110px] rounded border p-1.5 space-y-1.5 " +
-                  (isHoverTarget || pendingPaste
-                    ? "border-blueprint-accent bg-blueprint-accent/5"
-                    : isToday
-                      ? "border-blueprint-accent"
-                      : "border-blueprint-line/60")
-                }
-              >
-                <p className="text-[10px] text-blueprint-muted px-0.5">
-                  {isFirstOfMonth(dateKey, globalIndex, dayKeys)
-                    ? new Date(`${dateKey}T00:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short" })
-                    : formatDayNumber(dateKey)}
-                </p>
-                {cards.map((card) => (
-                  <SessionCard
-                    key={card.sessionId}
-                    card={card}
-                    dateKey={dateKey}
-                    templates={templates}
-                    isCopySource={copySource?.sessionId === card.sessionId}
-                    readOnly={readOnly}
-                    onCopy={(source) => {
-                      setPasteError(null);
-                      setCopySource(source);
-                    }}
-                  />
-                ))}
-                {pendingPaste ? (
-                  <GhostCard source={pendingPaste.source} label="Pasting…" />
-                ) : (
-                  isHoverTarget && copySource && <GhostCard source={copySource} label="Click to paste here" />
-                )}
-                {!copySource && !readOnly && (
-                  <button
-                    type="button"
-                    onClick={() => setAddingDate(dateKey)}
-                    className="w-full text-[10px] font-mono uppercase tracking-wide text-blueprint-muted hover:text-blueprint-accent border border-dashed border-blueprint-line rounded py-1"
-                  >
-                    + Add
-                  </button>
-                )}
-
-                {/* In copy mode the whole day cell is the paste target —
-                    this overlay stops clicks reaching the cards underneath. */}
-                {canPasteHere && (
-                  <button
-                    type="button"
-                    aria-label={`Paste onto ${dateKey}`}
-                    onClick={(event) => handlePaste(dateKey, event.shiftKey)}
-                    className="absolute inset-0 z-10 cursor-copy rounded"
-                  />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      ))}
+      {/* Phone: seven columns are too narrow to read, so one day per row.
+          Coaches only see days with sessions; the owner sees every day so
+          "+ Add" and paste still work. */}
+      <div className="md:hidden space-y-2">
+        {dayKeys.map((dateKey, index) =>
+          readOnly && (cardsByDate[dateKey] ?? []).length === 0 && !copySource ? null : renderDay(dateKey, index, "list")
+        )}
+      </div>
 
       {addingDate && (
         <QuickAddModal
