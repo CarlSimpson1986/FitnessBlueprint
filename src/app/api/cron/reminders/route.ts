@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { escapeHtml } from "@/lib/html";
 import { isInternalAddress, sendEmail } from "@/lib/email";
 import { publicEnv, serverEnv } from "@/lib/env";
 import { toLocalDateKey } from "@/lib/format";
@@ -82,6 +83,7 @@ function checkinEmailHtml(name: string, url: string) {
 </div>`.trim();
 }
 
+/** Raw text — escape it where it goes into HTML (the digest escapes its own). */
 function firstName(fullName: string) {
   return fullName.split(" ")[0] ?? "there";
 }
@@ -96,7 +98,11 @@ function firstName(fullName: string) {
 export async function GET(request: Request) {
   const env = serverEnv();
   const authHeader = request.headers.get("authorization");
-  if (env.CRON_SECRET && authHeader !== `Bearer ${env.CRON_SECRET}`) {
+  // Fail closed: without CRON_SECRET anyone could trigger the emails.
+  if (!env.CRON_SECRET) {
+    return NextResponse.json({ error: "CRON_SECRET is not set" }, { status: 500 });
+  }
+  if (authHeader !== `Bearer ${env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -169,7 +175,7 @@ export async function GET(request: Request) {
 
     for (const goal of dueGoals) {
       const member = memberById.get(goal.member_id);
-      if (!member?.email) continue;
+      if (!member?.email || isInternalAddress(member.email)) continue;
 
       const outcome = await sendOnce(
         supabase,
@@ -177,7 +183,7 @@ export async function GET(request: Request) {
         {
             to: member.email,
             subject: "Your 6-week check-in is here",
-            html: `<p>Hey ${firstName(member.full_name)},</p><p>Your 6-week check-in for ${goal.metric} is due — open the app and set your next target with Coach Ted.</p>`,
+            html: `<p>Hey ${escapeHtml(firstName(member.full_name))},</p><p>Your 6-week check-in for ${escapeHtml(goal.metric)} is due — open the app and set your next target with Coach Ted.</p>`,
         }
       );
       if (outcome === "sent") results.goalCheckins++;
@@ -209,7 +215,7 @@ export async function GET(request: Request) {
         {
           to: member.email,
           subject: "Your weekly check-in with Ted",
-          html: checkinEmailHtml(firstName(member.full_name), checkinUrl),
+          html: checkinEmailHtml(escapeHtml(firstName(member.full_name)), checkinUrl),
         }
       );
       if (outcome === "sent") results.sundayReminders++;
@@ -258,7 +264,6 @@ export async function GET(request: Request) {
       if (summary.status === "ok") {
         const { data: owners } = await supabase.from("profiles").select("id, email, full_name").eq("role", "owner");
         const feedbackUrl = `${publicEnv.NEXT_PUBLIC_SITE_URL}/owner/feedback`;
-        const escape = (t: string) => t.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]!);
         for (const owner of owners ?? []) {
           if (!owner.email || isInternalAddress(owner.email)) continue;
           const outcome = await sendOnce(
@@ -269,9 +274,9 @@ export async function GET(request: Request) {
               subject: "Ted's week: what members are saying",
               html: `
 <div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;color:#111">
-  <p style="font-size:16px">Hey ${escape(firstName(owner.full_name))}, here's what came up in feedback and check-ins this week:</p>
-  ${summary.averages ? `<p style="font-size:13px;color:#666">Average ratings: ${escape(formatRatingAverages(summary.averages))} (out of 5)</p>` : ""}
-  <div style="font-size:15px;line-height:1.6;white-space:pre-wrap">${escape(summary.text)}</div>
+  <p style="font-size:16px">Hey ${escapeHtml(firstName(owner.full_name))}, here's what came up in feedback and check-ins this week:</p>
+  ${summary.averages ? `<p style="font-size:13px;color:#666">Average ratings: ${escapeHtml(formatRatingAverages(summary.averages))} (out of 5)</p>` : ""}
+  <div style="font-size:15px;line-height:1.6;white-space:pre-wrap">${escapeHtml(summary.text)}</div>
   <p style="margin:24px 0"><a href="${feedbackUrl}" style="background:#2e9bf0;color:#000;text-decoration:none;font-weight:600;padding:10px 18px;border-radius:8px;display:inline-block">Read the feedback</a></p>
   <p style="font-size:13px;color:#666">Coach Ted · Fitness Blueprint</p>
 </div>`.trim(),

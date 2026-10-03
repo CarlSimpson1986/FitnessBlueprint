@@ -1,4 +1,5 @@
 import "server-only";
+import { escapeHtml } from "@/lib/html";
 import { createHash, randomBytes, timingSafeEqual } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email";
@@ -167,9 +168,6 @@ export function isValidWelcomeToken(appMetadata: Record<string, unknown> | undef
   return given.length === stored.length && timingSafeEqual(given, stored);
 }
 
-export function escapeHtml(text: string) {
-  return text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
-}
 
 function welcomeEmailHtml(fullName: string, email: string, welcomeUrl: string, role: Role, welcomeLine?: string) {
   const firstName = escapeHtml(fullName.split(" ")[0] ?? fullName);
@@ -191,3 +189,5 @@ function welcomeEmailHtml(fullName: string, email: string, welcomeUrl: string, r
   <p style="font-size:13px;color:#666;margin-top:28px">Fitness Blueprint</p>
 </div>`.trim();
 }
+
+export { escapeHtml };

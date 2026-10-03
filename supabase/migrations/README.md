@@ -24,6 +24,7 @@ Run in order — the filenames are numbered deliberately, don't reorder.
 | `0041_plan_weekly_limits.sql` | Hyrox only and the 21-day starter are 3 sessions a week |
 | `0042_coach_permissions.sql` | Per-coach on/off for Today / Programme / Check-ins (`coach_permissions`, `staff_can_view()`); coach reads of check-ins, health data and bookings follow the switches. Drops the never-enforced `coach_access_level` |
 | `0043_health_consent.sql` | Explicit health-info consent + body-measurements opt-out on `profiles` (`set_health_choices()`); members' health writes need a yes, staff stop seeing a member's health data when they say no |
+| `0044_advisor_fixes.sql` | Security audit 2026-10-03: revoke anon/authenticated EXECUTE on `promote_waitlist`/`rls_auto_enable` (Supabase grants new functions to those roles directly, so `revoke from public` isn't enough); consent helpers only answer for self/staff; drop member direct-write policies on bookings and waitlist (RPCs only); events update WITH CHECK; `profiles.email` always synced from `auth.users` (Stripe matches on it) |
 
 ## Adding a new migration
 

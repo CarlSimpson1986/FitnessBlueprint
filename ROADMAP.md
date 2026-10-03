@@ -31,6 +31,36 @@ anywhere (forms, goal metrics, Progress, Ted's profile, coach view).
 Change any time in Account settings. Every existing member starts
 unanswered, so Ted and check-ins are locked for them until they answer.
 
+**Security audit (2026-10-03, 0044 run):** outside-in probe with the public key
+read 0 rows from all 38 tables; API routes refuse forged/unauthenticated
+calls; git history has no secrets; `npm audit` clean for production deps
+(7 highs are dev-only build tooling). Fixed: member back doors that
+skipped book_session (direct booking insert), cancel_booking (direct
+cancel) and the waitlist queue (self-"offered" then accept), events
+could be edited into official gym events, members could set their own
+profiles.email (Stripe matches payments on it; existing rows re-synced),
+coaches could move a booking to another session/member while marking
+attendance (trigger now allows status only), promote_waitlist callable
+signed-out, consent helpers answered for any member (all in **0044**);
+cron now fails closed without CRON_SECRET; /auth/callback open redirect;
+unescaped names in reminder emails. Weekly-summary injection eval added
+(`npm run ted:summary-eval`, 6/6 pass). Open, lower priority:
+`lookup_member_by_email` lets any member check whether an email is a
+member and see their full name (buddy invites need some lookup — return
+first name only, or require the buddy to accept by code?); coaches read
+profiles/memberships/credit_ledger/waitlist regardless of their 0042
+switches; session_feedback accepts a rating for any session, not just
+ones they attended; a coach can still read weekly_checkins.weight_kg
+via the API after a member turns off measurements (RLS is per row; the
+coach page hides it); the health question is only re-asked on a direct
+booking, not on join-waitlist or accepting a buddy invite; CSP still allows 'unsafe-inline' scripts (needs
+Next nonces); Semgrep doesn't run on Windows (CodeQL covers it); ZAP
+not run (needs Java/Docker). **For Carl:** enable Dependabot alerts +
+CodeQL default setup (GitHub → Settings → Code security), Supabase
+leaked-password protection (Auth → Attack Protection), and note the
+repo is PUBLIC — fine while no secrets are committed, but private would
+hide the migrations and security notes from attackers.
+
 **Next, in order:** (1) Guy reads and approves /privacy; (2) migration 0038 once Guy has
 two-factor; (3) weekly-summary injection eval. Loose ends for Carl:
 deactivate TESTAPP promo code in Stripe if not done.
