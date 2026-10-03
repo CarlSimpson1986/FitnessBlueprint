@@ -786,12 +786,12 @@ that far — src/lib/booking-window.ts).
 
 ## Infra notes worth remembering
 
-- Supabase Performance Advisor (2026-10-03): ~39 "Auth RLS Initialization
-  Plan" (policies call auth.uid() per row — fix is `(select auth.uid())`
-  in every policy) and ~120 "Multiple Permissive Policies" (deliberate:
-  one simple policy per audience). Negligible at this gym's size; left
-  alone on purpose because the fix rewrites nearly every security policy.
-  Revisit at hundreds of members or if pages feel slow.
+- Supabase Performance Advisor (2026-10-03): fixed in **0046** (run) —
+  one policy per table/action ("<table>: read" etc., old ones ORed),
+  `to authenticated`, `(select auth.uid())`. Same access; generated, and
+  the generator's view matched the Advisor's list exactly. Signed-out
+  probe afterwards: 0 rows from all 38 tables. See CLAUDE.md for how to
+  change a policy now.
 
 - Free-tier Supabase project auto-pauses after ~1 week of no API
   traffic (data isn't lost, just needs restoring from the dashboard).

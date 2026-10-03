@@ -26,6 +26,7 @@ Run in order — the filenames are numbered deliberately, don't reorder.
 | `0043_health_consent.sql` | Explicit health-info consent + body-measurements opt-out on `profiles` (`set_health_choices()`); members' health writes need a yes, staff stop seeing a member's health data when they say no |
 | `0044_advisor_fixes.sql` | Security audit 2026-10-03: revoke anon/authenticated EXECUTE on `promote_waitlist`/`rls_auto_enable` (Supabase grants new functions to those roles directly, so `revoke from public` isn't enough); consent helpers only answer for self/staff; drop member direct-write policies on bookings and waitlist (RPCs only); events update WITH CHECK; `profiles.email` always synced from `auth.users` (Stripe matches on it) |
 | `0045_helpers_not_for_anon.sql` | RLS helper functions (`auth_role`, `is_owner`, `is_coach_or_owner`, `staff_can_view`, consent helpers) no longer executable signed out. The remaining Advisor 0029 warnings (signed-in users can run the booking/waitlist/Ted RPCs and helpers) are by design |
+| `0046_rls_performance.sql` | Performance Advisor fixes, same access: every policy merged to one per table/action (`"<table>: read"` etc., ORing the old ones), `to authenticated`, `(select auth.uid())`. Generated; each policy lists the old ones it replaces |
 
 ## Adding a new migration
 

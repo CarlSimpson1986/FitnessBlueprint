@@ -51,6 +51,14 @@ to main, etc). The rest depend on you reading this file.
   Per the confirmed spec, only the owner sees individual ratings. Don't
   add one because it "seems useful."
 
+- **RLS policy shape (since 0046):** one policy per table per action,
+  named `"<table>: read|create|change|delete"`, `to authenticated`, with
+  `(select auth.uid())` never bare `auth.uid()`. To change access, drop
+  and recreate that one policy with the new condition ORed in — a second
+  policy on the same table/action brings back the Performance Advisor
+  warnings. Old policy names in code comments are listed in 0046's
+  "Replaces:" lines.
+
 ## Where things go
 
 - API routes: `src/app/api/<feature>/route.ts`
