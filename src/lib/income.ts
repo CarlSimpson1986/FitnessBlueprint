@@ -132,6 +132,11 @@ type GoCardlessPayment = {
   links?: { subscription?: string };
 };
 
+/** GoCardless charge dates are plain UK dates (YYYY-MM-DD). */
+function ukDateKey(date: Date) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(date);
+}
+
 export async function fetchGoCardlessIncome(startDate: Date, endDate: Date): Promise<IncomeResult> {
   const env = serverEnv();
   if (!env.GOCARDLESS_ACCESS_TOKEN) {
@@ -165,9 +170,13 @@ export async function fetchGoCardlessIncome(startDate: Date, endDate: Date): Pro
 
   try {
     do {
+      // Filter on charge_date (when the money is collected), not created_at:
+      // GoCardless creates subscription payments weeks ahead, so filtering
+      // on creation showed next month's still-pending payments and hid the
+      // ones actually collected in the period.
       const params = new URLSearchParams({
-        "created_at[gte]": startDate.toISOString(),
-        "created_at[lt]": endDate.toISOString(),
+        "charge_date[gte]": ukDateKey(startDate),
+        "charge_date[lt]": ukDateKey(endDate),
         limit: "100",
       });
       if (after) params.set("after", after);
