@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { streamTedAnswer } from "@/lib/coach-ted/claude";
+import { ANSWER_REPLACED_MARKER, checkTedAnswer } from "@/lib/coach-ted/answer-check";
 import { embedText } from "@/lib/coach-ted/gemini";
 import { searchPubMed } from "@/lib/coach-ted/pubmed";
 import { OWNER_ANSWER_THRESHOLD } from "@/lib/coach-ted/cache";
@@ -164,6 +165,16 @@ ${question}` : question;
       }
       mark("done");
       console.log("coach-ted timings", timings, { model, pubmed: pubmedResults.length, kb: kbMatches.length });
+
+      // Phone numbers and links not on Ted's approved list come out, in
+      // code (src/lib/coach-ted/answer-check.ts). The member already saw
+      // the streamed text, so the corrected answer replaces it on screen.
+      const checked = checkTedAnswer(answer);
+      if (checked.removed.length) {
+        console.warn("Coach Ted: removed unapproved numbers/links", { member: user.id, removed: checked.removed });
+        answer = checked.text;
+        controller.enqueue(encoder.encode(ANSWER_REPLACED_MARKER + answer));
+      }
 
       if (answer.trim()) {
         const { error: saveError } = await admin.from("coach_ted_conversations").insert({

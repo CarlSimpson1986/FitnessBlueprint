@@ -16,7 +16,8 @@
     "db:push": "supabase db push",
     "db:reset": "supabase db reset",
     "ted:eval": "tsx --tsconfig tsconfig.json evals/coach-ted/run.ts",
-    "ted:summary-eval": "tsx --tsconfig tsconfig.json evals/coach-ted/summary-injection.ts"
+    "ted:summary-eval": "tsx --tsconfig tsconfig.json evals/coach-ted/summary-injection.ts",
+    "ted:check-test": "tsx --tsconfig tsconfig.json evals/coach-ted/answer-check-test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",

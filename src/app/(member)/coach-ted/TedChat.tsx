@@ -3,6 +3,13 @@
 import Image from "next/image";
 import { useState, type FormEvent } from "react";
 import { TedText } from "./TedText";
+import { ANSWER_REPLACED_MARKER } from "@/lib/coach-ted/answer-check";
+
+/** The server's answer check may send a corrected answer after the stream; it replaces what streamed. */
+function shownAnswer(streamed: string) {
+  const at = streamed.lastIndexOf(ANSWER_REPLACED_MARKER);
+  return at === -1 ? streamed : streamed.slice(at + ANSWER_REPLACED_MARKER.length);
+}
 
 type Message = {
   id: string;
@@ -56,9 +63,9 @@ export function TedChat({ initialMessages }: { initialMessages: Message[] }) {
         const { done, value } = await reader.read();
         if (done) break;
         answer += decoder.decode(value, { stream: true });
-        setAnswer(answer);
+        setAnswer(shownAnswer(answer));
       }
-      answer += decoder.decode();
+      answer = shownAnswer(answer + decoder.decode());
       setAnswer(answer || "Sorry — I didn't catch that. Please try again.");
     } catch {
       setMessages((prev) => prev.filter((m) => m.id !== pendingId));

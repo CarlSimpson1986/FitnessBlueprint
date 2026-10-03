@@ -68,6 +68,17 @@ about session length and air con instead of answering). New eval case
 control-water passes; squat-plateau / missed-week still flip between
 runs as in v8.
 
+**Ted answer check (2026-10-03):** every finished answer goes through
+src/lib/coach-ted/answer-check.ts — phone numbers and links not on the
+approved list (999, 111, 116 123, 85258; beateatingdisorders.org.uk,
+nhs.uk, pubmed) are removed, a safe-numbers line is appended if a number
+went, the corrected text replaces the streamed one and is what's saved,
+and the removal is logged (Vercel logs, "Coach Ted: removed"). Over 634
+past eval answers it caught 3, all real (Beat's helpline 0808 801 0677,
+a text short code, citizensadvice.org.uk) and no false alarms. If Guy
+wants Beat's helpline or Citizens Advice allowed, add them to both the
+prompt and ALLOWED_* in answer-check.ts. `npm run ted:check-test`.
+
 **Next, in order:** (1) Guy reads and approves /privacy; (2) migration 0038 once Guy has
 two-factor; (3) weekly-summary injection eval. Loose ends for Carl:
 deactivate TESTAPP promo code in Stripe if not done.
