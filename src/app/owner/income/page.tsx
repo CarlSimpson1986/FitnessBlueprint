@@ -108,6 +108,16 @@ export default async function IncomePage({
             <p className="text-xs text-blueprint-muted mt-1">
               GoCardless {!gocardless.configured && "(not configured)"}
               {gocardless.error && <span className="block text-red-400 mt-1">{gocardless.error}</span>}
+              {gocardless.connection && (
+                <span className="block mt-1">
+                  {gocardless.connection.account ?? "Unknown account"} ({gocardless.connection.environment}) ·{" "}
+                  {Object.keys(gocardless.connection.statusCounts).length === 0
+                    ? "no payments charged in this period"
+                    : Object.entries(gocardless.connection.statusCounts)
+                        .map(([status, n]) => `${n} ${status.replace(/_/g, " ")}`)
+                        .join(", ")}
+                </span>
+              )}
             </p>
           </div>
         </div>

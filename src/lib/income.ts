@@ -18,6 +18,12 @@ export type IncomeResult = {
   totalPence: number;
   configured: boolean;
   error?: string;
+  /**
+   * GoCardless only: which account the token is connected to and every
+   * payment it returned, any status — so £0 can be told apart from "wrong
+   * account" or "not confirmed yet".
+   */
+  connection?: { account: string | null; environment: "live" | "sandbox"; statusCounts: Record<string, number> };
 };
 
 /**
@@ -148,7 +154,10 @@ export async function fetchGoCardlessIncome(startDate: Date, endDate: Date): Pro
   const baseUrl = env.GOCARDLESS_ACCESS_TOKEN.startsWith("sandbox_")
     ? "https://api-sandbox.gocardless.com"
     : "https://api.gocardless.com";
+  const environment = env.GOCARDLESS_ACCESS_TOKEN.startsWith("sandbox_") ? "sandbox" : "live";
   const transactions: IncomeTransaction[] = [];
+  const statusCounts: Record<string, number> = {};
+  let account: string | null = null;
   const subscriptionNames = new Map<string, string | null>();
   let after: string | undefined;
   const headers = {
@@ -169,6 +178,12 @@ export async function fetchGoCardlessIncome(startDate: Date, endDate: Date): Pro
   }
 
   try {
+    const creditorRes = await fetch(`${baseUrl}/creditors?limit=1`, { headers });
+    if (creditorRes.ok) {
+      const body: { creditors?: { name?: string }[] } = await creditorRes.json();
+      account = body.creditors?.[0]?.name ?? null;
+    }
+
     do {
       // Filter on charge_date (when the money is collected), not created_at:
       // GoCardless creates subscription payments weeks ahead, so filtering
@@ -197,6 +212,7 @@ export async function fetchGoCardlessIncome(startDate: Date, endDate: Date): Pro
         await res.json();
 
       for (const payment of data.payments ?? []) {
+        statusCounts[payment.status] = (statusCounts[payment.status] ?? 0) + 1;
         if (payment.status !== "confirmed" && payment.status !== "paid_out") continue;
         transactions.push({
           id: payment.id,
@@ -226,5 +242,6 @@ export async function fetchGoCardlessIncome(startDate: Date, endDate: Date): Pro
     transactions,
     totalPence: transactions.reduce((sum, t) => sum + t.amountPence, 0),
     configured: true,
+    connection: { account, environment, statusCounts },
   };
 }
