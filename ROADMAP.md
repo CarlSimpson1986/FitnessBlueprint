@@ -13,12 +13,11 @@ browser (/auth/confirm + Supabase templates); buddy invites respect
 weekly limits/programme end; GoCardless env var removed; Coach Ted v8
 shipped (stays on Haiku — Carl's call).
 
-**Done 2026-10-03 (not yet deployed):** /privacy page (facts match the
+**Done 2026-10-03 (0042 run, pushed):** /privacy page (facts match the
 website policy: Fitness Blueprint Ltd, ICO-registered, gmail contact),
 linked from signup and Account; per-coach switches for Today / Programme
 / Check-ins on the Members page, enforced in RLS by **migration 0042**
-(run it before deploying — the Members page and coach pages read
-`coach_permissions`). No row = everything on, so coaches keep today's
+(the Members page and coach pages read `coach_permissions`). No row = everything on, so coaches keep today's
 access until Guy changes it; Tommy is not pre-restricted.
 
 **Next, in order:** (1) Guy reads and approves /privacy; it says health
