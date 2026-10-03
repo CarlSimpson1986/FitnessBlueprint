@@ -6,6 +6,49 @@ spec lives in the shared Google Doc; this is status, not spec.
 
 ## Pick up here next session (as of 2026-10-03)
 
+**Carl's run-through (started 2026-10-03), pick up here:** owner Part 1
+mostly done; client Part 2 was at step 11 (welcome email → set password →
+sign in). Shipped during it: RPE/%1RM value box in the builder, session
+notes (0047, run), Today shows the workout and an "After the session —
+notes" section, programme calendar is one day per row on phones, income
+shows which GoCardless account it reads. GoCardless £0 is real: the token
+is "The Health Hub Aylesbury" (live), whose only payments are 7 Virtuagym
+invoices from 2025 (£857.57 confirmed, never paid out). Ask Guy whether
+anyone pays by GoCardless now / which account. **Next for Carl:** run this
+in the Supabase SQL editor on a day Test Coach has a class (not Sunday),
+then View as → Coach → Today: mark them Attended, add notes.
+
+```sql
+-- Demo only: books Sarah Mitchell + Tom Wilson (.invalid demo clients) onto
+-- Test Coach's first scheduled session today (UK). Remove demo data clears it.
+with s as (
+  select se.id
+  from sessions se
+  join profiles c on c.id = se.coach_id
+  where se.session_date = (now() at time zone 'Europe/London')::date
+    and c.email = 'test-coach@fitnessblueprints.invalid'
+    and se.status = 'scheduled'
+  order by se.start_time
+  limit 1
+),
+m as (
+  select id from profiles
+  where email in ('demo-1@fitnessblueprints.invalid', 'demo-4@fitnessblueprints.invalid')
+)
+insert into bookings (session_id, member_id, status)
+select s.id, m.id, 'booked'
+from s cross join m
+where not exists (select 1 from bookings b where b.session_id = s.id and b.member_id = m.id)
+returning id, status;
+
+-- Notes need a yes to health info; demo clients loaded before 3 Oct may not have it.
+update profiles
+set health_consent = true, health_consent_at = now(), track_body_metrics = true
+where email in ('demo-1@fitnessblueprints.invalid', 'demo-4@fitnessblueprints.invalid')
+  and health_consent is distinct from true;
+```
+Two rows back = booked; none = already booked or no Test Coach class today.
+
 **Done 2026-10-02:** cron fixed (200); Stripe payment → account → plan
 live and tested end to end; welcome email sends a set-password link (no
 passwords emailed — CLAUDE.md rule); emailed sign-in links work in any
