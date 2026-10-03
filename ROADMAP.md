@@ -61,6 +61,13 @@ leaked-password protection (Auth → Attack Protection), and note the
 repo is PUBLIC — fine while no secrets are committed, but private would
 hide the migrations and security notes from attackers.
 
+**Coach Ted v9 (2026-10-03):** knows sessions are 60 minutes in a warm
+room (no air con, big fans) and never asks; water guidance is 2L a day
+plus more on training days, bring a bottle (Carl's call — he'd asked
+about session length and air con instead of answering). New eval case
+control-water passes; squat-plateau / missed-week still flip between
+runs as in v8.
+
 **Next, in order:** (1) Guy reads and approves /privacy; (2) migration 0038 once Guy has
 two-factor; (3) weekly-summary injection eval. Loose ends for Carl:
 deactivate TESTAPP promo code in Stripe if not done.
