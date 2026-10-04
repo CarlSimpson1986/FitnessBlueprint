@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { submitReadinessCheckin } from "./readiness-actions";
@@ -25,7 +26,7 @@ function PillPicker<T extends string>({
   onChange: (value: T) => void;
 }) {
   return (
-    <div className="flex gap-1.5">
+    <div className="grid grid-cols-3 gap-1.5">
       {options.map((option) => (
         <button
           key={option.value}
@@ -33,8 +34,8 @@ function PillPicker<T extends string>({
           onClick={() => onChange(option.value)}
           className={
             value === option.value
-              ? "text-xs font-medium text-black bg-blueprint-accent rounded-lg px-3 py-1.5 transition"
-              : "text-xs font-medium text-blueprint-muted border border-blueprint-line rounded-lg px-3 py-1.5 hover:border-blueprint-accent transition"
+              ? "text-sm font-medium text-black bg-blueprint-accent rounded-lg px-3 py-2.5 transition"
+              : "text-sm font-medium text-blueprint-ink border border-blueprint-line rounded-lg px-3 py-2.5 hover:border-blueprint-accent transition"
           }
         >
           {option.label}
@@ -59,7 +60,9 @@ export function ReadinessCheckin({
   const [error, setError] = useState<string | null>(null);
 
   if (done) {
-    return null;
+    return (
+      <p className="mt-3 text-xs text-blueprint-accent">✓ Checked in — your coach can see how you&apos;re feeling.</p>
+    );
   }
 
   function handleSubmit() {
@@ -85,27 +88,32 @@ export function ReadinessCheckin({
   }
 
   return (
-    <div className="border-t border-blueprint-line/60 mt-3 pt-3 space-y-2">
-      <p className="text-xs text-blueprint-muted">How are you feeling</p>
+    <div className="mt-3 rounded-xl border border-blueprint-accent/50 bg-blueprint-accent/10 p-3 space-y-3">
+      <div className="flex items-start gap-2">
+        <Image src="/coach-ted.png" alt="" width={28} height={28} className="rounded-full object-cover shrink-0" />
+        <div>
+          <p className="text-sm font-semibold text-blueprint-ink">Pre-session check-in</p>
+          <p className="text-xs text-blueprint-muted">10 seconds — helps your coach pace today&apos;s session for you.</p>
+        </div>
+      </div>
+      <p className="text-sm text-blueprint-ink">How are you feeling?</p>
       <PillPicker options={FEELINGS} value={feeling} onChange={setFeeling} />
       <input
         type="text"
         value={painArea}
         onChange={(event) => setPainArea(event.target.value)}
         placeholder="Any pain or niggles? (optional)"
-        className="w-full text-xs bg-transparent border border-blueprint-line rounded px-3 py-2 text-blueprint-ink placeholder:text-blueprint-muted"
+        className="w-full text-sm bg-blueprint-bg border border-blueprint-line rounded-lg px-3 py-2.5 text-blueprint-ink placeholder:text-blueprint-muted focus:outline-none focus:border-blueprint-accent"
       />
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={!feeling || isPending}
-          className="text-xs font-medium text-black bg-blueprint-accent rounded-lg px-3 py-1.5 disabled:opacity-50 transition"
-        >
-          {isPending ? "…" : "Send check-in"}
-        </button>
-        {error && <p className="text-xs text-red-400">{error}</p>}
-      </div>
+      <button
+        type="button"
+        onClick={handleSubmit}
+        disabled={!feeling || isPending}
+        className="w-full text-sm font-medium text-blueprint-accent border border-blueprint-accent rounded-lg px-3 py-2.5 hover:bg-blueprint-accent/15 disabled:opacity-50 transition"
+      >
+        {isPending ? "…" : feeling ? "Send to my coach" : "Pick how you're feeling to send"}
+      </button>
+      {error && <p className="text-xs text-red-400">{error}</p>}
     </div>
   );
 }
