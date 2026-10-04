@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { escapeHtml } from "@/lib/html";
-import { isInternalAddress, sendEmail } from "@/lib/email";
+import { isInternalAddress } from "@/lib/email";
+import { sendOnce } from "@/lib/email-log";
 import { publicEnv, serverEnv } from "@/lib/env";
 import { toLocalDateKey } from "@/lib/format";
 import { buildWeeklySummary } from "@/lib/coach-ted/weekly-summary";
 import { buildMondayDigest } from "@/lib/monday-digest";
 import { formatRatingAverages } from "@/lib/session-feedback";
 import { buildMonthlyReport, monthlyReportHtml, monthlyReportSubject, previousMonth } from "@/lib/monthly-progress";
-import type { Database } from "@/types/database.types";
 
 // The monthly progress email starts with October 2026's (sent 1 Nov) so
 // Guy can see a preview first (Email check card on /admin).
@@ -34,41 +34,6 @@ function londonNow(): Date {
   }).formatToParts(new Date());
   const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "00";
   return new Date(`${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}:${get("second")}`);
-}
-
-type AdminClient = ReturnType<typeof createAdminClient>;
-type EmailLogRow = Pick<
-  Database["public"]["Tables"]["email_log"]["Insert"],
-  "recipient_id" | "email_type" | "reference_key"
->;
-
-/**
- * Claims the email_log row, then sends. The row is what makes retries
- * idempotent (unique on recipient/type/reference), but it must only stand
- * if the send actually worked — otherwise a Brevo failure would be
- * recorded as sent and never retried. On failure the claim is released
- * so tomorrow's run tries again, and the error is logged.
- */
-async function sendOnce(
-  supabase: AdminClient,
-  log: EmailLogRow,
-  email: { to: string; subject: string; html: string }
-): Promise<"sent" | "already" | "failed"> {
-  const { error: logError } = await supabase.from("email_log").insert(log);
-  if (logError) return "already"; // unique violation = already sent
-
-  const { error } = await sendEmail(email);
-  if (error) {
-    console.error(`reminders: ${log.email_type} to ${email.to} failed — ${error}`);
-    await supabase
-      .from("email_log")
-      .delete()
-      .eq("recipient_id", log.recipient_id)
-      .eq("email_type", log.email_type)
-      .eq("reference_key", log.reference_key);
-    return "failed";
-  }
-  return "sent";
 }
 
 function checkinEmailHtml(name: string, url: string) {

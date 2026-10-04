@@ -117,6 +117,31 @@ function sessionTimes(s: SessionRow) {
   return { start: { utc: start }, end: { utc: new Date(start.getTime() + (s.duration_minutes ?? 60) * 60 * 1000) } };
 }
 
+/** One booked session as a calendar file, attached to the booking confirmation email. */
+export function sessionIcs(input: {
+  sessionId: string;
+  memberId: string;
+  className: string;
+  coachName: string | null;
+  sessionDate: string;
+  startTime: string;
+  durationMinutes: number | null;
+  siteUrl: string;
+}): string {
+  const start = londonToUtc(input.sessionDate, input.startTime.slice(0, 5));
+  return buildCalendar("Fitness Blueprint", [
+    {
+      // Same UID shape as memberFeed, so a subscribed calendar doesn't double it up.
+      uid: `booking-${input.sessionId}-${input.memberId}@fitnessblueprint`,
+      summary: `${input.className} · Fitness Blueprint`,
+      description: `Coach: ${input.coachName ?? "TBC"}\nManage your booking in the app.`,
+      url: `${input.siteUrl}/sessions`,
+      start: { utc: start },
+      end: { utc: new Date(start.getTime() + (input.durationMinutes ?? 60) * 60 * 1000) },
+    },
+  ]);
+}
+
 /** A member's (or coach's) own bookings. */
 export async function memberFeed(admin: Admin, profileId: string, siteUrl: string): Promise<string> {
   const { from, to } = windowKeys();

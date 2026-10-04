@@ -34,7 +34,15 @@ function htmlToText(html: string) {
     .trim();
 }
 
-export async function sendEmail(input: { to: string; subject: string; html: string }): Promise<{ error?: string }> {
+/** A file sent with the email — e.g. a booking's .ics so it lands in their calendar. */
+export type EmailAttachment = { name: string; content: string };
+
+export async function sendEmail(input: {
+  to: string;
+  subject: string;
+  html: string;
+  attachments?: EmailAttachment[];
+}): Promise<{ error?: string }> {
   const env = serverEnv();
 
   // Test/demo accounts use the reserved .invalid TLD (src/lib/test-accounts.ts,
@@ -69,6 +77,14 @@ export async function sendEmail(input: { to: string; subject: string; html: stri
       // HTML-only mail is a spam signal (Yahoo especially) — always send a
       // plain-text part alongside it.
       textContent: htmlToText(input.html),
+      ...(input.attachments?.length
+        ? {
+            attachment: input.attachments.map((a) => ({
+              name: a.name,
+              content: Buffer.from(a.content, "utf8").toString("base64"),
+            })),
+          }
+        : {}),
     }),
   });
 

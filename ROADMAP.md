@@ -70,6 +70,14 @@ unconfirmed invites lapse 3h before the class. Coach Today roster shows
 guests (health answers only with Check-ins on). Privacy page updated —
 Guy to approve the Guests line.
 
+**Session emails (2026-10-04, migration 0051 + one vault secret):**
+booking confirmation with a .ics attached (sent from book / accept-offer /
+accept-invite actions); evening-before reminder with a pre-session
+check-in nudge (new cron 17:00 UTC, /api/cron/session-reminders);
+instant "a place opened up" email via a pg_net trigger on
+waitlist_entries -> /api/webhooks/waitlist-offer, authorised with
+CRON_SECRET stored in Vault as 'cron_secret' (not in the repo).
+
 **Done 2026-10-02:** cron fixed (200); Stripe payment → account → plan
 live and tested end to end; welcome email sends a set-password link (no
 passwords emailed — CLAUDE.md rule); emailed sign-in links work in any

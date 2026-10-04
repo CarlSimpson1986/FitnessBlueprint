@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { publicEnv } from "@/lib/env";
 import { sendEmail } from "@/lib/email";
 import { guestInviteEmailHtml } from "@/lib/guest-invites";
+import { sendBookingConfirmation } from "@/lib/session-emails";
 
 export type ActionResult = { error?: string };
 export type BookResult = ActionResult & { needsHealthAnswer?: boolean };
@@ -36,6 +37,7 @@ export async function bookSession(sessionId: string): Promise<BookResult> {
     return { error: error.message };
   }
 
+  await sendBookingConfirmation(supabase, sessionId);
   return {};
 }
 
@@ -100,12 +102,13 @@ export async function leaveWaitlist(entryId: string): Promise<ActionResult> {
 
 export async function acceptWaitlistOffer(entryId: string): Promise<ActionResult> {
   const supabase = await createClient();
-  const { error } = await supabase.rpc("accept_waitlist_offer", { p_entry_id: entryId });
+  const { data: booking, error } = await supabase.rpc("accept_waitlist_offer", { p_entry_id: entryId });
 
   if (error) {
     return { error: error.message };
   }
 
+  if (booking?.session_id) await sendBookingConfirmation(supabase, booking.session_id);
   return {};
 }
 
@@ -182,12 +185,13 @@ export async function cancelGuestInvite(inviteId: string): Promise<ActionResult>
 
 export async function acceptBookingInvite(bookingId: string): Promise<ActionResult> {
   const supabase = await createClient();
-  const { error } = await supabase.rpc("accept_booking_invite", { p_booking_id: bookingId });
+  const { data: booking, error } = await supabase.rpc("accept_booking_invite", { p_booking_id: bookingId });
 
   if (error) {
     return { error: error.message };
   }
 
+  if (booking?.session_id) await sendBookingConfirmation(supabase, booking.session_id);
   return {};
 }
 
