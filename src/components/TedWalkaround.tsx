@@ -25,7 +25,7 @@ const STEPS: Step[] = [
   },
   {
     title: "Progress",
-    body: "Log your workouts, body metrics, and daily habits here, and set goals with me — we'll check in on how you're doing every 6 weeks.",
+    body: "Log your workouts, body metrics, and daily habits here, and set a 6-week goal with me — then check in every week so we can see how it's going.",
     target: "/progress",
   },
   {
