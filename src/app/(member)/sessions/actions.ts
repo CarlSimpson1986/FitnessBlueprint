@@ -1,6 +1,9 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { publicEnv } from "@/lib/env";
+import { sendEmail } from "@/lib/email";
+import { guestInviteEmailHtml } from "@/lib/guest-invites";
 
 export type ActionResult = { error?: string };
 export type BookResult = ActionResult & { needsHealthAnswer?: boolean };
@@ -106,31 +109,69 @@ export async function acceptWaitlistOffer(entryId: string): Promise<ActionResult
   return {};
 }
 
-export async function inviteBuddy(sessionId: string, buddyEmail: string): Promise<ActionResult> {
+export type GuestInviteResult = ActionResult & {
+  /** The class is full: the member is pointed at messaging the gym instead. */
+  full?: boolean;
+  /** Set when the email didn't go, so the member can send the link themselves. */
+  shareUrl?: string;
+};
+
+/**
+ * Refer a friend (0050). invite_guest checks the member is booked in, has a
+ * guest pass left this month, the friend isn't already a member and the
+ * class has room — all in the database, under the member's own session.
+ * Then the friend is emailed their confirm link.
+ */
+export async function inviteGuest(sessionId: string, guestName: string, guestEmail: string): Promise<GuestInviteResult> {
   const supabase = await createClient();
 
-  const trimmedEmail = buddyEmail.trim();
-  if (!trimmedEmail) {
-    return { error: "Enter your buddy's email." };
-  }
-
-  const { data, error: lookupError } = await supabase.rpc("lookup_member_by_email", {
-    p_email: trimmedEmail,
-  });
-
-  if (lookupError) {
-    return { error: lookupError.message };
-  }
-
-  const buddy = data?.[0];
-  if (!buddy) {
-    return { error: "No member found with that email." };
-  }
-
-  const { error } = await supabase.rpc("invite_buddy", {
+  const { data, error } = await supabase.rpc("invite_guest", {
     p_session_id: sessionId,
-    p_buddy_member_id: buddy.id,
+    p_name: guestName,
+    p_email: guestEmail,
   });
+  if (error) {
+    return { error: error.message, full: error.message.startsWith("This class is full") };
+  }
+  const token = data?.[0]?.token;
+  if (!token) return { error: "Couldn't create the invite — try again." };
+
+  const url = `${publicEnv.NEXT_PUBLIC_SITE_URL}/guest/${token}`;
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const [{ data: inviter }, { data: session }] = await Promise.all([
+    supabase.from("profiles").select("full_name").eq("id", user?.id ?? "").maybeSingle(),
+    supabase.from("sessions").select("session_date, start_time, template_id").eq("id", sessionId).maybeSingle(),
+  ]);
+  const { data: template } = session
+    ? await supabase.from("session_templates").select("name").eq("id", session.template_id).maybeSingle()
+    : { data: null };
+
+  const { error: emailError } = await sendEmail({
+    to: guestEmail.trim().toLowerCase(),
+    subject: `${inviter?.full_name?.split(" ")[0] ?? "A friend"} has invited you to train at Fitness Blueprint`,
+    html: guestInviteEmailHtml({
+      guestName: guestName.trim(),
+      inviterName: inviter?.full_name ?? "A friend",
+      className: template?.name ?? "a class",
+      sessionDate: session?.session_date ?? "",
+      startTime: session?.start_time ?? "",
+      url,
+    }),
+  });
+  if (emailError) {
+    console.error("inviteGuest: email failed —", emailError);
+    return { shareUrl: url };
+  }
+
+  return {};
+}
+
+export async function cancelGuestInvite(inviteId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("cancel_guest_invite", { p_invite_id: inviteId });
 
   if (error) {
     return { error: error.message };
@@ -161,13 +202,3 @@ export async function declineBookingInvite(bookingId: string): Promise<ActionRes
   return {};
 }
 
-export async function withdrawBookingInvite(bookingId: string): Promise<ActionResult> {
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("withdraw_booking_invite", { p_booking_id: bookingId });
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  return {};
-}

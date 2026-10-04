@@ -5,7 +5,7 @@ import { useState, type ReactNode } from "react";
 /**
  * Both tabs' content are rendered server-side and passed in as ReactNode —
  * this just toggles visibility client-side (display:none, not unmount) so
- * nested client components like WaitlistPanel/BuddyInvitePanel don't lose
+ * nested client components like WaitlistPanel/GuestInvitePanel don't lose
  * their local state on switch.
  */
 export function BookingsTabs({ myBookings, schedule }: { myBookings: ReactNode; schedule: ReactNode }) {

@@ -1092,6 +1092,35 @@ export type Database = {
         }
         Relationships: []
       }
+      guest_invites: {
+        Row: {
+          id: string
+          session_id: string
+          invited_by: string
+          guest_name: string
+          guest_email: string
+          status: 'invited' | 'confirmed' | 'declined' | 'cancelled'
+          confirmed_at: string | null
+          joined_member_id: string | null
+          joined_at: string | null
+          created_at: string
+        }
+        Insert: Record<string, never>
+        Update: Record<string, never>
+        Relationships: []
+      }
+      guest_details: {
+        Row: {
+          invite_id: string
+          phone: string
+          health_any_yes: boolean
+          health_notes: string | null
+          consented_at: string
+        }
+        Insert: Record<string, never>
+        Update: Record<string, never>
+        Relationships: []
+      }
       goals: {
         Row: {
           id: string
@@ -1303,6 +1332,52 @@ export type Database = {
           invited_by: string | null
           invite_expires_at: string | null
         }
+      }
+      guest_passes_left: {
+        Args: Record<string, never>
+        Returns: number
+      }
+      invite_guest: {
+        Args: {
+          p_session_id: string
+          p_name: string
+          p_email: string
+        }
+        Returns: {
+          invite_id: string
+          token: string
+        }[]
+      }
+      cancel_guest_invite: {
+        Args: {
+          p_invite_id: string
+        }
+        Returns: undefined
+      }
+      get_guest_invite: {
+        Args: {
+          p_token: string
+        }
+        Returns: {
+          guest_name: string
+          inviter_first_name: string
+          class_name: string
+          session_date: string
+          start_time: string
+          status: 'invited' | 'confirmed' | 'declined' | 'cancelled'
+          lapsed: boolean
+        }[]
+      }
+      respond_guest_invite: {
+        Args: {
+          p_token: string
+          p_accept: boolean
+          p_phone?: string
+          p_health_any_yes?: boolean
+          p_health_notes?: string
+          p_consent?: boolean
+        }
+        Returns: string
       }
       session_spots_taken: {
         Args: {

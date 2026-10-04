@@ -38,6 +38,16 @@ export type RosterEntry = {
   lastNote: SessionNote | null;
 };
 
+/** A friend a member brought (0050) — not a member, so no attendance or notes. */
+export type RosterGuest = {
+  inviteId: string;
+  name: string;
+  invitedBy: string;
+  confirmed: boolean;
+  /** null = not confirmed yet, or the viewer's Check-ins switch is off (guest_details RLS). */
+  health: { phone: string; anyYes: boolean; notes: string | null } | null;
+};
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function ukDateKey(date: Date) {
@@ -60,7 +70,9 @@ function programmeLabel(lengthDays: number) {
  */
 const NO_TODAY_ACCESS = "Guy has turned off Today for your account.";
 
-export async function getSessionRoster(sessionId: string): Promise<{ roster?: RosterEntry[]; error?: string }> {
+export async function getSessionRoster(
+  sessionId: string
+): Promise<{ roster?: RosterEntry[]; guests?: RosterGuest[]; error?: string }> {
   // Called from a client component, so return an error rather than redirect.
   const { supabase, access } = await requireStaffAccess();
   if (!access.today) return { error: NO_TODAY_ACCESS };
@@ -163,7 +175,48 @@ export async function getSessionRoster(sessionId: string): Promise<{ roster?: Ro
     };
   });
 
-  return { roster };
+  return { roster, guests: await loadGuests(supabase, sessionId, nameById) };
+}
+
+/**
+ * Guests on this class: "guest_invites: read" (0050, Today switch) for who's
+ * coming, "guest_details: read" (Check-ins switch) for phone + health.
+ */
+async function loadGuests(
+  supabase: Awaited<ReturnType<typeof requireStaffAccess>>["supabase"],
+  sessionId: string,
+  nameById: Map<string, string>
+): Promise<RosterGuest[]> {
+  const { data: invites } = await supabase
+    .from("guest_invites")
+    .select("id, guest_name, invited_by, status")
+    .eq("session_id", sessionId)
+    .in("status", ["invited", "confirmed"])
+    .order("created_at");
+  if (!invites?.length) return [];
+
+  const { data: details } = await supabase
+    .from("guest_details")
+    .select("invite_id, phone, health_any_yes, health_notes")
+    .in("invite_id", invites.map((i) => i.id));
+  const detailsById = new Map((details ?? []).map((d) => [d.invite_id, d]));
+
+  const missing = invites.map((i) => i.invited_by).filter((id) => !nameById.has(id));
+  if (missing.length) {
+    const { data: inviters } = await supabase.from("profiles").select("id, full_name").in("id", missing);
+    for (const p of inviters ?? []) nameById.set(p.id, p.full_name);
+  }
+
+  return invites.map((i) => {
+    const d = detailsById.get(i.id);
+    return {
+      inviteId: i.id,
+      name: i.guest_name,
+      invitedBy: nameById.get(i.invited_by) ?? "a member",
+      confirmed: i.status === "confirmed",
+      health: d ? { phone: d.phone, anyYes: d.health_any_yes, notes: d.health_notes } : null,
+    };
+  });
 }
 
 const MARKABLE_STATUSES = ["attended", "no_show", "excused"] as const;

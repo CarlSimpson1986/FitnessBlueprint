@@ -60,6 +60,16 @@ Weekly check-in (migration 0049): "one thing to get round it next week"
 progress next week" — on Admin → Check-ins, in Ted's context and Guy's
 Monday summary.
 
+**Refer a friend (migration 0050, from the spec doc):** member-to-member
+buddy invites replaced by guest invites — a booked member brings a friend
+from outside the gym, free, 1 pass a month (+1 if a guest of theirs joins).
+Guest takes a place (counted in book_session, waitlist, "X/Y booked");
+full class = "message us". Guest gets an email link (/guest/<token>, no
+account) to confirm with phone + 7-question health check + consent;
+unconfirmed invites lapse 3h before the class. Coach Today roster shows
+guests (health answers only with Check-ins on). Privacy page updated —
+Guy to approve the Guests line.
+
 **Done 2026-10-02:** cron fixed (200); Stripe payment → account → plan
 live and tested end to end; welcome email sends a set-password link (no
 passwords emailed — CLAUDE.md rule); emailed sign-in links work in any

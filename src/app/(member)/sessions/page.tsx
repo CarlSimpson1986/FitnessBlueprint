@@ -5,7 +5,7 @@ import { formatSessionDate, formatSessionTime, toLocalDateKey } from "@/lib/form
 import { ReadinessCheckin } from "../ReadinessCheckin";
 import { BookingButton } from "./BookingButton";
 import { WaitlistPanel } from "./WaitlistPanel";
-import { BuddyInvitePanel } from "./BuddyInvitePanel";
+import { GuestInvitePanel } from "./GuestInvitePanel";
 import { InviteResponsePanel } from "./InviteResponsePanel";
 import { BookingsTabs } from "./BookingsTabs";
 import { BOOKING_WINDOW_DAYS, lastBookableDate } from "@/lib/booking-window";
@@ -90,7 +90,8 @@ export default async function SessionsPage() {
     { data: myBookings },
     { data: spotsTaken },
     { data: myWaitlistEntries },
-    { data: sentInvites },
+    { data: guestInvites },
+    { data: guestPassesLeft },
     { data: myReadiness },
   ] = await Promise.all([
     supabase
@@ -107,11 +108,12 @@ export default async function SessionsPage() {
       .in("session_id", sessionIds)
       .in("status", ["waiting", "offered"]),
     supabase
-      .from("bookings")
-      .select("id, session_id, member_id, status")
+      .from("guest_invites")
+      .select("id, session_id, guest_name, status")
       .eq("invited_by", user.id)
-      .eq("status", "invited")
+      .in("status", ["invited", "confirmed"])
       .in("session_id", sessionIds),
+    supabase.rpc("guest_passes_left"),
     supabase.from("readiness_checkins").select("session_id").eq("member_id", user.id).in("session_id", sessionIds),
   ]);
 
@@ -123,7 +125,6 @@ export default async function SessionsPage() {
     new Set(
       [
         ...(myWaitlistEntries ?? []).map((e) => e.buddy_member_id),
-        ...(sentInvites ?? []).map((i) => i.member_id),
         ...receivedInvites.map((b) => b.invited_by),
       ].filter((id): id is string => id !== null)
     )
@@ -145,10 +146,10 @@ export default async function SessionsPage() {
       },
     ])
   );
-  const sentInviteBySession = new Map(
-    (sentInvites ?? []).map((i) => [
+  const guestInviteBySession = new Map(
+    (guestInvites ?? []).map((i) => [
       i.session_id,
-      { id: i.id, buddyName: buddyNameById.get(i.member_id) ?? "your buddy", status: "invited" as const },
+      { id: i.id, guestName: i.guest_name, status: i.status as "invited" | "confirmed" },
     ])
   );
   const receivedInviteBySession = new Map(
@@ -294,7 +295,7 @@ export default async function SessionsPage() {
                 const coach = coachById.get(session.coach_id);
                 const bookingId = myBookingBySession.get(session.id) ?? null;
                 const receivedInvite = receivedInviteBySession.get(session.id) ?? null;
-                const sentInvite = sentInviteBySession.get(session.id) ?? null;
+                const guestInvite = guestInviteBySession.get(session.id) ?? null;
                 const taken = spotsBySession.get(session.id) ?? 0;
                 const isFull = taken >= session.capacity;
 
@@ -317,7 +318,12 @@ export default async function SessionsPage() {
                     ) : bookingId ? (
                       <div className="flex flex-col items-end">
                         <BookingButton sessionId={session.id} bookingId={bookingId} isFull={isFull} />
-                        <BuddyInvitePanel sessionId={session.id} sentInvite={sentInvite} />
+                        <GuestInvitePanel
+                          sessionId={session.id}
+                          invite={guestInvite}
+                          passesLeft={guestPassesLeft ?? 0}
+                          isFull={isFull}
+                        />
                       </div>
                     ) : isFull ? (
                       <WaitlistPanel

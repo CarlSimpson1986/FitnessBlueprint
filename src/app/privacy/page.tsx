@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 // Public page: no auth check. Facts here (controller, contact, retention)
 // match the gym's website policy at fitnessblueprint.co.uk/privacy-policy —
 // change both together. Bump LAST_UPDATED on any change.
-const LAST_UPDATED = "3 October 2026";
+const LAST_UPDATED = "4 October 2026";
 const CONTACT_EMAIL = "fitnessblueprintaylesbury@gmail.com";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -80,6 +80,12 @@ export default function PrivacyPage() {
             <li>
               <strong className="text-blueprint-ink">Payments:</strong> handled by Stripe and GoCardless.
               We see what you bought and when, never your full card or bank details.
+            </li>
+            <li>
+              <strong className="text-blueprint-ink">Guests:</strong> if a member invites you to a class,
+              we hold the name and email they gave us. If you confirm, we also keep your phone number and
+              your answers to a short health check, with your consent, so the coach can look after you.
+              The member who invited you never sees your health answers.
             </li>
           </ul>
         </Section>

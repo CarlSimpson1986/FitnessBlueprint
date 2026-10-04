@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SESSION_NOTE_MAX_LENGTH, SESSION_NOTE_TAGS, type SessionNote } from "@/lib/session-notes";
-import { getSessionRoster, markAttendance, saveSessionNote, type ProgrammeTag, type RosterEntry } from "./actions";
+import { getSessionRoster, markAttendance, saveSessionNote, type ProgrammeTag, type RosterEntry, type RosterGuest } from "./actions";
 
 const STATUS_LABEL: Record<RosterEntry["status"], string> = {
   booked: "Booked",
@@ -207,6 +207,7 @@ export function SessionRoster({
 }) {
   const router = useRouter();
   const [roster, setRoster] = useState<RosterEntry[] | null>(null);
+  const [guests, setGuests] = useState<RosterGuest[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pendingBookingId, setPendingBookingId] = useState<string | null>(null);
   const [editingNoteFor, setEditingNoteFor] = useState<string | null>(null);
@@ -220,6 +221,7 @@ export function SessionRoster({
         setError(result.error);
       } else {
         setRoster(result.roster ?? []);
+        setGuests(result.guests ?? []);
       }
     });
 
@@ -262,7 +264,7 @@ export function SessionRoster({
     );
   }
 
-  if (roster.length === 0) {
+  if (roster.length === 0 && guests.length === 0) {
     return (
       <>
         <p className="text-xs text-blueprint-muted px-4 pb-3">No one&apos;s booked in yet.</p>
@@ -316,6 +318,31 @@ export function SessionRoster({
             </li>
           ))}
         </ul>
+        {guests.length > 0 && (
+          <ul className="space-y-2 mt-2">
+            {guests.map((guest) => (
+              <li key={guest.inviteId} className="border-t border-blueprint-line/60 pt-2">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-blueprint-ink">
+                    {guest.name}
+                    <span className="ml-2 text-[10px] font-mono uppercase tracking-wide text-blueprint-accent">
+                      Guest of {guest.invitedBy.split(" ")[0]}
+                    </span>
+                  </span>
+                  <span className="text-[10px] font-mono uppercase tracking-wide text-blueprint-muted">
+                    {guest.confirmed ? "Confirmed" : "Not confirmed"}
+                  </span>
+                </div>
+                {guest.health && (
+                  <p className={`text-[11px] mt-1 ${guest.health.anyYes ? "text-amber-300" : "text-blueprint-muted"}`}>
+                    {guest.health.anyYes ? `Health: ${guest.health.notes ?? "said yes to a question"}` : "Health: all clear"} ·{" "}
+                    {guest.health.phone}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
         {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
       </div>
 
