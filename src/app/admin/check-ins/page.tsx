@@ -25,7 +25,7 @@ export default async function CheckinsPage({ searchParams }: { searchParams: Pro
   const [{ data: checkins }, { data: members }] = await Promise.all([
     supabase
       .from("weekly_checkins")
-      .select("member_id, weight_kg, energy, sleep, nutrition, win, struggle, note_for_coach, created_at")
+      .select("member_id, weight_kg, energy, sleep, nutrition, win, struggle, workaround, next_week_action, note_for_coach, created_at")
       .eq("week_of", weekOf)
       .order("created_at", { ascending: false }),
     supabase.from("profiles").select("id, full_name, health_consent, track_body_metrics").eq("role", "member").order("full_name"),
@@ -93,6 +93,16 @@ export default async function CheckinsPage({ searchParams }: { searchParams: Pro
                 {c.struggle && (
                   <p className="text-sm text-blueprint-ink mt-1">
                     <span className="text-blueprint-muted">In the way:</span> {c.struggle}
+                  </p>
+                )}
+                {c.workaround && (
+                  <p className="text-sm text-blueprint-ink mt-1">
+                    <span className="text-blueprint-muted">Getting round it:</span> {c.workaround}
+                  </p>
+                )}
+                {c.next_week_action && (
+                  <p className="text-sm text-blueprint-ink mt-1">
+                    <span className="text-blueprint-muted">#1 action next week:</span> {c.next_week_action}
                   </p>
                 )}
                 {c.note_for_coach && (

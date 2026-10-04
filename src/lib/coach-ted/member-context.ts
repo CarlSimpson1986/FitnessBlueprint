@@ -81,7 +81,7 @@ export async function buildMemberProfile(supabase: Supabase, memberId: string): 
       .limit(3),
     supabase
       .from("weekly_checkins")
-      .select("week_of, weight_kg, energy, sleep, nutrition, win, struggle")
+      .select("week_of, weight_kg, energy, sleep, nutrition, win, struggle, workaround, next_week_action")
       .eq("member_id", memberId)
       .order("week_of", { ascending: false })
       .limit(2),
@@ -178,6 +178,8 @@ export async function buildMemberProfile(supabase: Supabase, memberId: string): 
     ];
     if (c.win) parts.push(`win: ${c.win}`);
     if (c.struggle) parts.push(`struggle: ${c.struggle}`);
+    if (c.workaround) parts.push(`plan to get round it: ${c.workaround}`);
+    if (c.next_week_action) parts.push(`their number 1 action for the next week: ${c.next_week_action}`);
     lines.push(parts.join("; "));
   }
 

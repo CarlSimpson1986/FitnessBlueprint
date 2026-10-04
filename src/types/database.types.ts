@@ -986,6 +986,8 @@ export type Database = {
           nutrition: number
           win: string | null
           struggle: string | null
+          workaround: string | null
+          next_week_action: string | null
           note_for_coach: string | null
           created_at: string
         }
@@ -999,6 +1001,8 @@ export type Database = {
           nutrition: number
           win?: string | null
           struggle?: string | null
+          workaround?: string | null
+          next_week_action?: string | null
           note_for_coach?: string | null
           created_at?: string
         }
@@ -1012,6 +1016,8 @@ export type Database = {
           nutrition?: number
           win?: string | null
           struggle?: string | null
+          workaround?: string | null
+          next_week_action?: string | null
           note_for_coach?: string | null
           created_at?: string
         }

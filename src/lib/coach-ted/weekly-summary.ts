@@ -39,7 +39,7 @@ export async function buildWeeklySummary(supabase: SupabaseClient<Database>, now
       .gte("created_at", since.toISOString()),
     supabase
       .from("weekly_checkins")
-      .select("member_id, energy, sleep, nutrition, win, struggle, note_for_coach")
+      .select("member_id, energy, sleep, nutrition, win, struggle, workaround, next_week_action, note_for_coach")
       .gte("week_of", ukDateKey(since)),
   ]);
 
@@ -82,6 +82,8 @@ export async function buildWeeklySummary(supabase: SupabaseClient<Database>, now
     const parts = [`energy ${c.energy}/5, sleep ${c.sleep}/5, nutrition ${c.nutrition}/5`];
     if (c.win?.trim()) parts.push(`win: "${c.win.trim()}"`);
     if (c.struggle?.trim()) parts.push(`struggle: "${c.struggle.trim()}"`);
+    if (c.workaround?.trim()) parts.push(`plan to get round it: "${c.workaround.trim()}"`);
+    if (c.next_week_action?.trim()) parts.push(`number 1 action next week: "${c.next_week_action.trim()}"`);
     if (c.note_for_coach?.trim()) parts.push(`note for coach: "${c.note_for_coach.trim()}"`);
     notes.push(`Weekly check-in — ${parts.join("; ")}`);
   }

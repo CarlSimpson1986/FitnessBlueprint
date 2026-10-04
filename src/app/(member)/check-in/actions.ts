@@ -12,6 +12,8 @@ export type WeeklyCheckinInput = {
   nutrition: number;
   win: string;
   struggle: string;
+  workaround: string;
+  nextWeekAction: string;
   noteForCoach: string;
 };
 
@@ -53,6 +55,9 @@ export async function submitWeeklyCheckin(rawInput: WeeklyCheckinInput): Promise
     nutrition: input.nutrition,
     win: input.win.trim() || null,
     struggle: input.struggle.trim() || null,
+    // Only meaningful with something in the way to get round.
+    workaround: (input.struggle.trim() && input.workaround.trim()) || null,
+    next_week_action: input.nextWeekAction.trim() || null,
     note_for_coach: input.noteForCoach.trim() || null,
   });
 

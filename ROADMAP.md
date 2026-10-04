@@ -55,6 +55,10 @@ lifts they've logged (with their best) or plain-language big lifts, or
 "just stronger overall" (weekly total lifted); goals store a start value
 and the card shows Start → Now → Target. Weight / body fat big-picture
 dates are worked out from the research rates (Steady / Solid / Ambitious).
+Weekly check-in (migration 0049): "one thing to get round it next week"
+(shown once they've said what got in the way) and "number 1 action to
+progress next week" — on Admin → Check-ins, in Ted's context and Guy's
+Monday summary.
 
 **Done 2026-10-02:** cron fixed (200); Stripe payment → account → plan
 live and tested end to end; welcome email sends a set-password link (no

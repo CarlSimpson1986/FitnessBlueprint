@@ -38,6 +38,8 @@ export function CheckinForm({
   });
   const [win, setWin] = useState("");
   const [struggle, setStruggle] = useState("");
+  const [workaround, setWorkaround] = useState("");
+  const [nextWeekAction, setNextWeekAction] = useState("");
   const [note, setNote] = useState("");
 
   const allRated = Object.values(ratings).every((r) => r !== null);
@@ -53,6 +55,8 @@ export function CheckinForm({
         nutrition: ratings.nutrition!,
         win,
         struggle,
+        workaround,
+        nextWeekAction,
         noteForCoach: note,
       });
       if (result.error) {
@@ -127,6 +131,34 @@ export function CheckinForm({
       <div>
         <p className="text-sm text-blueprint-ink font-medium mb-2">What got in the way?</p>
         <textarea rows={2} value={struggle} onChange={(e) => setStruggle(e.target.value)} className={textareaClass} placeholder="Work, sleep, weekends…" />
+      </div>
+
+      {struggle.trim() && (
+        <div>
+          <p className="text-sm text-blueprint-ink font-medium mb-2">
+            What&apos;s one thing you can put in place to get round that next week?
+          </p>
+          <textarea
+            rows={2}
+            value={workaround}
+            onChange={(e) => setWorkaround(e.target.value)}
+            className={textareaClass}
+            placeholder="e.g. Prep Sunday's lunches, book the early class"
+          />
+        </div>
+      )}
+
+      <div>
+        <p className="text-sm text-blueprint-ink font-medium mb-2">
+          What&apos;s the number 1 action you need to take to progress next week?
+        </p>
+        <textarea
+          rows={2}
+          value={nextWeekAction}
+          onChange={(e) => setNextWeekAction(e.target.value)}
+          className={textareaClass}
+          placeholder="One thing — make it specific"
+        />
       </div>
 
       <div>
