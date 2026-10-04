@@ -4,7 +4,22 @@ Living record of what's built, what's known-broken, and what's next.
 Update this file as work lands — don't let it drift. Full product
 spec lives in the shared Google Doc; this is status, not spec.
 
-## Pick up here next session (as of 2026-10-03)
+## Pick up here next session (as of 2026-10-04)
+
+**Run-through, pick up here (2026-10-04):** client side done up to and
+including: Ted tour (account carlossimpson83@gmail.com, member, tour reset
+via SQL), goals rework, weekly check-in questions, booking, pre-session
+check-in, booking confirmation + waitlist offer emails (both confirmed
+working by Carl). Migrations 0048–0051 all run; Vault secret 'cron_secret'
+set. **Next:** (1) evening session reminder — first send 2026-10-04 ~18:00,
+confirm it arrived; (2) "Bring a friend" guest invite test on Mon 5 Oct
+06:00 Circuits (untested); (3) rest of client app: Progress, Coach Ted,
+Account; (4) coach side Mon 5 Oct: View as -> Coach -> Today, mark
+attendance, notes, Programme view-only. Demo cleanup: Admin -> Remove demo
+data (waitlist test changed a Test Coach class's capacity).
+Lessons: read the spec Google Doc before asking product questions; give
+Carl SQL as a validated file in supabase/manual/, not pasted in chat.
+
 
 **Carl's run-through (started 2026-10-03), pick up here:** owner Part 1
 mostly done; client Part 2 was at step 11 (welcome email → set password →
