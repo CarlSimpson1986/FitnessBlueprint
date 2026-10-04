@@ -14,6 +14,7 @@ export function BodyMetricsForm() {
   const router = useRouter();
   const [weight, setWeight] = useState("");
   const [waist, setWaist] = useState("");
+  const [hips, setHips] = useState("");
   const [bodyFat, setBodyFat] = useState("");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -28,6 +29,7 @@ export function BodyMetricsForm() {
       const result = await logBodyMetrics({
         weightKg: toNumberOrNull(weight),
         waistCm: toNumberOrNull(waist),
+        hipCm: toNumberOrNull(hips),
         bodyFatPct: toNumberOrNull(bodyFat),
       });
 
@@ -38,6 +40,7 @@ export function BodyMetricsForm() {
 
       setWeight("");
       setWaist("");
+      setHips("");
       setBodyFat("");
       setSaved(true);
       startTransition(() => {
@@ -74,6 +77,19 @@ export function BodyMetricsForm() {
           placeholder="e.g. 87"
           value={waist}
           onChange={(e) => setWaist(e.target.value)}
+          className="w-full bg-blueprint-bg border border-blueprint-line rounded-lg px-3 py-2 text-sm text-blueprint-ink placeholder:text-blueprint-muted focus:outline-none focus:border-blueprint-accent"
+        />
+      </div>
+
+      <div>
+        <label className="text-[10px] font-mono uppercase tracking-wide text-blueprint-muted">Hips (cm)</label>
+        <input
+          type="number"
+          inputMode="decimal"
+          step="0.1"
+          placeholder="e.g. 100"
+          value={hips}
+          onChange={(e) => setHips(e.target.value)}
           className="w-full bg-blueprint-bg border border-blueprint-line rounded-lg px-3 py-2 text-sm text-blueprint-ink placeholder:text-blueprint-muted focus:outline-none focus:border-blueprint-accent"
         />
       </div>

@@ -1,6 +1,7 @@
 "use server";
 
 import { requireProfile } from "@/lib/auth";
+import { BODY_GOAL_METRICS, isBodyGoalMetric } from "@/lib/goal-tracking";
 
 export type ActionResult = { error?: string };
 
@@ -16,8 +17,10 @@ export type SaveGoalInput = {
   barriers: string | null;
   habits: string[];
   why: string | null;
-  /** Current weight/body fat the member typed into the wizard, if we had none. */
-  baseline?: { weightKg: number | null; bodyFatPct: number | null } | null;
+  /** Where they were when they set it — the Goals card's "Start". */
+  startValue: number | null;
+  /** A body measurement typed into the wizard because we had none on record. */
+  bodyBaseline: { metric: string; value: number } | null;
 };
 
 /**
@@ -34,6 +37,9 @@ export async function saveGoal(input: SaveGoalInput): Promise<ActionResult> {
 
   if (!input.metric.trim() || !input.longTarget.trim() || !input.microTarget.trim()) {
     return { error: "Missing required fields." };
+  }
+  if (input.startValue !== null && !Number.isFinite(input.startValue)) {
+    return { error: "That starting number doesn't look right." };
   }
 
   const { error: abandonError } = await supabase
@@ -57,6 +63,7 @@ export async function saveGoal(input: SaveGoalInput): Promise<ActionResult> {
     barriers: input.barriers,
     habits: input.habits,
     why: input.why,
+    start_value: input.startValue,
     status: "active",
   });
 
@@ -65,12 +72,17 @@ export async function saveGoal(input: SaveGoalInput): Promise<ActionResult> {
   }
 
   // Log it as a body metric so Progress has a starting point. RLS
-  // ("members log own body metrics", 0017) scopes this to the member.
-  if (input.baseline && (input.baseline.weightKg !== null || input.baseline.bodyFatPct !== null)) {
+  // ("body_metrics: create", 0046) scopes this to the member and refuses it
+  // if they've opted out of body measurements (0043).
+  const body = input.bodyBaseline;
+  if (body && isBodyGoalMetric(body.metric) && Number.isFinite(body.value) && body.value > 0) {
+    const column = BODY_GOAL_METRICS[body.metric];
     await supabase.from("body_metrics").insert({
       member_id: user.id,
-      weight_kg: input.baseline.weightKg,
-      body_fat_pct: input.baseline.bodyFatPct,
+      weight_kg: column === "weight_kg" ? body.value : null,
+      waist_cm: column === "waist_cm" ? body.value : null,
+      hip_cm: column === "hip_cm" ? body.value : null,
+      body_fat_pct: column === "body_fat_pct" ? body.value : null,
     });
   }
 

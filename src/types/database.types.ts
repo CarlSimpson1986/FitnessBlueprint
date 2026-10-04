@@ -732,6 +732,7 @@ export type Database = {
           member_id: string
           weight_kg: number | null
           waist_cm: number | null
+          hip_cm: number | null
           body_fat_pct: number | null
           recorded_at: string
         }
@@ -740,6 +741,7 @@ export type Database = {
           member_id: string
           weight_kg?: number | null
           waist_cm?: number | null
+          hip_cm?: number | null
           body_fat_pct?: number | null
           recorded_at?: string
         }
@@ -748,6 +750,7 @@ export type Database = {
           member_id?: string
           weight_kg?: number | null
           waist_cm?: number | null
+          hip_cm?: number | null
           body_fat_pct?: number | null
           recorded_at?: string
         }
@@ -1092,6 +1095,7 @@ export type Database = {
           long_target: string
           long_date: string | null
           micro_target: string
+          start_value: number | null
           checkin_date: string
           barriers: string | null
           habits: string[]
@@ -1108,6 +1112,7 @@ export type Database = {
           long_target: string
           long_date?: string | null
           micro_target: string
+          start_value?: number | null
           checkin_date: string
           barriers?: string | null
           habits?: string[]
@@ -1124,6 +1129,7 @@ export type Database = {
           long_target?: string
           long_date?: string | null
           micro_target?: string
+          start_value?: number | null
           checkin_date?: string
           barriers?: string | null
           habits?: string[]

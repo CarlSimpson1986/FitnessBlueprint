@@ -97,7 +97,7 @@ export default function PrivacyPage() {
             <li>
               Health and fitness information is a special category of data under UK law, so the app asks
               for your explicit consent before keeping any. Saying no does not affect your membership or
-              booking. You can also say yes but opt out of body measurements (weight, waist, body fat).
+              booking. You can also say yes but opt out of body measurements (weight, waist, hips, body fat).
               Change either answer any time in Account settings: once you turn it off, your coaches stop
               seeing that information.
             </li>

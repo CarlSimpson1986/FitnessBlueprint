@@ -49,6 +49,13 @@ where email in ('demo-1@fitnessblueprints.invalid', 'demo-4@fitnessblueprints.in
 ```
 Two rows back = booked; none = already booked or no Test Coach class today.
 
+**Goals rework (2026-10-04, migration 0048 — run before deploying):** hips
+measurement; every goal type has "Something else"; strength picks from
+lifts they've logged (with their best) or plain-language big lifts, or
+"just stronger overall" (weekly total lifted); goals store a start value
+and the card shows Start → Now → Target. Weight / body fat big-picture
+dates are worked out from the research rates (Steady / Solid / Ambitious).
+
 **Done 2026-10-02:** cron fixed (200); Stripe payment → account → plan
 live and tested end to end; welcome email sends a set-password link (no
 passwords emailed — CLAUDE.md rule); emailed sign-in links work in any

@@ -8,6 +8,7 @@ export type MetricPoint = { date: string; value: number };
 const METRICS = [
   { key: "weight", label: "Weight", unit: "kg" },
   { key: "waist", label: "Waist", unit: "cm" },
+  { key: "hips", label: "Hips", unit: "cm" },
   { key: "bodyFat", label: "Body fat", unit: "%" },
 ] as const;
 
@@ -79,14 +80,16 @@ function Trend({ series, unit }: { series: MetricPoint[]; unit: string }) {
 export function BodyMetricsCard({
   weight,
   waist,
+  hips,
   bodyFat,
 }: {
   weight: MetricPoint[];
   waist: MetricPoint[];
+  hips: MetricPoint[];
   bodyFat: MetricPoint[];
 }) {
   const [active, setActive] = useState<MetricKey>("weight");
-  const seriesByKey: Record<MetricKey, MetricPoint[]> = { weight, waist, bodyFat };
+  const seriesByKey: Record<MetricKey, MetricPoint[]> = { weight, waist, hips, bodyFat };
 
   return (
     <div className="fb-card">
@@ -113,6 +116,11 @@ export function BodyMetricsCard({
         ))}
       </div>
       <Trend series={seriesByKey[active]} unit={METRICS.find((m) => m.key === active)!.unit} />
+      {(active === "waist" || active === "hips") && waist.length > 0 && hips.length > 0 && (
+        <p className="text-xs text-blueprint-muted mt-2">
+          Waist-to-hip ratio: {(waist[waist.length - 1]!.value / hips[hips.length - 1]!.value).toFixed(2)}
+        </p>
+      )}
     </div>
   );
 }

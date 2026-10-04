@@ -67,7 +67,7 @@ export function HealthSettingsCard({
         <span className="text-sm text-blueprint-ink">
           Track body measurements
           <span className="block text-xs text-blueprint-muted mt-0.5">
-            Weight, waist and body fat. Off means you&apos;re never asked for them.
+            Weight, waist, hips and body fat. Off means you&apos;re never asked for them.
           </span>
         </span>
       </label>

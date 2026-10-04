@@ -74,7 +74,7 @@ export async function buildMemberProfile(supabase: Supabase, memberId: string): 
     supabase.from("profiles").select("full_name, track_body_metrics").eq("id", memberId).maybeSingle(),
     supabase
       .from("goals")
-      .select("type, metric, long_target, long_date, micro_target, checkin_date, barriers, habits, why")
+      .select("type, metric, long_target, long_date, micro_target, checkin_date, barriers, habits, why, start_value")
       .eq("member_id", memberId)
       .eq("status", "active")
       .order("created_at", { ascending: false })
@@ -87,7 +87,7 @@ export async function buildMemberProfile(supabase: Supabase, memberId: string): 
       .limit(2),
     supabase
       .from("body_metrics")
-      .select("weight_kg, waist_cm, body_fat_pct, recorded_at")
+      .select("weight_kg, waist_cm, hip_cm, body_fat_pct, recorded_at")
       .eq("member_id", memberId)
       .order("recorded_at", { ascending: true }),
     supabase.from("bookings").select("session_id").eq("member_id", memberId).eq("status", "attended"),
@@ -124,7 +124,7 @@ export async function buildMemberProfile(supabase: Supabase, memberId: string): 
       // Target values are stored without units; naming the metric next to
       // each stops a lift target being read as a bodyweight one.
       `Goal (${g.type.replace(/_/g, " ")}), measured by ${g.metric}: long-term target ${g.metric} ${g.long_target}${g.long_date ? ` by ${describeDay(g.long_date)}` : ""}`,
-      `6-week target ${g.metric} ${g.micro_target} by ${describeDay(g.checkin_date)}`,
+      `6-week target ${g.metric} ${g.micro_target} by ${describeDay(g.checkin_date)}${g.start_value !== null ? ` (started at ${g.start_value})` : ""}`,
     ];
     if (g.habits?.length) parts.push(`habits they chose: ${g.habits.join(", ")}`);
     if (g.barriers) parts.push(`barriers: ${g.barriers}`);
@@ -135,7 +135,7 @@ export async function buildMemberProfile(supabase: Supabase, memberId: string): 
   // Opted out of body measurements (0043): Ted gets none, including old ones.
   const metricsOn = profile.data?.track_body_metrics === true;
   const metricRows = metricsOn ? (metrics.data ?? []) : [];
-  const describeMetric = (key: "weight_kg" | "waist_cm" | "body_fat_pct", label: string, unit: string) => {
+  const describeMetric = (key: "weight_kg" | "waist_cm" | "hip_cm" | "body_fat_pct", label: string, unit: string) => {
     const series = metricRows.filter((r) => r[key] !== null);
     if (!series.length) return;
     const first = series[0]!;
@@ -157,6 +157,7 @@ export async function buildMemberProfile(supabase: Supabase, memberId: string): 
   const latestWeight = [...metricRows].reverse().find((r) => r.weight_kg !== null)?.weight_kg;
   if (latestWeight) lines.push(proteinRange(Number(latestWeight)), safeLossRate(Number(latestWeight)));
   describeMetric("waist_cm", "Waist", "cm");
+  describeMetric("hip_cm", "Hips", "cm");
   describeMetric("body_fat_pct", "Body fat", "%");
 
   const attendedIds = (attended.data ?? []).map((b) => b.session_id);

@@ -139,3 +139,83 @@ export function checkTarget(baseline: number, target: number, g: Guidance): stri
   }
   return null;
 }
+
+export type Timeline = {
+  /** Weeks to the big-picture target at the top / bottom of the research rate. */
+  fastWeeks: number;
+  slowWeeks: number;
+  /** What Ted says about the pace, citing the source. */
+  explanation: string;
+};
+
+/**
+ * How long the big-picture target should take at the same research rates
+ * as the 6-week guidance above, so Ted can offer a date instead of asking
+ * the member to guess one. Null when there's no rate to go on (muscle-gain
+ * body fat, measurements, lifts, the member's own metric) or the target is
+ * the wrong way.
+ */
+export function timelineFor(
+  goal: "lose_fat" | "build_muscle",
+  metric: "Weight (kg)" | "Body fat %",
+  baseline: number,
+  target: number
+): Timeline | null {
+  if (goal === "lose_fat" && metric === "Weight (kg)") {
+    const toLose = baseline - target;
+    if (toLose <= 0) return null;
+    return {
+      fastWeeks: Math.ceil(toLose / (baseline * 0.01)),
+      slowWeeks: Math.ceil(toLose / (baseline * 0.005)),
+      explanation:
+        `To lose fat and hang on to muscle, the research says lose ${round1(baseline * 0.005)}–${round1(baseline * 0.01)}kg ` +
+        `a week at your weight (0.5–1% of bodyweight; Garthe et al. 2011, Helms et al. 2014). ` +
+        `${round1(toLose)}kg at that pace takes`,
+    };
+  }
+
+  if (goal === "lose_fat" && metric === "Body fat %") {
+    // Same model as guidanceFor: after n weeks losing fraction f a week,
+    // all as fat, body fat = (b - f·n) / (1 - f·n). Solved for n.
+    const b = baseline / 100;
+    const t = target / 100;
+    if (t >= b || t <= 0) return null;
+    const weeksAt = (f: number) => Math.ceil((b - t) / (f * (1 - t)));
+    return {
+      fastWeeks: weeksAt(0.01),
+      slowWeeks: weeksAt(0.005),
+      explanation:
+        `Losing 0.5–1% of your bodyweight a week, mostly as fat, is the pace that protects muscle ` +
+        `(Garthe et al. 2011; Helms et al. 2014). ${baseline}% down to ${target}% at that pace takes`,
+    };
+  }
+
+  if (goal === "build_muscle" && metric === "Weight (kg)") {
+    const toGain = target - baseline;
+    if (toGain <= 0) return null;
+    return {
+      fastWeeks: Math.ceil(toGain / (baseline * 0.005)),
+      slowWeeks: Math.ceil(toGain / (baseline * 0.0025)),
+      explanation:
+        `To add muscle and keep fat gain to a minimum, the research says gain ${round1(baseline * 0.0025)}–` +
+        `${round1(baseline * 0.005)}kg a week at your weight (0.25–0.5% of bodyweight, newer lifters toward ` +
+        `the top end; Iraki et al. 2019). ${round1(toGain)}kg at that pace takes`,
+    };
+  }
+
+  return null;
+}
+
+/** Big-picture dates Ted offers as one-tap picks, soonest last. */
+export function suggestedDates(timeline: Timeline, from: Date) {
+  const at = (weeks: number) => {
+    const d = new Date(from);
+    d.setDate(d.getDate() + weeks * 7);
+    return d;
+  };
+  return [
+    { label: "Steady", date: at(timeline.slowWeeks) },
+    { label: "Solid", date: at(Math.round((timeline.fastWeeks + timeline.slowWeeks) / 2)) },
+    { label: "Ambitious", date: at(timeline.fastWeeks) },
+  ];
+}

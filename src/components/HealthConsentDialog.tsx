@@ -82,7 +82,7 @@ export function HealthConsentDialog({
           <span className="text-sm text-blueprint-ink">
             Include body measurements
             <span className="block text-xs text-blueprint-muted mt-0.5">
-              Weight, waist and body fat. Untick if you&apos;d rather not track them. Everything else
+              Weight, waist, hips and body fat. Untick if you&apos;d rather not track them. Everything else
               still works.
             </span>
           </span>
