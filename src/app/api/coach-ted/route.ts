@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { streamTedAnswer } from "@/lib/coach-ted/claude";
+import { streamTedAnswer, writePubMedQuery } from "@/lib/coach-ted/claude";
 import { ANSWER_REPLACED_MARKER, checkTedAnswer } from "@/lib/coach-ted/answer-check";
 import { embedText } from "@/lib/coach-ted/gemini";
 import { searchPubMed } from "@/lib/coach-ted/pubmed";
@@ -104,11 +104,19 @@ export async function POST(request: Request) {
 ${question}` : question;
 
   // PubMed and the member's profile don't depend on the embedding, so
-  // start them now in parallel.
-  const pubmedPromise = searchPubMed(searchText, 5).catch((err) => {
-    console.error("PubMed search failed:", err);
-    return [];
-  });
+  // start them now in parallel. For PubMed, Haiku writes the search terms
+  // first (member wording finds the wrong papers); "none" means it isn't a
+  // research question.
+  const pubmedPromise = writePubMedQuery(searchText)
+    .catch((err) => {
+      console.error("Coach Ted: writing the PubMed query failed, using keywords:", err);
+      return null;
+    })
+    .then((terms) => (terms === "none" ? [] : searchPubMed(searchText, 5, terms)))
+    .catch((err) => {
+      console.error("PubMed search failed:", err);
+      return [];
+    });
   const profilePromise = buildMemberProfile(supabase, user.id).catch((err) => {
     console.error("Coach Ted: building the member profile failed:", err);
     return "";
@@ -155,6 +163,7 @@ ${question}` : question;
       title: a.title,
       url: a.url,
       snippet: `${a.journal}, ${a.pubDate}`,
+      conclusion: a.conclusion,
     })),
     knowledgeBase: kbMatches.map((k: { category: string; content: string }) => ({
       category: k.category,

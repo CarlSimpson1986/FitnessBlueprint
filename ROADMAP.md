@@ -419,6 +419,17 @@ that far — src/lib/booking-window.ts).
   prompt — warm room, 60-min sessions; fix JUDGE_SYSTEM in
   evals/coach-ted/run.ts). Cost per answer ~$0.004 Haiku vs ~$0.012
   Sonnet. Model choice is Carl's call.
+  **Ted research = PubMed conclusions (Carl: a MUST, 2026-10-05):** Haiku
+  writes up to 3 PubMed searches per question (or NONE), one combined
+  esearch limited to systematic reviews/meta-analyses, efetch, and only
+  papers with a labelled Conclusion(s) are kept; Ted may only state
+  research findings that a given conclusion says, never from memory.
+  Also: dates/weight targets in the question are worked out in code
+  (question-facts.ts); pregnancy wording tightened. Haiku eval v11/v12
+  still 32/36 — failures move between cases each run (invented member
+  facts, projecting totals). **Set PUBMED_API_KEY in Vercel** (free, NCBI
+  account) — without it PubMed allows 3 requests/s and busy moments drop
+  research (Ted still answers).
 - `gemini-embedding-001` no longer appears on Google's pricing page
   (Gemini Embedding 2 is current) — may be retired next; if so switch
   EMBEDDING_MODEL and press Re-index on /admin/ted-answers.
