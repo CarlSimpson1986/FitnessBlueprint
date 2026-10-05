@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { z } from "zod";
 import { serverEnv } from "@/lib/env";
 import { PLANNING_MODELS, withGeminiFallback } from "@/lib/gemini-models";
 import type { SegmentInput } from "@/lib/workout-content";
@@ -29,6 +30,47 @@ function getClient() {
   }
   return client;
 }
+
+// What Gemini must send back: the week-1 shape, checked field by field
+// rather than trusted. Intensity limits match the check constraints in
+// 0027 (paired, % of 1RM 0-100, RPE 1-10), so a bad week fails here with
+// a clear message instead of at save time or by breaking the editor.
+const setSchema = z
+  .object({
+    target: z.string().max(200).nullable(),
+    restSeconds: z.number().int().min(0).max(3600).nullable(),
+    intensityType: z.enum(["percent_1rm", "rpe"]).nullable().optional(),
+    intensityValue: z.number().nullable().optional(),
+  })
+  .refine((set) => (set.intensityType ?? null) === null || typeof set.intensityValue === "number", "intensity needs a value")
+  .refine(
+    (set) =>
+      set.intensityType == null ||
+      (set.intensityType === "percent_1rm"
+        ? set.intensityValue! > 0 && set.intensityValue! <= 100
+        : set.intensityValue! >= 1 && set.intensityValue! <= 10),
+    "intensity out of range"
+  )
+  .transform((set) => ({ ...set, intensityValue: set.intensityType == null ? null : set.intensityValue }));
+
+const segmentSchema = z.object({
+  type: z.enum(["warmup", "straight", "circuit", "finisher", "cooldown"]),
+  label: z.string().max(200).nullable(),
+  defaultRounds: z.number().int().min(1).max(50).nullable(),
+  exercises: z
+    .array(
+      z.object({
+        name: z.string().min(1).max(200),
+        metricType: z.enum(["weight_kg", "weight_kg_and_reps", "reps_only", "time_seconds", "distance_m"]),
+        eachSide: z.boolean(),
+        tempo: z.string().max(50).nullable(),
+        note: z.string().max(1000).nullable(),
+        videoUrl: z.string().max(500).nullable(),
+        sets: z.array(setSchema).min(1).max(20),
+      })
+    )
+    .min(1),
+});
 
 const PROGRESSION_SYSTEM_PROMPT = `
 You generate the remaining weeks of a group-class training block from a
@@ -100,9 +142,11 @@ Generate exactly ${additionalWeeks} additional week(s) (week 2 through week ${we
     throw new Error("Gemini returned a response that wasn't valid JSON — try again.");
   }
 
-  if (!Array.isArray(parsed)) {
+  const weeks = z.array(z.array(segmentSchema).min(1)).length(additionalWeeks).safeParse(parsed);
+  if (!weeks.success) {
+    console.error("Autofinish: Gemini's weeks failed validation —", weeks.error.issues.slice(0, 5));
     throw new Error("Gemini's response wasn't shaped as expected — try again.");
   }
 
-  return parsed as SegmentInput[][];
+  return weeks.data;
 }

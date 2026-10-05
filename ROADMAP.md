@@ -384,6 +384,19 @@ that far — src/lib/booking-window.ts).
   need answers from Guy before building.
 
 **Open — needs a decision or action from the owner:**
+- **Monthly plan names — ask Guy.** Unlimited / 2x per week / 1x per
+  week (Stripe: "GCP - UNLIMITED" / "GCP - 2 per week" / "GCP - 1 per
+  week") look like the monthly continuation packages; rename (not retire)
+  once Guy confirms what they're called. Carl's keep-list (2026-10-05):
+  Hyrox, all 6-week plans, 21-day starter, drop-in. 5-pack retired in
+  **0052 (to run)**.
+- **Architect review (2026-10-05) follow-ups:** Coach Ted now needs an
+  active membership (staff exempt) — every member on the app has one until
+  full migration, per Carl; the View-as Test Member needs one assigned to
+  see Ted. Still to do: owner page to review Ted conversations (+ member
+  thumbs-down, removed-number log), Ted eval on Sonnet 5.5, SQL tests for
+  booking/credit/waitlist functions. 0038 can run as soon as Carl is able
+  (the app already forces staff two-factor, so it locks no one out).
 - `gemini-embedding-001` no longer appears on Google's pricing page
   (Gemini Embedding 2 is current) — may be retired next; if so switch
   EMBEDDING_MODEL and press Re-index on /admin/ted-answers.

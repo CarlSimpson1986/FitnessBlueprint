@@ -7,6 +7,7 @@ import { embedText } from "@/lib/coach-ted/gemini";
 import { searchPubMed } from "@/lib/coach-ted/pubmed";
 import { OWNER_ANSWER_THRESHOLD } from "@/lib/coach-ted/cache";
 import { buildMemberProfile, recentTedTurns } from "@/lib/coach-ted/member-context";
+import { hasActiveMembership, NO_MEMBERSHIP_MESSAGE } from "@/lib/coach-ted/access";
 
 // Shown to members; the limit itself is enforced in claim_ted_question() (0039).
 const DAILY_QUESTION_LIMIT = 20;
@@ -40,9 +41,17 @@ export async function POST(request: Request) {
   }
 
   // Ted is built on their health info, so he needs their consent (0043).
-  const { data: consentRow } = await supabase.from("profiles").select("health_consent").eq("id", user.id).maybeSingle();
+  const { data: consentRow } = await supabase.from("profiles").select("health_consent, role").eq("id", user.id).maybeSingle();
   if (!consentRow?.health_consent) {
     return NextResponse.json({ error: "Turn on health tracking to use Coach Ted." }, { status: 403 });
+  }
+
+  // Ted is for paying members (2026-10-05 review). Signup is open, so
+  // without this anyone with a throwaway email could ask him questions —
+  // and a handful of such accounts would use up the gym-wide daily limit
+  // for everyone. Staff keep access for testing.
+  if (consentRow.role === "member" && !(await hasActiveMembership(supabase, user.id))) {
+    return NextResponse.json({ error: NO_MEMBERSHIP_MESSAGE }, { status: 403 });
   }
 
   const body = await request.json().catch(() => null);
@@ -105,22 +114,32 @@ ${question}` : question;
     return "";
   });
 
-  const questionEmbedding = await embedText(searchText);
+  // The question slot is already claimed, so if Gemini's embeddings are
+  // down Ted still answers — just without Guy's answers and the knowledge
+  // base, which are what the embedding finds.
+  const questionEmbedding = await embedText(searchText).catch((err) => {
+    console.error("Coach Ted: embedding failed, answering without Guy's answers/knowledge base:", err);
+    return null;
+  });
   mark("embed");
 
   const [pubmedResults, kbMatches, ownerMatches, memberProfile] = await Promise.all([
     pubmedPromise,
-    admin
-      .rpc("match_knowledge_base", { query_embedding: questionEmbedding, match_count: 5 })
-      .then((r) => r.data ?? []),
+    questionEmbedding
+      ? admin
+          .rpc("match_knowledge_base", { query_embedding: questionEmbedding, match_count: 5 })
+          .then((r) => r.data ?? [])
+      : [],
     // match_qa_cache skips answers Guy has hidden (is_flagged).
-    admin
-      .rpc("match_qa_cache", {
-        query_embedding: questionEmbedding,
-        match_threshold: OWNER_ANSWER_THRESHOLD,
-        match_count: 2,
-      })
-      .then((r) => r.data ?? []),
+    questionEmbedding
+      ? admin
+          .rpc("match_qa_cache", {
+            query_embedding: questionEmbedding,
+            match_threshold: OWNER_ANSWER_THRESHOLD,
+            match_count: 2,
+          })
+          .then((r) => r.data ?? [])
+      : [],
     profilePromise,
   ]);
   mark("context");
