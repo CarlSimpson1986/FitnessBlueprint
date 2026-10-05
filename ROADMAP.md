@@ -383,6 +383,34 @@ that far — src/lib/booking-window.ts).
   (how many free passes, does the guest take a spot?). The open questions
   need answers from Guy before building.
 
+**Carl / Guy walkthrough 2026-10-05 — actions** (Guy has signed in and
+set up two-factor; he'll invite 5-10 tech-savvy members, e.g. Akil, once
+Carl gives the go-ahead — target end of this week / weekend):
+- Build (agreed on the call):
+  - Live session: "Finish section" not "Finish workout"; a way to go back
+    to an earlier section to fix what was logged.
+  - Programming: "Not scored" tick per segment (warm-up/cool-down) so
+    members only log the main lift, accessories and conditioning.
+  - Exercise notes are coach-only: currently nobody but Guy sees them —
+    show them to coaches (Today / programme), never members.
+  - Owner Account settings: calendar link etc. treat Guy like a member —
+    should be the owner's account settings.
+  - Ted "Not helpful": optional "what was wrong?" reason for Guy.
+  - Segment labels: Guy writes Part A / Part B / Part C on the board.
+- Gap found: marking a booking "Excused" does NOT refund the credit (Carl
+  told Guy it does — late cancellations agreed with the coach should get
+  the credit back). Needs a decision on who can refund.
+- Needs Guy's decision: an "admin" role (e.g. Hannah) — everything except
+  the money pages? Can they edit, or view only? (CLAUDE.md: only the
+  owner edits today.)
+- At launch: remove the demo-data button and email-check page.
+- Waiting on Guy: which GoCardless account group members move to (he said
+  the guy.wt one) and the package names for group vs PT; asking Virtuagym
+  how its card payments (VirtuagymPay) and GoCardless mandates move over.
+- Idea from Guy: CSV import to create member accounts in bulk for the
+  migration (each gets the set-your-password email).
+- Session economics page was slow on the call — check.
+
 **Open — needs a decision or action from the owner:**
 - **Monthly plan names — ask Guy.** Unlimited / 2x per week / 1x per
   week (Stripe: "GCP - UNLIMITED" / "GCP - 2 per week" / "GCP - 1 per
