@@ -4,7 +4,7 @@
 --
 -- For every function the migrations define, compares the live body with
 -- the LATEST migration's version (by md5 fingerprint). Generated
--- 2026-10-05 from supabase/migrations/ (0001_init_core_schema.sql .. 0054_restore_cancellation_window.sql).
+-- 2026-10-05 from supabase/migrations/ (0001_init_core_schema.sql .. 0055_waitlist_needs_membership.sql).
 --
 -- status:
 --   ok        live function matches the latest migration
@@ -33,7 +33,7 @@ with expected(name, arg_count, expected_from, body_md5) as (values
   ('invite_guest', 3, '0050_guest_invites.sql', 'd6a3657003a4652b39927f1296d628cc'),
   ('is_coach_or_owner', 0, '0038_staff_two_factor.sql', 'd8b79e98d5685e42e2e56f00796af6f3'),
   ('is_owner', 0, '0038_staff_two_factor.sql', '49f936dc0be8c42c49decece0b36f466'),
-  ('join_waitlist', 2, '0050_guest_invites.sql', '146b75de1efdd4e691b0d5c22284b453'),
+  ('join_waitlist', 2, '0055_waitlist_needs_membership.sql', 'cb835746139538ea2d425843e1939050'),
   ('leave_waitlist', 1, '0010_waitlist.sql', 'dd8ebafb9864ec480c655e4878b60ece'),
   ('list_coach_names', 0, '0011_coach_names_for_members.sql', '5fc4b4435a31a00c18aee93a098c3772'),
   ('lookup_member_by_email', 1, '0010_waitlist.sql', '0a444f3d16306b2499180d862b1d9f67'),

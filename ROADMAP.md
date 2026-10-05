@@ -407,9 +407,11 @@ that far — src/lib/booking-window.ts).
   **0054 re-applies it (to run)**. supabase/manual/function-audit.sql
   (read-only, regenerate with the scratchpad audit script if functions
   change) lists any live function that doesn't match its latest migration.
-  Found while writing tests: join_waitlist() doesn't require a
-  membership, so a non-member can be offered (and hold for 2h) a place
-  they can't book.
+  0054 run. **0055 (to run):** joining a waitlist now needs the same plan
+  as booking (active membership covering that class/date, a credit if a
+  pack) — members pay first, then get access (Carl), so nobody can hold a
+  2-hour offer they can't use. supabase/manual/late-cancel-refunds.sql
+  lists refunds given within 3 hours before 0054.
 - `gemini-embedding-001` no longer appears on Google's pricing page
   (Gemini Embedding 2 is current) — may be retired next; if so switch
   EMBEDDING_MODEL and press Re-index on /admin/ted-answers.

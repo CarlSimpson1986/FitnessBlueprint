@@ -13,7 +13,8 @@
 -- What it does: creates throwaway members (@fitnessblueprints.invalid),
 -- a coach, test plans and sessions, then calls the real functions the app
 -- uses (book_session, cancel_booking, join_waitlist, accept_waitlist_offer
--- — latest versions in 0050 / 0012 / 0010), signed in as each member.
+-- — latest versions in 0050 / 0054 / 0055 / 0010), signed in as each
+-- member. The two "(0055)" checks fail until 0055 has been run.
 --
 -- Not covered (can't be, from one SQL session): two people booking the
 -- last place at the same instant. book_session locks the session row and
@@ -294,6 +295,12 @@ begin
 
   v_lines := v_lines || pg_temp.expect_error('Full class: booking refused', m_6wk,
     format('select book_session(%L)', s_full), 'Session is full');
+
+  -- 0055: waiting needs the same plan as booking.
+  v_lines := v_lines || pg_temp.expect_error('No membership: can''t join a waitlist (0055)', m_none,
+    format('select join_waitlist(%L)', s_full), 'No active membership');
+  v_lines := v_lines || pg_temp.expect_error('Hyrox-only plan: can''t wait for a GCP class (0055)', m_hyrox,
+    format('select join_waitlist(%L)', s_full), 'only covers');
 
   v_lines := v_lines || pg_temp.expect_error('Class with space: can''t join its waitlist', m_6wk,
     format('select join_waitlist(%L)', s_c), 'has space');
