@@ -53,7 +53,7 @@ export const FAQ: FaqSection[] = [
     items: [
       {
         question: "How do I book a class?",
-        answer: `My bookings, then Schedule, then Book next to the class. Classes open ${BOOKING_WINDOW_DAYS / 7} weeks ahead. Your booked classes show under My bookings and on your home screen.`,
+        answer: `My bookings, then Schedule, then Book next to the class. Classes open ${BOOKING_WINDOW_DAYS} days ahead: on a Tuesday you can book up to next Tuesday. Your booked classes show under My bookings and on your home screen.`,
       },
       {
         question: "How do I cancel, and do I lose anything?",

@@ -14,8 +14,8 @@
 -- a coach, test plans and sessions, then calls the real functions the app
 -- uses (book_session, cancel_booking, join_waitlist, accept_waitlist_offer
 -- — latest versions in 0050 / 0054 / 0055 / 0010), signed in as each
--- member. Checks marked "(0055)" / "(0056)" fail until that migration
--- has been run.
+-- member. Checks marked "(0055)" / "(0056)" / "(0059)" fail until that
+-- migration has been run.
 --
 -- Not covered (can't be, from one SQL session): two people booking the
 -- last place at the same instant. book_session locks the session row and
@@ -39,6 +39,7 @@ declare
   m_1x uuid := gen_random_uuid();     -- 1 session a week
   m_6wk uuid := gen_random_uuid();    -- 6-week programme, started 35 days ago
   m_hyrox uuid := gen_random_uuid();  -- Hyrox-only plan
+  m_lc uuid := gen_random_uuid();     -- 1x a week, for the late-cancel checks (0059)
 
   -- plans
   p_pack uuid; p_unl uuid; p_1x uuid; p_6wk uuid; p_hyrox uuid;
@@ -51,6 +52,8 @@ declare
   v_bk_a bookings%rowtype;
   v_bk_soon bookings%rowtype;
   v_bk_full bookings%rowtype;
+  v_bk_lc bookings%rowtype;
+  v_bk_1x bookings%rowtype;
   v_entry waitlist_entries%rowtype;
   v_bal integer;
   v_bal_before integer;
@@ -113,13 +116,13 @@ begin
   select '00000000-0000-0000-0000-000000000000', u.id, 'authenticated', 'authenticated',
          'sqltest-' || u.n || '-' || v_tag || '@fitnessblueprints.invalid', '{}'::jsonb, '{}'::jsonb, now(), now()
   from (values (v_coach, 'coach'), (m_none, 'none'), (m_pack, 'pack'), (m_unl, 'unl'),
-               (m_1x, '1x'), (m_6wk, '6wk'), (m_hyrox, 'hyrox')) as u(id, n);
+               (m_1x, '1x'), (m_6wk, '6wk'), (m_hyrox, 'hyrox'), (m_lc, 'lc')) as u(id, n);
 
   insert into profiles (id, role, full_name, email)
   select u.id, u.role::member_role, 'SQL test ' || u.n, 'sqltest-' || u.n || '-' || v_tag || '@fitnessblueprints.invalid'
   from (values (v_coach, 'coach', 'coach'), (m_none, 'member', 'none'), (m_pack, 'member', 'pack'),
                (m_unl, 'member', 'unl'), (m_1x, 'member', '1x'), (m_6wk, 'member', '6wk'),
-               (m_hyrox, 'member', 'hyrox')) as u(id, role, n);
+               (m_hyrox, 'member', 'hyrox'), (m_lc, 'member', 'lc')) as u(id, role, n);
 
   insert into membership_plans (code, name, price_pence, billing_type, sessions_per_week, credit_pack_size, programme_length_days, allowed_template_codes)
   values ('sqltest_pack_' || v_tag, 'SQL test pack', 0, 'one_off', null, 2, null, null) returning id into p_pack;
@@ -137,12 +140,17 @@ begin
     (m_unl, p_unl, 'active', now()),
     (m_1x, p_1x, 'active', now()),
     (m_6wk, p_6wk, 'active', now() - interval '35 days'),
-    (m_hyrox, p_hyrox, 'active', now());
+    (m_hyrox, p_hyrox, 'active', now()),
+    (m_lc, p_1x, 'active', now());
 
   insert into credit_ledger (member_id, delta, reason) values (m_pack, 2, 'signup_bonus');
 
-  -- Next Monday (a whole Mon-Sun week inside the 14-day booking window).
-  v_monday := v_today + (8 - extract(isodow from v_today)::int);
+  -- Two days in the same Mon-Sun week inside the 7-day window (0059):
+  -- tomorrow and the day after, or Monday and Tuesday if tomorrow is Sunday.
+  v_monday := v_today + 1;
+  if extract(isodow from v_monday) = 7 then
+    v_monday := v_today + 2;
+  end if;
 
   insert into sessions (template_id, coach_id, session_date, start_time, duration_minutes, capacity)
     values (v_gcp, v_coach, v_today + 2, '10:00', 60, 10) returning id into s_a;
@@ -167,7 +175,7 @@ begin
   insert into sessions (template_id, coach_id, session_date, start_time, duration_minutes, capacity, status)
     values (v_gcp, v_coach, v_today + 2, '13:00', 60, 10, 'cancelled') returning id into s_cancelled;
   insert into sessions (template_id, coach_id, session_date, start_time, duration_minutes, capacity)
-    values (v_gcp, v_coach, v_today + 9, '10:00', 60, 10) returning id into s_6wk_late;
+    values (v_gcp, v_coach, v_today + 7, '10:00', 60, 10) returning id into s_6wk_late;
 
   -- --------------------------------------------------------------------------
   -- Is the live cancel_booking the 0012 version (3-hour refund window)?
@@ -184,8 +192,8 @@ begin
     format('select book_session(%L)', s_a), 'No active membership');
   v_lines := v_lines || pg_temp.expect_error('Past session: can''t book', m_unl,
     format('select book_session(%L)', s_past), 'already started');
-  v_lines := v_lines || pg_temp.expect_error('More than 14 days ahead: can''t book', m_unl,
-    format('select book_session(%L)', s_far), 'two weeks ahead');
+  v_lines := v_lines || pg_temp.expect_error('More than 7 days ahead: can''t book (0059)', m_unl,
+    format('select book_session(%L)', s_far), 'a week ahead');
   v_lines := v_lines || pg_temp.expect_error('Cancelled session: can''t book', m_unl,
     format('select book_session(%L)', s_cancelled), 'not open for booking');
   v_lines := v_lines || pg_temp.expect_error('Hyrox-only plan: can''t book GCP', m_hyrox,
@@ -208,13 +216,29 @@ begin
   -- --------------------------------------------------------------------------
   begin
     perform pg_temp.sign_in_as(m_1x);
-    select * into v_bk from book_session(s_week1);
+    select * into v_bk_1x from book_session(s_week1);
     v_lines := v_lines || 'PASS  1x a week: first session that week books'::text;
   exception when others then
     v_lines := v_lines || ('FAIL  1x a week: first session that week books — ' || sqlerrm);
   end;
   v_lines := v_lines || pg_temp.expect_error('1x a week: second session the same week is refused', m_1x,
     format('select book_session(%L)', s_week2), 'session(s) a week');
+
+  -- 0059: an attended class keeps counting towards the week.
+  update bookings set status = 'attended' where id = v_bk_1x.id;
+  v_lines := v_lines || pg_temp.expect_error('1x a week: still refused after the first is marked attended (0059)', m_1x,
+    format('select book_session(%L)', s_week2), 'session(s) a week');
+
+  -- 0059: cancelling inside 3 hours uses up the week's class.
+  begin
+    perform pg_temp.sign_in_as(m_lc);
+    select * into v_bk_lc from book_session(s_soon);
+    perform cancel_booking(v_bk_lc.id);
+  exception when others then
+    v_lines := v_lines || ('FAIL  Late cancel setup (0059) — ' || sqlerrm);
+  end;
+  v_lines := v_lines || pg_temp.expect_error('1x a week: a late cancel still counts, can''t rebook (0059)', m_lc,
+    format('select book_session(%L)', s_soon), 'session(s) a week');
 
   -- --------------------------------------------------------------------------
   -- Credits (2-credit pack)
@@ -329,6 +353,18 @@ begin
       else 'FAIL  Excuse an early cancel — balance ' || v_bal_before || ' -> ' || v_bal end;
   exception when others then
     v_lines := v_lines || ('FAIL  Excuse an early cancel (0056) — ' || sqlerrm);
+  end;
+
+  begin
+    perform pg_temp.sign_in_as_staff(v_coach);
+    perform excuse_booking(v_bk_lc.id);
+    perform pg_temp.sign_in_as(m_lc);
+    select * into v_bk from book_session(s_soon);
+    v_lines := v_lines || case when v_bk.status = 'booked'
+      then 'PASS  Excusing a late cancel gives the week''s class back (0056 + 0059)'::text
+      else 'FAIL  Excuse gives the class back — status ' || v_bk.status end;
+  exception when others then
+    v_lines := v_lines || ('FAIL  Excuse gives the class back (0056 + 0059) — ' || sqlerrm);
   end;
 
   -- --------------------------------------------------------------------------

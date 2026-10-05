@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ukSessionStart } from "@/lib/booking-window";
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { formatSessionDate, formatSessionTime } from "@/lib/format";
@@ -260,7 +261,7 @@ export default async function HomePage() {
                   {formatSessionTime(nextSession.start_time)}
                 </p>
               </div>
-              <BookingButton sessionId={nextSession.id} bookingId={nextBookingId} isFull={false} />
+              <BookingButton sessionId={nextSession.id} bookingId={nextBookingId} isFull={false} startsAt={ukSessionStart(nextSession.session_date, nextSession.start_time)} />
             </div>
             {healthOn && <ReadinessCheckin sessionId={nextSession.id} hasCheckedIn={!!existingCheckin} />}
             <Link
@@ -302,7 +303,7 @@ export default async function HomePage() {
                         {template?.name ?? "Session"}
                       </p>
                     </div>
-                    <BookingButton sessionId={session.id} bookingId={bookingId} isFull={false} />
+                    <BookingButton sessionId={session.id} bookingId={bookingId} isFull={false} startsAt={ukSessionStart(session.session_date, session.start_time)} />
                   </li>
                 );
               })}

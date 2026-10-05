@@ -1,6 +1,7 @@
 "use server";
 
 import { requireStaffAccess } from "@/lib/coach-permissions";
+import { LATE_CANCEL_MS, ukSessionStart } from "@/lib/booking-window";
 import { SESSION_NOTE_MAX_LENGTH, SESSION_NOTE_TAGS, type SessionNote } from "@/lib/session-notes";
 
 export type ActionResult = { error?: string };
@@ -51,19 +52,6 @@ export type RosterGuest = {
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-// Matches cancel_booking's refund window (0012 / 0054).
-const LATE_CANCEL_MS = 3 * 60 * 60 * 1000;
-
-/** A UK wall-clock date + time ("2026-10-05", "18:30:00") as an instant. */
-function ukWallClockToDate(date: string, time: string) {
-  const asUtc = new Date(`${date}T${time.slice(0, 8)}Z`);
-  const ukHour = Number(
-    new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", hour: "2-digit", hourCycle: "h23" }).format(asUtc)
-  );
-  // Difference between UK and UTC at that moment (0 in GMT, 1 in BST).
-  const offsetHours = (ukHour - asUtc.getUTCHours() + 24) % 24;
-  return new Date(asUtc.getTime() - offsetHours * 60 * 60 * 1000);
-}
 
 function ukDateKey(date: Date) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(date);
@@ -170,7 +158,7 @@ export async function getSessionRoster(
   const checkinByMember = new Map((checkins ?? []).map((c) => [c.member_id, c]));
 
   // Session start as an instant: session_date/start_time are UK wall-clock.
-  const sessionStart = session ? ukWallClockToDate(session.session_date, session.start_time) : null;
+  const sessionStart = session ? ukSessionStart(session.session_date, session.start_time) : null;
 
   const roster = (bookings ?? []).map((booking) => {
     const checkin = checkinByMember.get(booking.member_id);
@@ -184,7 +172,7 @@ export async function getSessionRoster(
         booking.status === "cancelled" &&
         !!booking.cancelled_at &&
         !!sessionStart &&
-        Date.parse(booking.cancelled_at) >= sessionStart.getTime() - LATE_CANCEL_MS,
+        Date.parse(booking.cancelled_at) >= sessionStart - LATE_CANCEL_MS,
       readiness: checkin
         ? {
             feeling: checkin.feeling as Feeling,

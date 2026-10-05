@@ -415,10 +415,12 @@ Carl gives the go-ahead — target end of this week / weekend):
   **Guy to check FAQ answers marked guyToConfirm:** what happens when a
   6-week/21-day programme ends; pausing/changing/cancelling membership
   ("speak to Guy"). No credit packs in this app (PT only, Carl).
-  **Policy gap — needs Carl/Guy:** the 3-hour rule only bites drop-ins.
-  On weekly plans and 6-week programmes a late cancel just frees that
-  week's place (book_session counts only 'booked'), so it costs nothing.
-  Option: count late cancels toward the week's allowance.
+  **0059 (to run, then deploy):** per the spec ("lose the booking
+  credit"), a cancel inside 3 hours now uses up that week's class; also
+  attended/no-show classes keep counting (before, marking attendance
+  freed the place). Excusing gives it back. Cancel inside 3 hours shows
+  a warning first (spec: consequences shown before confirming). Booking
+  window 14 -> 7 days (Carl: on a Tuesday, book up to next Tuesday).
   Walkthrough findings: classes in Schedule can't be tapped for details
   (no workout preview before the day); 10k Steps challenge is labelled
   "Attendance" and shows ISO dates (2026-10-03 -> 2026-10-31); Purchases

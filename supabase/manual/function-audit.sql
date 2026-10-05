@@ -4,7 +4,7 @@
 --
 -- For every function the migrations define, compares the live body with
 -- the LATEST migration's version (by md5 fingerprint). Generated
--- 2026-10-05 from supabase/migrations/ (0001_init_core_schema.sql .. 0058_ted_rating_reason.sql).
+-- 2026-10-05 from supabase/migrations/ (0001_init_core_schema.sql .. 0059_weekly_allowance_counts_late_cancels.sql).
 --
 -- status:
 --   ok        live function matches the latest migration
@@ -18,7 +18,7 @@ with expected(name, arg_count, expected_from, body_md5) as (values
   ('accept_booking_invite', 1, '0040_stripe_checkout.sql', 'b3f5886eb740c420309fabd5b84d80c6'),
   ('accept_waitlist_offer', 1, '0010_waitlist.sql', '9230bb8d3597452467f4b45e9195602f'),
   ('auth_role', 0, '0002_rls_policies.sql', '9443df2104374cf0d4671d6344e23d4a'),
-  ('book_session', 1, '0050_guest_invites.sql', 'b952df0172ea55cc287c93f07b4f7047'),
+  ('book_session', 1, '0059_weekly_allowance_counts_late_cancels.sql', '73eadef3cbfa6647d1dae58ebd648817'),
   ('can_write_session_note', 2, '0047_session_notes.sql', '17944a57c3baa27de125c703cdf2348f'),
   ('cancel_booking', 1, '0054_restore_cancellation_window.sql', 'a77c65e737c50a53042246561a8b1fe2'),
   ('cancel_guest_invite', 1, '0050_guest_invites.sql', 'ddabdfaa26a8309ea83c5324bc777d4f'),

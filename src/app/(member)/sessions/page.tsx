@@ -8,7 +8,7 @@ import { WaitlistPanel } from "./WaitlistPanel";
 import { GuestInvitePanel } from "./GuestInvitePanel";
 import { InviteResponsePanel } from "./InviteResponsePanel";
 import { BookingsTabs } from "./BookingsTabs";
-import { BOOKING_WINDOW_DAYS, lastBookableDate } from "@/lib/booking-window";
+import { BOOKING_WINDOW_DAYS, LATE_CANCEL_MS, lastBookableDate, ukSessionStart } from "@/lib/booking-window";
 
 export default async function SessionsPage() {
   const { supabase, user, profile } = await requireProfile();
@@ -54,9 +54,10 @@ export default async function SessionsPage() {
     ? (creditLedgerRows ?? []).reduce((sum, row) => sum + row.delta, 0)
     : null;
 
-  // "X/Y this week" for capped recurring plans — mirrors the same
-  // Mon-Sun boundary book_session() (0023) enforces server-side, so
-  // what a member sees here always matches what actually blocks them.
+  // "X/Y this week" for capped recurring plans — mirrors book_session()
+  // (0059): same Mon-Sun week, and the same classes count — booked,
+  // attended, no-show, or cancelled inside 3 hours of the start — so what
+  // a member sees here always matches what actually blocks them.
   let weeklyUsed: number | null = null;
   if (activePlan?.sessions_per_week != null) {
     const now = new Date();
@@ -69,7 +70,7 @@ export default async function SessionsPage() {
 
     const { data: weekSessions } = await supabase
       .from("sessions")
-      .select("id")
+      .select("id, session_date, start_time")
       .gte("session_date", toLocalDateKey(weekStart))
       .lte("session_date", toLocalDateKey(weekEnd));
 
@@ -77,13 +78,18 @@ export default async function SessionsPage() {
     const { data: weekBookings } = weekSessionIds.length
       ? await supabase
           .from("bookings")
-          .select("id")
+          .select("session_id, status, cancelled_at")
           .eq("member_id", user.id)
-          .eq("status", "booked")
+          .in("status", ["booked", "attended", "no_show", "cancelled"])
           .in("session_id", weekSessionIds)
       : { data: [] };
 
-    weeklyUsed = (weekBookings ?? []).length;
+    const startById = new Map((weekSessions ?? []).map((s) => [s.id, ukSessionStart(s.session_date, s.start_time)]));
+    weeklyUsed = (weekBookings ?? []).filter((b) => {
+      if (b.status !== "cancelled") return true;
+      const start = startById.get(b.session_id);
+      return !!b.cancelled_at && !!start && Date.parse(b.cancelled_at) >= start - LATE_CANCEL_MS;
+    }).length;
   }
 
   const [
@@ -267,7 +273,7 @@ export default async function SessionsPage() {
                   >
                     Start session
                   </Link>
-                  <BookingButton sessionId={session.id} bookingId={bookingId} isFull={false} />
+                  <BookingButton sessionId={session.id} bookingId={bookingId} isFull={false} startsAt={ukSessionStart(session.session_date, session.start_time)} />
                 </div>
               </div>
             );
@@ -279,7 +285,7 @@ export default async function SessionsPage() {
   const scheduleContent = (
     <div>
       <p className="text-xs text-blueprint-muted mb-4">
-        Bookings open {BOOKING_WINDOW_DAYS / 7} weeks ahead.
+        Bookings open {BOOKING_WINDOW_DAYS} days ahead.
       </p>
       {sessionsByDate.size === 0 && (
         <p className="text-blueprint-muted text-sm">No upcoming sessions scheduled yet.</p>
@@ -317,7 +323,7 @@ export default async function SessionsPage() {
                       />
                     ) : bookingId ? (
                       <div className="flex flex-col items-end">
-                        <BookingButton sessionId={session.id} bookingId={bookingId} isFull={isFull} />
+                        <BookingButton sessionId={session.id} bookingId={bookingId} isFull={isFull} startsAt={ukSessionStart(session.session_date, session.start_time)} />
                         <GuestInvitePanel
                           sessionId={session.id}
                           invite={guestInvite}
