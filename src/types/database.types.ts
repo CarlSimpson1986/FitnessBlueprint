@@ -1516,6 +1516,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      excuse_booking: {
+        Args: { p_booking_id: string }
+        Returns: Database["public"]["Tables"]["bookings"]["Row"]
+      }
       rate_ted_answer: {
         Args: { p_conversation_id: string; p_rating: string | null }
         Returns: undefined

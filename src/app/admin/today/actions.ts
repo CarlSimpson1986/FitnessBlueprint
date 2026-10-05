@@ -22,6 +22,8 @@ export type RosterEntry = {
   memberName: string;
   programme: ProgrammeTag | null;
   status: "booked" | "cancelled" | "attended" | "no_show" | "excused" | "invited";
+  /** Cancelled inside the 3-hour window (credit kept) — the coach can excuse it to give the credit back (0056). */
+  lateCancel: boolean;
   readiness: {
     feeling: Feeling;
     sleepQuality: SleepQuality | null;
@@ -49,6 +51,19 @@ export type RosterGuest = {
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+// Matches cancel_booking's refund window (0012 / 0054).
+const LATE_CANCEL_MS = 3 * 60 * 60 * 1000;
+
+/** A UK wall-clock date + time ("2026-10-05", "18:30:00") as an instant. */
+function ukWallClockToDate(date: string, time: string) {
+  const asUtc = new Date(`${date}T${time.slice(0, 8)}Z`);
+  const ukHour = Number(
+    new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", hour: "2-digit", hourCycle: "h23" }).format(asUtc)
+  );
+  // Difference between UK and UTC at that moment (0 in GMT, 1 in BST).
+  const offsetHours = (ukHour - asUtc.getUTCHours() + 24) % 24;
+  return new Date(asUtc.getTime() - offsetHours * 60 * 60 * 1000);
+}
 
 function ukDateKey(date: Date) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(date);
@@ -80,7 +95,7 @@ export async function getSessionRoster(
   const [{ data: bookings, error }, { data: checkins }] = await Promise.all([
     supabase
       .from("bookings")
-      .select("id, member_id, status")
+      .select("id, member_id, status, cancelled_at")
       .eq("session_id", sessionId)
       .order("booked_at"),
     supabase
@@ -98,7 +113,7 @@ export async function getSessionRoster(
   const [{ data: members, error: membersError }, { data: session }, { data: memberships }, { data: programmePlans }] =
     await Promise.all([
       supabase.from("profiles").select("id, full_name, health_consent").in("id", idFilter),
-      supabase.from("sessions").select("session_date").eq("id", sessionId).maybeSingle(),
+      supabase.from("sessions").select("session_date, start_time").eq("id", sessionId).maybeSingle(),
       supabase.from("member_memberships").select("member_id, plan_id, started_at").eq("status", "active").in("member_id", idFilter),
       supabase.from("membership_plans").select("id, programme_length_days").not("programme_length_days", "is", null),
     ]);
@@ -154,6 +169,9 @@ export async function getSessionRoster(
   const consentById = new Map((members ?? []).map((m) => [m.id, m.health_consent === true]));
   const checkinByMember = new Map((checkins ?? []).map((c) => [c.member_id, c]));
 
+  // Session start as an instant: session_date/start_time are UK wall-clock.
+  const sessionStart = session ? ukWallClockToDate(session.session_date, session.start_time) : null;
+
   const roster = (bookings ?? []).map((booking) => {
     const checkin = checkinByMember.get(booking.member_id);
     return {
@@ -162,6 +180,11 @@ export async function getSessionRoster(
       memberName: nameById.get(booking.member_id) ?? "Unknown member",
       programme: programmeByMember.get(booking.member_id) ?? null,
       status: booking.status,
+      lateCancel:
+        booking.status === "cancelled" &&
+        !!booking.cancelled_at &&
+        !!sessionStart &&
+        Date.parse(booking.cancelled_at) >= sessionStart.getTime() - LATE_CANCEL_MS,
       readiness: checkin
         ? {
             feeling: checkin.feeling as Feeling,
@@ -219,7 +242,21 @@ async function loadGuests(
   });
 }
 
-const MARKABLE_STATUSES = ["attended", "no_show", "excused"] as const;
+/**
+ * Excuses a booking (booked, late-cancelled or no-show) and gives back the
+ * credit if one was spent — excuse_booking() (0056) checks the caller is
+ * the owner or the coach taking the session with Today on, and does the
+ * refund; the credit ledger can't be written any other way.
+ */
+export async function excuseBooking(bookingId: string): Promise<ActionResult> {
+  const { supabase, access } = await requireStaffAccess();
+  if (!access.today) return { error: NO_TODAY_ACCESS };
+
+  const { error } = await supabase.rpc("excuse_booking", { p_booking_id: bookingId });
+  return error ? { error: error.message } : {};
+}
+
+const MARKABLE_STATUSES = ["attended", "no_show"] as const;
 type MarkableStatus = (typeof MARKABLE_STATUSES)[number];
 
 /**

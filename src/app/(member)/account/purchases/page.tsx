@@ -6,6 +6,7 @@ const REASON_LABEL: Record<string, string> = {
   monthly_reset: "Monthly reset",
   booking: "Booking",
   cancellation_refund: "Cancellation refund",
+  excused_refund: "Excused by your coach",
   manual_adjustment: "Manual adjustment",
   signup_bonus: "Signup bonus",
 };

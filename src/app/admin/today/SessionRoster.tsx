@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SESSION_NOTE_MAX_LENGTH, SESSION_NOTE_TAGS, type SessionNote } from "@/lib/session-notes";
-import { getSessionRoster, markAttendance, saveSessionNote, type ProgrammeTag, type RosterEntry, type RosterGuest } from "./actions";
+import { excuseBooking, getSessionRoster, markAttendance, saveSessionNote, type ProgrammeTag, type RosterEntry, type RosterGuest } from "./actions";
 
 const STATUS_LABEL: Record<RosterEntry["status"], string> = {
   booked: "Booked",
@@ -234,12 +234,16 @@ export function SessionRoster({
     setPendingBookingId(bookingId);
     setError(null);
 
-    const result = await markAttendance(bookingId, status);
+    // Excused goes through excuse_booking (0056), which also gives the credit back.
+    const result = status === "excused" ? await excuseBooking(bookingId) : await markAttendance(bookingId, status);
 
     if (result.error) {
       setError(result.error);
     } else {
-      setRoster((prev) => prev?.map((entry) => (entry.bookingId === bookingId ? { ...entry, status } : entry)) ?? null);
+      setRoster(
+        (prev) =>
+          prev?.map((entry) => (entry.bookingId === bookingId ? { ...entry, status, lateCancel: false } : entry)) ?? null
+      );
       router.refresh();
     }
 
@@ -303,6 +307,21 @@ export function SessionRoster({
                       </button>
                     ))}
                   </div>
+                ) : (entry.lateCancel || entry.status === "no_show") && canMark ? (
+                  <span className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono uppercase tracking-wide text-blueprint-muted">
+                      {entry.lateCancel ? "Late cancel" : STATUS_LABEL[entry.status]}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={pendingBookingId === entry.bookingId}
+                      onClick={() => handleMark(entry.bookingId, "excused")}
+                      title="Gives their credit back"
+                      className="text-[10px] font-mono uppercase tracking-wide text-blueprint-muted border border-blueprint-line rounded px-2 py-1 hover:border-blueprint-accent hover:text-blueprint-accent disabled:opacity-50 transition"
+                    >
+                      Excuse
+                    </button>
+                  </span>
                 ) : (
                   <span className="text-[10px] font-mono uppercase tracking-wide text-blueprint-muted">
                     {STATUS_LABEL[entry.status]}

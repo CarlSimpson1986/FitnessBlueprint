@@ -4,7 +4,7 @@
 --
 -- For every function the migrations define, compares the live body with
 -- the LATEST migration's version (by md5 fingerprint). Generated
--- 2026-10-05 from supabase/migrations/ (0001_init_core_schema.sql .. 0055_waitlist_needs_membership.sql).
+-- 2026-10-05 from supabase/migrations/ (0001_init_core_schema.sql .. 0056_excuse_booking.sql).
 --
 -- status:
 --   ok        live function matches the latest migration
@@ -24,6 +24,7 @@ with expected(name, arg_count, expected_from, body_md5) as (values
   ('cancel_guest_invite', 1, '0050_guest_invites.sql', 'ddabdfaa26a8309ea83c5324bc777d4f'),
   ('claim_ted_question', 0, '0039_ted_usage_limits.sql', '048cffaababff7ccb0cec1dff79c6cd4'),
   ('decline_booking_invite', 1, '0014_buddy_booking.sql', 'ed15c883592e5f8fd5368bb26cf22d7c'),
+  ('excuse_booking', 1, '0056_excuse_booking.sql', '10039a986311af01266016fb24bf8541'),
   ('get_guest_invite', 1, '0050_guest_invites.sql', '50a6d5c71412a37f80a9f6a8a402196d'),
   ('guard_booking_direct_update', 0, '0044_advisor_fixes.sql', '854bbc60e06f417a038a1e5bf1e7a284'),
   ('guest_passes_left', 0, '0050_guest_invites.sql', '054ed0bc7abda61ea182d2b5eb2e4f76'),

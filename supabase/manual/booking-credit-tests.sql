@@ -14,7 +14,8 @@
 -- a coach, test plans and sessions, then calls the real functions the app
 -- uses (book_session, cancel_booking, join_waitlist, accept_waitlist_offer
 -- — latest versions in 0050 / 0054 / 0055 / 0010), signed in as each
--- member. The two "(0055)" checks fail until 0055 has been run.
+-- member. Checks marked "(0055)" / "(0056)" fail until that migration
+-- has been run.
 --
 -- Not covered (can't be, from one SQL session): two people booking the
 -- last place at the same instant. book_session locks the session row and
@@ -83,6 +84,14 @@ begin
       end;
       return 'FAIL  ' || p_label || ' — it was allowed';
     end;
+    $f$
+  $fn$;
+
+  -- Staff need a two-factor session since 0038 (aal2 in the token).
+  execute $fn$
+    create function pg_temp.sign_in_as_staff(p_user uuid) returns void language sql as $f$
+      select set_config('request.jwt.claims',
+        json_build_object('sub', p_user, 'role', 'authenticated', 'aal', 'aal2')::text, true);
     $f$
   $fn$;
 
@@ -280,6 +289,46 @@ begin
     v_lines := v_lines || case when sqlerrm ilike '%No credits remaining%'
       then 'PASS  Rebook with 0 credits refused (balance can''t go negative)'
       else 'FAIL  Rebook after cancelling — ' || sqlerrm end;
+  end;
+
+  -- --------------------------------------------------------------------------
+  -- Excused gives the credit back (0056)
+  -- --------------------------------------------------------------------------
+  v_lines := v_lines || pg_temp.expect_error('Excuse: a member can''t excuse a booking (0056)', m_unl,
+    format('select excuse_booking(%L)', v_bk_soon.id), 'Only the coach');
+
+  begin
+    perform pg_temp.sign_in_as_staff(v_coach);
+    v_bal_before := pg_temp.balance(m_pack);
+    select * into v_bk from excuse_booking(v_bk_soon.id);
+    v_bal := pg_temp.balance(m_pack);
+    v_lines := v_lines || case when v_bk.status = 'excused' and v_bal = v_bal_before + 1
+      then 'PASS  Excuse a late cancel: the coach gives the credit back (0056)'::text
+      else 'FAIL  Excuse a late cancel — status ' || v_bk.status || ', balance ' || v_bal_before || ' -> ' || v_bal end;
+  exception when others then
+    v_lines := v_lines || ('FAIL  Excuse a late cancel (0056) — ' || sqlerrm);
+  end;
+
+  begin
+    perform pg_temp.sign_in_as_staff(v_coach);
+    perform excuse_booking(v_bk_soon.id);
+    v_lines := v_lines || 'FAIL  Excuse twice — it was allowed (0056)'::text;
+  exception when others then
+    v_lines := v_lines || case when sqlerrm ilike '%can''t be excused%'
+      then 'PASS  Excuse twice: refused, no second credit (0056)'::text
+      else 'FAIL  Excuse twice — ' || sqlerrm end;
+  end;
+
+  begin
+    perform pg_temp.sign_in_as_staff(v_coach);
+    v_bal_before := pg_temp.balance(m_pack);
+    select * into v_bk from excuse_booking(v_bk_a.id);
+    v_bal := pg_temp.balance(m_pack);
+    v_lines := v_lines || case when v_bk.status = 'excused' and v_bal = v_bal_before
+      then 'PASS  Excuse an early cancel: already refunded, no extra credit (0056)'::text
+      else 'FAIL  Excuse an early cancel — balance ' || v_bal_before || ' -> ' || v_bal end;
+  exception when others then
+    v_lines := v_lines || ('FAIL  Excuse an early cancel (0056) — ' || sqlerrm);
   end;
 
   -- --------------------------------------------------------------------------
