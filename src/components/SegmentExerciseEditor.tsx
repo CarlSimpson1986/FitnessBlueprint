@@ -44,6 +44,21 @@ function inputClass() {
  * target/rest, added one at a time — matches the Everfit-style reference
  * the owner asked to match (0020), rather than one shared rounds count.
  */
+/**
+ * Dropdown wording for a section's type, in Guy's Part A/B/C terms
+ * (2026-10-05). The type still decides how members log it: sets show one
+ * exercise at a time, a circuit shows them all together, and warm-ups /
+ * cool-downs start unscored.
+ */
+function sectionTypeOption(segments: SegmentDraft[], index: number, type: SegmentType) {
+  if (type === "warmup" || type === "cooldown") return SEGMENT_TYPE_LABEL[type];
+  const letter = String.fromCharCode(
+    64 + segments.slice(0, index).filter((s) => s.type !== "warmup" && s.type !== "cooldown").length + 1
+  );
+  const how = type === "circuit" ? "circuit, all exercises together" : type === "finisher" ? "finisher" : "sets, one exercise at a time";
+  return `Part ${letter}: ${how}`;
+}
+
 export function SegmentExerciseEditor({
   initialSegments,
   onSave,
@@ -237,15 +252,15 @@ export function SegmentExerciseEditor({
                     updateSegment(segIndex, { type, isScored: type !== "warmup" && type !== "cooldown" });
                   }}
                 >
-                  {(Object.keys(SEGMENT_TYPE_LABEL) as SegmentType[]).map((t) => (
+                  {(["straight", "circuit", "finisher", "warmup", "cooldown"] as SegmentType[]).map((t) => (
                     <option key={t} value={t}>
-                      {SEGMENT_TYPE_LABEL[t]}
+                      {sectionTypeOption(segments, segIndex, t)}
                     </option>
                   ))}
                 </select>
                 <input
                   className={inputClass()}
-                  placeholder={`Shows as "${segmentDisplayLabel(segments, segIndex)}" — or type your own name`}
+                  placeholder={`Own name (optional) — blank shows as "${segmentDisplayLabel(segments, segIndex)}"`}
                   value={segment.label}
                   onChange={(e) => updateSegment(segIndex, { label: e.target.value })}
                 />
