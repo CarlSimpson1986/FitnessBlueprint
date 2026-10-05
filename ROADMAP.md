@@ -422,9 +422,14 @@ Carl gives the go-ahead — target end of this week / weekend):
   a warning first (spec: consequences shown before confirming). Booking
   window 14 -> 7 days (Carl: on a Tuesday, book up to next Tuesday).
   Walkthrough findings: classes in Schedule can't be tapped for details
-  (no workout preview before the day); 10k Steps challenge is labelled
-  "Attendance" and shows ISO dates (2026-10-03 -> 2026-10-31); Purchases
-  says "see the team in person" with no next-payment date.
+  (no workout preview before the day); Purchases says "see the team in
+  person" with no next-payment date. Fixed: challenge cards say what's
+  counted ("Counts classes you attend" etc.) with "3 Oct – 31 Oct" dates;
+  admin challenge types reworded. The 10k Steps challenge was created as
+  Attendance (counted classes) — supabase/manual/fix-10k-steps-challenge.sql
+  makes it coach-tracked. Session economics: queries paged (1,000-row cap
+  was silently truncating long periods) and bookings filtered by date via
+  the join instead of a URL of session ids (the slowness on the call).
 - Needs Guy's decision (Carl: ask Guy first): an "admin" role (e.g. Hannah) — everything except
   the money pages? Can they edit, or view only? (CLAUDE.md: only the
   owner edits today.)
@@ -434,7 +439,6 @@ Carl gives the go-ahead — target end of this week / weekend):
   how its card payments (VirtuagymPay) and GoCardless mandates move over.
 - Idea from Guy: CSV import to create member accounts in bulk for the
   migration (each gets the set-your-password email).
-- Session economics page was slow on the call — check.
 
 **Open — needs a decision or action from the owner:**
 - **Monthly plan names — ask Guy.** Unlimited / 2x per week / 1x per

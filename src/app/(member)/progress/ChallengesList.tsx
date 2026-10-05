@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { joinChallenge } from "./challenges-actions";
-import type { ChallengeType } from "@/lib/challenges";
+import { CHALLENGE_TRACKING_LABEL, formatChallengeDates, type ChallengeType } from "@/lib/challenges";
 
 export type ChallengeItem = {
   id: string;
@@ -17,13 +17,6 @@ export type ChallengeItem = {
   participantCount: number;
   isJoined: boolean;
   progress: number | null;
-};
-
-const TYPE_LABEL: Record<ChallengeType, string> = {
-  attendance: "Attendance",
-  habit: "Habit",
-  event_prep: "Event prep",
-  team: "Team",
 };
 
 function ChallengeCard({ challenge }: { challenge: ChallengeItem }) {
@@ -52,14 +45,15 @@ function ChallengeCard({ challenge }: { challenge: ChallengeItem }) {
 
   return (
     <li className="fb-card">
-      <p className="fb-eyebrow mb-1">{TYPE_LABEL[challenge.type]}</p>
+      <p className="fb-eyebrow mb-1">Challenge</p>
       <p className="text-blueprint-ink font-medium">{challenge.title}</p>
       {challenge.description && (
         <p className="text-xs text-blueprint-muted mt-1">{challenge.description}</p>
       )}
       <p className="text-xs text-blueprint-muted mt-1">
-        {challenge.startsAt} → {challenge.endsAt} · {challenge.participantCount} joined
+        {formatChallengeDates(challenge.startsAt, challenge.endsAt)} · {challenge.participantCount} joined
       </p>
+      <p className="text-[11px] text-blueprint-muted mt-0.5">{CHALLENGE_TRACKING_LABEL[challenge.type]}</p>
 
       {joined ? (
         pct !== null ? (

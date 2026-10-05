@@ -1,6 +1,32 @@
 export type ChallengeType = "attendance" | "habit" | "event_prep" | "team";
 
 /**
+ * What a challenge counts, in members' words — shown instead of the type
+ * name ("Attendance" on a 10k-steps challenge confused people, 2026-10-05).
+ */
+export const CHALLENGE_TRACKING_LABEL: Record<ChallengeType, string> = {
+  attendance: "Counts classes you attend",
+  habit: "Counts days you tick a habit",
+  event_prep: "Tracked by your coach",
+  team: "Team challenge · tracked by your coach",
+};
+
+/** "3 Oct – 31 Oct" (adds the year when it isn't this year). */
+export function formatChallengeDates(startsAt: string, endsAt: string, today = new Date()) {
+  const thisYear = today.getFullYear();
+  const fmt = (iso: string) => {
+    const d = new Date(`${iso}T12:00:00Z`);
+    return d.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      timeZone: "UTC",
+      ...(d.getUTCFullYear() !== thisYear ? { year: "numeric" } : {}),
+    });
+  };
+  return `${fmt(startsAt)} – ${fmt(endsAt)}`;
+}
+
+/**
  * Attendance/habit progress is derived from source-of-truth tables at read
  * time — same convention as computeWeekStreak in progress.ts — rather than
  * a stored counter. challenge_participants.progress_value has no RLS

@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { requireOwner } from "@/lib/auth";
 import { CreateChallengeForm } from "./CreateChallengeForm";
+import { formatChallengeDates } from "@/lib/challenges";
 
 const TYPE_LABEL: Record<string, string> = {
-  attendance: "Attendance",
-  habit: "Habit",
-  event_prep: "Event prep",
-  team: "Team",
+  attendance: "Classes attended",
+  habit: "Habit days",
+  event_prep: "You track it",
+  team: "Team · you track it",
 };
 
 export default async function ManageChallengesPage() {
@@ -62,7 +63,7 @@ export default async function ManageChallengesPage() {
                 </p>
                 <p className="text-blueprint-ink font-medium">{challenge.title}</p>
                 <p className="text-xs text-blueprint-muted mt-1">
-                  {challenge.starts_at} → {challenge.ends_at} · target {challenge.target_value} ·{" "}
+                  {formatChallengeDates(challenge.starts_at, challenge.ends_at)} · target {challenge.target_value} ·{" "}
                   {participantCountByChallenge.get(challenge.id) ?? 0} joined
                 </p>
               </li>

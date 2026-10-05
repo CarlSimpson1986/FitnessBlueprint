@@ -6,10 +6,10 @@ import { createChallenge } from "./actions";
 import type { ChallengeType } from "@/lib/challenges";
 
 const TYPE_OPTIONS: { value: ChallengeType; label: string }[] = [
-  { value: "attendance", label: "Attendance (auto-tracked)" },
-  { value: "habit", label: "Habit (auto-tracked)" },
-  { value: "event_prep", label: "Event prep (you track manually)" },
-  { value: "team", label: "Team (you track manually)" },
+  { value: "attendance", label: "Classes attended (counted automatically)" },
+  { value: "habit", label: "Days a habit is ticked (counted automatically)" },
+  { value: "event_prep", label: "Anything else, e.g. steps or an event (you track it)" },
+  { value: "team", label: "Team (you track it)" },
 ];
 
 export function CreateChallengeForm() {

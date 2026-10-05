@@ -54,6 +54,20 @@ export type SessionEconomicsResult = {
  * happened (session_date in the past, not coach-cancelled) count, since
  * a scheduled-but-not-yet-run session has no attendance signal yet.
  */
+/** Runs a ranged query page by page (1,000 rows each) and returns every row. */
+async function fetchAllPages<T>(
+  page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>
+): Promise<T[]> {
+  const size = 1000;
+  const rows: T[] = [];
+  for (let from = 0; ; from += size) {
+    const { data, error } = await page(from, from + size - 1);
+    if (error) throw new Error(error.message);
+    rows.push(...(data ?? []));
+    if (!data || data.length < size) return rows;
+  }
+}
+
 export async function fetchSessionEconomics(
   startDate: Date,
   endDate: Date
@@ -63,14 +77,19 @@ export async function fetchSessionEconomics(
   const rangeEnd = toLocalDateKey(endDate);
   const effectiveEnd = rangeEnd < today ? rangeEnd : today;
 
-  const { data: sessions } = await supabase
-    .from("sessions")
-    .select("id, session_date, start_time, capacity, coach_id, template_id, status")
-    .neq("status", "cancelled")
-    .gte("session_date", toLocalDateKey(startDate))
-    .lt("session_date", effectiveEnd);
-
-  const sessionRows = sessions ?? [];
+  const rangeStart = toLocalDateKey(startDate);
+  // Paged: a query returns at most 1,000 rows, which a few months of
+  // sessions/bookings passes — the figures were silently cut short.
+  const sessionRows = await fetchAllPages((from, to) =>
+    supabase
+      .from("sessions")
+      .select("id, session_date, start_time, capacity, coach_id, template_id, status")
+      .neq("status", "cancelled")
+      .gte("session_date", rangeStart)
+      .lt("session_date", effectiveEnd)
+      .order("id")
+      .range(from, to)
+  );
   const sessionIds = sessionRows.map((s) => s.id);
 
   if (sessionIds.length === 0) {
@@ -95,8 +114,19 @@ export async function fetchSessionEconomics(
   const coachIds = [...new Set(sessionRows.map((s) => s.coach_id))];
   const templateIds = [...new Set(sessionRows.map((s) => s.template_id))];
 
-  const [{ data: bookings }, { data: coaches }, { data: templates }] = await Promise.all([
-    supabase.from("bookings").select("session_id, status").in("session_id", sessionIds),
+  // Filtered by the session's date through the join, not by listing every
+  // session id in the URL (slow, and too long for a long period).
+  const [bookings, { data: coaches }, { data: templates }] = await Promise.all([
+    fetchAllPages((from, to) =>
+      supabase
+        .from("bookings")
+        .select("id, session_id, status, sessions!inner(session_date, status)")
+        .gte("sessions.session_date", rangeStart)
+        .lt("sessions.session_date", effectiveEnd)
+        .neq("sessions.status", "cancelled")
+        .order("id")
+        .range(from, to)
+    ),
     supabase.from("profiles").select("id, full_name").in("id", coachIds),
     supabase.from("session_templates").select("id, name").in("id", templateIds),
   ]);
