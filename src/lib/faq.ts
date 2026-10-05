@@ -58,7 +58,7 @@ export const FAQ: FaqSection[] = [
       {
         question: "How do I cancel, and do I lose anything?",
         answer:
-          "In My bookings, open Schedule and tap Cancel next to the class. Cancel at least 3 hours before it starts and your credit comes back. Inside 3 hours you lose the credit (on a weekly plan, that week's place). If something came up, message your coach: they can excuse it and give the credit back.",
+          "In My bookings, open Schedule and tap Cancel next to the class. Please cancel at least 3 hours before it starts so someone on the waitlist can have your place. A drop-in cancelled inside 3 hours isn't refunded, unless your coach excuses it, so tell them if something came up.",
       },
       {
         question: "Can I see the workout before I book?",
@@ -73,12 +73,12 @@ export const FAQ: FaqSection[] = [
       {
         question: "How many classes can I book?",
         answer:
-          "It depends on your plan. Weekly plans (for example 2x per week) cover that many classes each Monday to Sunday week; the top of My bookings shows how many you've used. Packs and drop-ins use one credit per class.",
+          "It depends on your plan. Plans like 1x or 2x per week (including the 6-week programmes) cover that many classes each Monday to Sunday week, and Unlimited has no weekly cap; the top of My bookings shows how many you've used. Hyrox only covers Hyrox classes. A drop-in is one class.",
       },
       {
-        question: "Do my credits run out?",
+        question: "My programme is ending. What happens next?",
         answer:
-          "You can see your credits and plan under Profile, then Purchases & credits. Ask Guy how long pack credits last.",
+          "The 6-week and 21-day programmes run for a set number of days, and you can book classes up to the last one; your end date shows when you try to book past it. To carry on training with us, speak to Guy about a monthly membership. You can see your plan under Profile, then Purchases & credits.",
         guyToConfirm: true,
       },
       {

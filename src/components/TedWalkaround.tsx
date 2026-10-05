@@ -24,7 +24,7 @@ const STEPS: Step[] = [
   },
   {
     title: "Book a class",
-    body: "My bookings, then Schedule, then Book. Can't make it? Cancel at least 3 hours before and you keep your credit. Full? Join the waitlist and grab a place if one opens up.",
+    body: "My bookings, then Schedule, then Book. Can't make it? Cancel at least 3 hours before so someone else can have your place. Full? Join the waitlist and grab a place if one opens up.",
     target: "/sessions",
   },
   {
