@@ -165,7 +165,11 @@ ${question}` : question;
   // Streamed as plain text so the answer appears as it's written. The
   // conversation is saved once it's finished — the function stays alive
   // until the stream closes.
+  // The id is chosen now and sent as a header, so the chat can offer
+  // thumbs up/down on this answer as soon as it finishes (0053).
+  const conversationId = crypto.randomUUID();
   const encoder = new TextEncoder();
+  let removedItems: string[] = [];
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       let answer = "";
@@ -192,15 +196,18 @@ ${question}` : question;
       if (checked.removed.length) {
         console.warn("Coach Ted: removed unapproved numbers/links", { member: user.id, removed: checked.removed });
         answer = checked.text;
+        removedItems = checked.removed;
         controller.enqueue(encoder.encode(ANSWER_REPLACED_MARKER + answer));
       }
 
       if (answer.trim()) {
         const { error: saveError } = await admin.from("coach_ted_conversations").insert({
+          id: conversationId,
           member_id: user.id,
           question,
           answer,
           was_served_from_cache: false,
+          removed_items: removedItems,
         });
         if (saveError) console.error("Coach Ted: saving the conversation failed:", saveError);
       }
@@ -208,5 +215,7 @@ ${question}` : question;
     },
   });
 
-  return new Response(stream, { headers: { "Content-Type": "text/plain; charset=utf-8" } });
+  return new Response(stream, {
+    headers: { "Content-Type": "text/plain; charset=utf-8", "X-Ted-Conversation-Id": conversationId },
+  });
 }

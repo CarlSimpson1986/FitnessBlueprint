@@ -8,8 +8,9 @@ import { TedAnswersClient, type TedAnswerRow } from "./TedAnswersClient";
  * the old shared answer cache, repurposed 2026-09-25). Read via "owner reads qa cache"
  * (0003) on the owner's RLS-respecting client.
  */
-export default async function TedAnswersPage() {
+export default async function TedAnswersPage({ searchParams }: { searchParams: Promise<{ question?: string }> }) {
   const { supabase } = await requireOwner();
+  const { question } = await searchParams;
 
   const { data } = await supabase
     .from("coach_ted_qa_cache")
@@ -34,7 +35,11 @@ export default async function TedAnswersPage() {
           your own answer to a common question and Ted will follow it (tailored to each member) whenever
           someone asks something with the same meaning. Hide an answer to stop Ted using it.
         </p>
-        <TedAnswersClient rows={(data ?? []) as TedAnswerRow[]} threshold={OWNER_ANSWER_THRESHOLD} />
+        <TedAnswersClient
+          rows={(data ?? []) as TedAnswerRow[]}
+          threshold={OWNER_ANSWER_THRESHOLD}
+          initialQuestion={question?.slice(0, 1000) ?? ""}
+        />
       </div>
     </main>
   );

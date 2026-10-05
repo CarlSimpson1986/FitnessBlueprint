@@ -118,9 +118,9 @@ function AnswerCard({ row }: { row: TedAnswerRow }) {
   );
 }
 
-function AddAnswer() {
+function AddAnswer({ initialQuestion }: { initialQuestion: string }) {
   const { run, isPending, error } = useAction();
-  const [question, setQuestion] = useState("");
+  const [question, setQuestion] = useState(initialQuestion);
   const [answer, setAnswer] = useState("");
 
   return (
@@ -217,11 +217,20 @@ function ReindexButton() {
   );
 }
 
-export function TedAnswersClient({ rows, threshold }: { rows: TedAnswerRow[]; threshold: number }) {
+export function TedAnswersClient({
+  rows,
+  threshold,
+  initialQuestion = "",
+}: {
+  rows: TedAnswerRow[];
+  threshold: number;
+  /** Pre-filled from /owner/ted-conversations ("Write your answer"). */
+  initialQuestion?: string;
+}) {
   return (
     <div className="space-y-6">
       <SimilarityTester threshold={threshold} />
-      <AddAnswer />
+      <AddAnswer initialQuestion={initialQuestion} />
       <div>
         <div className="flex items-center justify-between mb-3">
           <p className="fb-eyebrow">Your answers ({rows.length})</p>

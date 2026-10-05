@@ -29,7 +29,11 @@ const NAV: (NavLink & { children: NavLink[] })[] = [
       { href: "/admin/events", label: "Events" },
     ],
   },
-  { href: "/admin/ted-answers", label: "Coach Ted", children: [] },
+  {
+    href: "/admin/ted-answers",
+    label: "Coach Ted",
+    children: [{ href: "/owner/ted-conversations", label: "Conversations" }],
+  },
   {
     href: "/owner/income",
     label: "Business",

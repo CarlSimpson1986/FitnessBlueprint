@@ -657,6 +657,10 @@ export type Database = {
           matched_qa_cache_id: string | null
           was_served_from_cache: boolean
           created_at: string
+          member_rating: "up" | "down" | null
+          rated_at: string | null
+          removed_items: string[]
+          owner_reviewed_at: string | null
         }
         Insert: {
           id?: string
@@ -666,6 +670,10 @@ export type Database = {
           matched_qa_cache_id?: string | null
           was_served_from_cache?: boolean
           created_at?: string
+          member_rating?: "up" | "down" | null
+          rated_at?: string | null
+          removed_items?: string[]
+          owner_reviewed_at?: string | null
         }
         Update: {
           id?: string
@@ -675,6 +683,10 @@ export type Database = {
           matched_qa_cache_id?: string | null
           was_served_from_cache?: boolean
           created_at?: string
+          member_rating?: "up" | "down" | null
+          rated_at?: string | null
+          removed_items?: string[]
+          owner_reviewed_at?: string | null
         }
         Relationships: []
       }
@@ -1503,6 +1515,10 @@ export type Database = {
       claim_ted_question: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      rate_ted_answer: {
+        Args: { p_conversation_id: string; p_rating: string | null }
+        Returns: undefined
       }
       lookup_member_by_email: {
         Args: {

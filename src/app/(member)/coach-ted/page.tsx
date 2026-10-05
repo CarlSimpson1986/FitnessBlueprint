@@ -14,7 +14,7 @@ export default async function CoachTedPage() {
 
   const { data: conversations } = await supabase
     .from("coach_ted_conversations")
-    .select("id, question, answer, created_at")
+    .select("id, question, answer, created_at, member_rating")
     .eq("member_id", user.id)
     .order("created_at", { ascending: false })
     .limit(HISTORY_LIMIT);
@@ -22,7 +22,7 @@ export default async function CoachTedPage() {
   const initialMessages = (conversations ?? [])
     .slice()
     .reverse()
-    .map((c) => ({ id: c.id, question: c.question, answer: c.answer }));
+    .map((c) => ({ id: c.id, question: c.question, answer: c.answer, conversationId: c.id, rating: c.member_rating }));
 
   return (
     <main className="min-h-screen px-5 py-8">

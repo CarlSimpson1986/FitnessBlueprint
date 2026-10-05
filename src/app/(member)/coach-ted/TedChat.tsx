@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState, type FormEvent } from "react";
 import { TedText } from "./TedText";
 import { ANSWER_REPLACED_MARKER } from "@/lib/coach-ted/answer-check";
+import { rateTedAnswer } from "./actions";
 
 /** The server's answer check may send a corrected answer after the stream; it replaces what streamed. */
 function shownAnswer(streamed: string) {
@@ -11,10 +12,15 @@ function shownAnswer(streamed: string) {
   return at === -1 ? streamed : streamed.slice(at + ANSWER_REPLACED_MARKER.length);
 }
 
+type Rating = "up" | "down" | null;
+
 type Message = {
   id: string;
   question: string;
   answer: string | null;
+  /** Null while an answer is still streaming, or if it wasn't saved. */
+  conversationId: string | null;
+  rating: Rating;
 };
 
 export function TedChat({ initialMessages }: { initialMessages: Message[] }) {
@@ -33,7 +39,7 @@ export function TedChat({ initialMessages }: { initialMessages: Message[] }) {
     setError(null);
     setIsSubmitting(true);
     const pendingId = `pending-${Date.now()}`;
-    setMessages((prev) => [...prev, { id: pendingId, question: trimmed, answer: null }]);
+    setMessages((prev) => [...prev, { id: pendingId, question: trimmed, answer: null, conversationId: null, rating: null }]);
     setQuestion("");
 
     const setAnswer = (answer: string) =>
@@ -67,11 +73,28 @@ export function TedChat({ initialMessages }: { initialMessages: Message[] }) {
       }
       answer = shownAnswer(answer + decoder.decode());
       setAnswer(answer || "Sorry — I didn't catch that. Please try again.");
+      const conversationId = res.headers.get("X-Ted-Conversation-Id");
+      if (answer && conversationId) {
+        setMessages((prev) => prev.map((m) => (m.id === pendingId ? { ...m, conversationId } : m)));
+      }
     } catch {
       setMessages((prev) => prev.filter((m) => m.id !== pendingId));
       setError("Something went wrong — please try again.");
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function rate(message: Message, rating: Rating) {
+    if (!message.conversationId) return;
+    const next = message.rating === rating ? null : rating;
+    const setRating = (value: Rating) =>
+      setMessages((prev) => prev.map((m) => (m.id === message.id ? { ...m, rating: value } : m)));
+    setRating(next);
+    const result = await rateTedAnswer(message.conversationId, next);
+    if (result.error) {
+      setRating(message.rating);
+      setError(result.error);
     }
   }
 
@@ -105,6 +128,27 @@ export function TedChat({ initialMessages }: { initialMessages: Message[] }) {
                 <TedText text={message.answer} />
               )}
             </div>
+            {message.conversationId && (
+              <div className="mr-8 flex items-center gap-3 pl-1">
+                {(["up", "down"] as const).map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => rate(message, value)}
+                    aria-pressed={message.rating === value}
+                    className={
+                      "text-xs font-mono uppercase tracking-wide transition " +
+                      (message.rating === value ? "text-blueprint-accent" : "text-blueprint-muted hover:text-blueprint-ink")
+                    }
+                  >
+                    {value === "up" ? "Helpful" : "Not helpful"}
+                  </button>
+                ))}
+                {message.rating === "down" && (
+                  <span className="text-xs text-blueprint-muted">Thanks, Guy will take a look.</span>
+                )}
+              </div>
+            )}
           </div>
         ))}
       </div>

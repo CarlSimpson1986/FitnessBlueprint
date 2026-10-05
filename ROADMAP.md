@@ -393,10 +393,19 @@ that far — src/lib/booking-window.ts).
 - **Architect review (2026-10-05) follow-ups:** Coach Ted now needs an
   active membership (staff exempt) — every member on the app has one until
   full migration, per Carl; the View-as Test Member needs one assigned to
-  see Ted. Still to do: owner page to review Ted conversations (+ member
-  thumbs-down, removed-number log), Ted eval on Sonnet 5.5, SQL tests for
-  booking/credit/waitlist functions. 0038 can run as soon as Carl is able
-  (the app already forces staff two-factor, so it locks no one out).
+  see Ted. 0038 and 0052 run 2026-10-05 (staff two-factor now enforced
+  in RLS). **Ted review (0053, to run BEFORE deploying the commit that
+  uses it):** members rate answers Helpful / Not helpful; removed
+  numbers/links are saved per answer; owner page /owner/ted-conversations
+  ("Needs a look" = not helpful or removed, until Guy marks reviewed;
+  "Write your answer" pre-fills /admin/ted-answers). **SQL tests:**
+  supabase/manual/booking-credit-tests.sql — 24 checks on book/cancel/
+  credits/weekly limit/programme end/Hyrox-only/waitlist; always ends in
+  an "error" that rolls everything back (safe on prod). Sonnet 5.5 eval
+  was already done 2026-10-02 (see Coach Ted section) — Carl chose Haiku.
+  Found while writing tests: join_waitlist() doesn't require a
+  membership, so a non-member can be offered (and hold for 2h) a place
+  they can't book.
 - `gemini-embedding-001` no longer appears on Google's pricing page
   (Gemini Embedding 2 is current) — may be retired next; if so switch
   EMBEDDING_MODEL and press Re-index on /admin/ted-answers.
