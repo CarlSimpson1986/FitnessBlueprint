@@ -264,8 +264,10 @@ templates live in the dashboard; re-check after any Supabase project change.
    eval, privacy-notice line (Gemini checked 2026-10-02: UK users get paid-tier data terms even on the free key, so nothing to do), open signup
    (Guy's call).
 4. **Two-factor (0038 not yet run).** Code is live; Carl has enrolled.
-   Once Guy has set his up (he's prompted on next visit), Carl runs
-   0038 to enforce it in RLS.
+   Guy's owner account was created 2026-10-05 via Admin → Members
+   (welcome "Set your password" link, valid 7 days — after that he uses
+   "Email me a sign-in link"). Once he's signed in and set up two-factor
+   (prompted on first visit), Carl runs 0038 to enforce it in RLS.
 5. Waiting on Guy: monthly check-in (replace weekly?), leaderboard
    (ranked on what? opt-out?), refer a friend (passes? takes a space?).
 
