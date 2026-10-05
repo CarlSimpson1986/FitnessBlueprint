@@ -1,4 +1,4 @@
-import { SEGMENT_TYPE_ACCENT, SEGMENT_TYPE_LABEL, describeSet, type SegmentDraft } from "@/lib/workout-content";
+import { SEGMENT_TYPE_ACCENT, describeSet, segmentDisplayLabel, type SegmentDraft } from "@/lib/workout-content";
 
 /**
  * Read-only "what a member would see" preview, phone-framed. Renders
@@ -36,7 +36,7 @@ export function MemberWorkoutPreview({
               <p className="text-xs text-blueprint-muted">Nothing built yet.</p>
             ) : (
               <div className="space-y-3">
-                {segments.map((segment) => (
+                {segments.map((segment, segIndex) => (
                   <div
                     key={segment.key}
                     className="rounded overflow-hidden border border-blueprint-line"
@@ -44,7 +44,7 @@ export function MemberWorkoutPreview({
                   >
                     <div className="bg-blueprint-raised/60 px-3 py-1.5">
                       <p className="text-[11px] text-blueprint-muted">
-                        {segment.label || SEGMENT_TYPE_LABEL[segment.type]}
+                        {segmentDisplayLabel(segments, segIndex)}
                       </p>
                     </div>
                     <div className="p-2 space-y-2.5">

@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { SEGMENT_TYPE_ACCENT, SEGMENT_TYPE_LABEL, type MetricType, type SegmentType } from "@/lib/workout-content";
+import { SEGMENT_TYPE_ACCENT, segmentDisplayLabel, type MetricType, type SegmentType } from "@/lib/workout-content";
 import { finishWorkout, logExerciseSet } from "./actions";
 
 export type LiveSet = {
@@ -299,7 +299,7 @@ export function LiveLogging({
             if (segIndex > reachedIndex) {
               return (
                 <p key={segment.id} className="text-xs text-blueprint-dim">
-                  {segment.label || SEGMENT_TYPE_LABEL[segment.type]}
+                  {segmentDisplayLabel(segments, segIndex)}
                 </p>
               );
             }
@@ -309,7 +309,7 @@ export function LiveLogging({
               return (
                 <div key={segment.id} className="fb-card">
                   <DoneRow
-                    label={segment.label || SEGMENT_TYPE_LABEL[segment.type]}
+                    label={segmentDisplayLabel(segments, segIndex)}
                     onEdit={segment.isScored ? () => setReopenedId(segment.id) : undefined}
                   />
                 </div>
@@ -331,7 +331,7 @@ export function LiveLogging({
               >
                 <div className="bg-blueprint-raised/60 px-4 py-2">
                   <p className="text-xs text-blueprint-muted">
-                    {segment.label || SEGMENT_TYPE_LABEL[segment.type]}
+                    {segmentDisplayLabel(segments, segIndex)}
                     {isCircuit ? " · repeat as shown · log as you go" : ""}
                   </p>
                 </div>

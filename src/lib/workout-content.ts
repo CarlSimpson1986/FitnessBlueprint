@@ -22,6 +22,24 @@ export const SEGMENT_TYPE_LABEL: Record<SegmentType, string> = {
   cooldown: "Cooldown",
 };
 
+/**
+ * What a section is called on screen: its own label if Guy gave one;
+ * otherwise warm-ups and cool-downs by name, and every other section
+ * "Part A", "Part B"… in order — how Guy writes the board (2026-10-05).
+ */
+export function segmentDisplayLabel(
+  segments: { type: SegmentType; label: string | null }[],
+  index: number
+): string {
+  const segment = segments[index]!;
+  if (segment.label?.trim()) return segment.label.trim();
+  if (segment.type === "warmup" || segment.type === "cooldown") return SEGMENT_TYPE_LABEL[segment.type];
+  const position = segments
+    .slice(0, index + 1)
+    .filter((s) => s.type !== "warmup" && s.type !== "cooldown").length;
+  return `Part ${String.fromCharCode(64 + position)}`;
+}
+
 // A header-bar accent per segment type, so a wide multi-column layout of
 // segment "blocks" is scannable at a glance (matches the coach's mental
 // model of a workout as a row of distinct blocks).

@@ -17,6 +17,7 @@ import {
   type SegmentInput,
   type SegmentType,
   type IntensityType,
+  segmentDisplayLabel,
 } from "@/lib/workout-content";
 
 function numberOrNull(value: string): number | null {
@@ -244,7 +245,7 @@ export function SegmentExerciseEditor({
                 </select>
                 <input
                   className={inputClass()}
-                  placeholder="Label (optional), e.g. Part A"
+                  placeholder={`Shows as "${segmentDisplayLabel(segments, segIndex)}" — or type your own name`}
                   value={segment.label}
                   onChange={(e) => updateSegment(segIndex, { label: e.target.value })}
                 />
