@@ -403,6 +403,10 @@ that far — src/lib/booking-window.ts).
   credits/weekly limit/programme end/Hyrox-only/waitlist; always ends in
   an "error" that rolls everything back (safe on prod). Sonnet 5.5 eval
   was already done 2026-10-02 (see Coach Ted section) — Carl chose Haiku.
+  **Tests found 0012 not live** (late cancels were refunded) →
+  **0054 re-applies it (to run)**. supabase/manual/function-audit.sql
+  (read-only, regenerate with the scratchpad audit script if functions
+  change) lists any live function that doesn't match its latest migration.
   Found while writing tests: join_waitlist() doesn't require a
   membership, so a non-member can be offered (and hold for 2h) a place
   they can't book.
