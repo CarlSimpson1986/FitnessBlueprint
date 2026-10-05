@@ -415,7 +415,7 @@ Carl gives the go-ahead — target end of this week / weekend):
   **Guy to check FAQ answers marked guyToConfirm:** what happens when a
   6-week/21-day programme ends; pausing/changing/cancelling membership
   ("speak to Guy"). No credit packs in this app (PT only, Carl).
-  **0059 (to run, then deploy):** per the spec ("lose the booking
+  **0059 (run + deployed 2026-10-05, tests 34/34):** per the spec ("lose the booking
   credit"), a cancel inside 3 hours now uses up that week's class; also
   attended/no-show classes keep counting (before, marking attendance
   freed the place). Excusing gives it back. Cancel inside 3 hours shows
