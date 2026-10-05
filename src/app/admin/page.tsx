@@ -26,7 +26,7 @@ export default async function AdminPage() {
           {/* On a laptop the owner has these in the sidebar (OwnerShell). */}
           <div className={(isOwner ? "lg:hidden " : "") + "flex items-center gap-4"}>
             <Link
-              href="/account/settings"
+              href="/admin/account"
               className="text-xs text-blueprint-muted hover:text-blueprint-accent transition"
             >
               Account settings

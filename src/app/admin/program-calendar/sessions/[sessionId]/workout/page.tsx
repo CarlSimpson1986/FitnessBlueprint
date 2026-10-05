@@ -68,7 +68,7 @@ export default async function SessionWorkoutPage({
                 <SessionRoster sessionId={sessionId} canMark={isMine} />
               </div>
             )}
-            <MemberWorkoutPreview title={template?.name ?? "Session"} segments={initialSegments} />
+            <MemberWorkoutPreview title={template?.name ?? "Session"} segments={initialSegments} showCoachNotes />
           </div>
         </div>
       </main>

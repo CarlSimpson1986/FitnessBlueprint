@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { HomeLink } from "@/components/HomeLink";
 import { SetPasswordForm } from "../SetPasswordForm";
@@ -7,6 +8,8 @@ import { HealthSettingsCard } from "./HealthSettingsCard";
 
 export default async function AccountSettingsPage() {
   const { profile } = await requireProfile();
+  // Coaches and the owner have their own settings page in admin.
+  if (profile.role !== "member") redirect("/admin/account");
 
   return (
     <main className="min-h-screen px-5 py-8 pb-24">
@@ -30,13 +33,9 @@ export default async function AccountSettingsPage() {
         <p className="fb-eyebrow mt-10 mb-3">Health info</p>
         <HealthSettingsCard consent={profile.health_consent} trackBodyMetrics={profile.track_body_metrics} />
 
-        {/* Members get their bookings, the owner the whole gym. Not coaches (owner's call). */}
-        {(profile.role === "member" || profile.role === "owner") && (
-          <>
-            <p className="fb-eyebrow mt-10 mb-3">Add to your calendar</p>
-            <CalendarFeedCard isOwner={profile.role === "owner"} />
-          </>
-        )}
+        {/* Members get their bookings here; the owner's whole-gym feed is on /admin/account. */}
+        <p className="fb-eyebrow mt-10 mb-3">Add to your calendar</p>
+        <CalendarFeedCard isOwner={false} />
       </div>
     </main>
   );

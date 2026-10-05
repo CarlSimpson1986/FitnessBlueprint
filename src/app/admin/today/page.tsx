@@ -92,6 +92,7 @@ export default async function TodayPage() {
                         <MemberWorkoutPreview
                           title={templateNameById.get(session.template_id) ?? "Session"}
                           segments={workoutBySession.get(session.id) ?? []}
+                          showCoachNotes
                         />
                       </div>
                     )}

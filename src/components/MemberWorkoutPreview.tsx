@@ -9,10 +9,23 @@ import { SEGMENT_TYPE_ACCENT, SEGMENT_TYPE_LABEL, describeSet, type SegmentDraft
  * real logging actions, which makes no sense for previewing content
  * that may not even be saved. This mirrors its visual structure only.
  */
-export function MemberWorkoutPreview({ title, segments }: { title: string; segments: SegmentDraft[] }) {
+export function MemberWorkoutPreview({
+  title,
+  segments,
+  showCoachNotes = false,
+}: {
+  title: string;
+  segments: SegmentDraft[];
+  /**
+   * Show each exercise's note as a "Coach note" — for coaches' own views
+   * (Today, their session page). Members never see notes (Carl/Guy,
+   * 2026-10-05), so the owner's builder preview leaves this off.
+   */
+  showCoachNotes?: boolean;
+}) {
   return (
     <div className="shrink-0" style={{ width: 300 }}>
-      <p className="fb-eyebrow mb-2 text-center">Member preview</p>
+      <p className="fb-eyebrow mb-2 text-center">{showCoachNotes ? "Session plan" : "Member preview"}</p>
       <div className="rounded-[28px] border-4 border-blueprint-line bg-black p-2 mx-auto sticky top-4" style={{ width: 300 }}>
         <div className="rounded-[20px] overflow-hidden bg-black" style={{ height: 560 }}>
           <div className="h-full overflow-y-auto px-4 py-5">
@@ -41,6 +54,9 @@ export function MemberWorkoutPreview({ title, segments }: { title: string; segme
                             {exercise.name.trim() || "Untitled exercise"}
                             {exercise.eachSide ? " (each side)" : ""}
                           </p>
+                          {showCoachNotes && exercise.note.trim() && (
+                            <p className="text-[10px] text-blueprint-accent mt-0.5">Coach note: {exercise.note.trim()}</p>
+                          )}
                           <ul className="mt-1 space-y-0.5">
                             {exercise.sets.map((set, i) => (
                               <li key={set.key} className="text-[10px] text-blueprint-muted flex justify-between gap-2">

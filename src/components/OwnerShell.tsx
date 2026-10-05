@@ -109,7 +109,7 @@ export function OwnerShell({ children }: { children: ReactNode }) {
         </nav>
         <div className="border-t border-blueprint-line pt-4 mt-6 space-y-1">
           <Link
-            href="/account/settings"
+            href="/admin/account"
             className="block rounded px-2 py-1.5 text-sm text-blueprint-muted hover:text-blueprint-ink transition"
           >
             Account settings
