@@ -402,6 +402,22 @@ Carl gives the go-ahead — target end of this week / weekend):
     on) or Guy; roster flags late cancellations with an Excuse button;
     refund logged as excused_refund with who did it.
   - Builder label placeholder now "e.g. Part A".
+- **Help & FAQs + new tour (2026-10-05):** /help (Profile -> Help &
+  FAQs), written from Claude walking the app as Test Member. Same text
+  (src/lib/faq.ts) is in Ted's prompt ("How the app works"): before it,
+  Ted answered "how do I cancel?" with "ask your coach" + water advice.
+  Ted is told to assume the app lacks anything not listed — Haiku still
+  invented buttons for uncovered questions (habit Edit, workout preview,
+  watch data) until each got an FAQ entry; new app questions may still
+  get made-up answers on Haiku. Tour rewritten as the first week (Get
+  app, book/cancel 3h/waitlist, check-in/Start session/Finish section/
+  rate, Ted, Sunday check-in, Help); Profile -> Show me round again.
+  **Guy to check FAQ answers marked guyToConfirm:** how long pack
+  credits last; pausing/changing/cancelling membership ("speak to Guy").
+  Walkthrough findings: classes in Schedule can't be tapped for details
+  (no workout preview before the day); 10k Steps challenge is labelled
+  "Attendance" and shows ISO dates (2026-10-03 -> 2026-10-31); Purchases
+  says "see the team in person" with no next-payment date.
 - Needs Guy's decision (Carl: ask Guy first): an "admin" role (e.g. Hannah) — everything except
   the money pages? Can they edit, or view only? (CLAUDE.md: only the
   owner edits today.)

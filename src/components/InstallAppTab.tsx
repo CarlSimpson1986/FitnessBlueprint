@@ -25,6 +25,7 @@ export function InstallAppTab() {
       <button
         type="button"
         onClick={handleClick}
+        data-tour="install"
         className="flex flex-col items-center gap-1 px-3 text-blueprint-ink"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" width={20} height={20}>

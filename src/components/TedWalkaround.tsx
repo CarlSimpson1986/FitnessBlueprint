@@ -8,29 +8,42 @@ import { markTedTourSeen } from "@/app/(member)/ted-tour-actions";
 /** `target` matches a `data-tour` attribute (the bottom-nav tabs set one per href). */
 type Step = { title: string; body: string; target?: string };
 
+// A new member's first week, in order (Carl, 2026-10-05): the old tour
+// named the tabs but never said how to book, log a class or check in.
+// Kept to one or two sentences a step; the details live in Help & FAQs
+// (src/lib/faq.ts), which the last step points to.
 const STEPS: Step[] = [
   {
     title: "Hey, I'm Ted",
-    body: "I'll show you round the app real quick — four things to know, then you're set.",
+    body: "Thirty seconds and you'll know how everything works. Tap Next.",
   },
   {
-    title: "My bookings",
-    body: "Book a session, cancel one, or join the waitlist for a full class — this tab always shows what's coming up for you.",
+    title: "First, keep me handy",
+    body: "Tap Get app to put Fitness Blueprint on your home screen, so it opens like any other app.",
+    target: "install",
+  },
+  {
+    title: "Book a class",
+    body: "My bookings, then Schedule, then Book. Can't make it? Cancel at least 3 hours before and you keep your credit. Full? Join the waitlist and grab a place if one opens up.",
     target: "/sessions",
   },
   {
-    title: "Coach Ted",
-    body: "That's me. Ask me anything about training, nutrition, or recovery, any time — I'll always point you back to your coach for anything specific to you.",
+    title: "On the day",
+    body: "Do the quick check-in before class so your coach knows how you're feeling. In class, tap Start session, log as you go and tap Finish section. Afterwards, rate the class.",
+  },
+  {
+    title: "Ask me anything",
+    body: "Training, food, sleep, recovery, or how the app works. I know your goals and check-ins, and I use real research.",
     target: "/coach-ted",
   },
   {
-    title: "Progress",
-    body: "Log your workouts, body metrics, and daily habits here, and set a 6-week goal with me — then check in every week so we can see how it's going.",
+    title: "Your progress",
+    body: "Your streak, lifts and habits. Every Sunday I'll ask how your week went: it takes a minute.",
     target: "/progress",
   },
   {
-    title: "Profile",
-    body: "Account settings, your purchases and credits, and logging out all live here.",
+    title: "Stuck? Help is here",
+    body: "Profile has Help & FAQs, your settings, and Show me round again if you want this tour back.",
     target: "/account",
   },
 ];

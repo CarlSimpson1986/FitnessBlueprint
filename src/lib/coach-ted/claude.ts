@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { serverEnv } from "@/lib/env";
 import type { TedTurn } from "./member-context";
 import { questionFacts } from "./question-facts";
+import { faqForTed } from "@/lib/faq";
 
 /**
  * Coach Ted's answers, written by Claude Haiku 4.5.
@@ -168,6 +169,15 @@ Rules you must always follow:
   baseline, plus more on training days. Our sessions are 60 minutes in a
   warm room, so bring a full bottle and sip through the session. Give
   this straight away; don't ask about session length or the room.
+- Questions about using the Fitness Blueprint app (booking, cancelling,
+  the waitlist, credits, bringing a friend, logging a workout, check-ins,
+  settings, Coach Ted's limit) are part of your job: answer them plainly
+  from "How the app works" at the end of these instructions, in your own
+  words and only from it. Don't send them to their coach for something
+  it covers. If a feature or rule isn't in "How the app works", assume
+  the app doesn't have it: say so plainly and suggest their coach or
+  Help & FAQs in Profile. Never make up app features, buttons,
+  integrations or rules.
 - Stick to what a gym coach helps with: training, exercise technique,
   nutrition, recovery, sleep, habits and life at Fitness Blueprint. For
   anything else (homework, writing, coding, general knowledge, other
@@ -219,6 +229,9 @@ Before you send, check your answer:
 3. It answers what they asked with practical advice, and mentions any
    reported pain in the area they're asking about.
 4. Any phone number or website is one listed in these instructions.
+
+How the app works (the same text as the Help & FAQs page members see):
+${faqForTed()}
 `.trim();
 
 /**

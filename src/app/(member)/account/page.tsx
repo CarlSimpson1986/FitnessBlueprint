@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
 import { HomeLink } from "@/components/HomeLink";
 import { signOut } from "./actions";
+import { replayTedTour } from "../ted-tour-actions";
 
 function MenuRow({ href, label, hint }: { href: string; label: string; hint?: string }) {
   return (
@@ -52,8 +53,18 @@ export default async function AccountPage() {
           <MenuRow href="/goals" label="Goals" />
           <MenuRow href="/account/settings" label="Account settings" />
           <MenuRow href="/account/purchases" label="Purchases & credits" />
+          <MenuRow href="/help" label="Help & FAQs" />
           <MenuRow href="/privacy" label="Privacy notice" />
         </div>
+
+        <form action={replayTedTour} className="mt-2">
+          <button
+            type="submit"
+            className="w-full text-left text-sm text-blueprint-muted hover:text-blueprint-accent px-1 py-2 transition"
+          >
+            Show me round again
+          </button>
+        </form>
 
         <form action={signOut} className="mt-6">
           <button type="submit" className="fb-btn-secondary w-full">
