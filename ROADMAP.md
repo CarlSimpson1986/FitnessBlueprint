@@ -386,7 +386,7 @@ that far — src/lib/booking-window.ts).
 **Carl / Guy walkthrough 2026-10-05 — actions** (Guy has signed in and
 set up two-factor; he'll invite 5-10 tech-savvy members, e.g. Akil, once
 Carl gives the go-ahead — target end of this week / weekend):
-- **Built 2026-10-05 (run 0056, 0057, 0058 BEFORE deploying):**
+- **Built and deployed 2026-10-05 (0056, 0057, 0058 run by Carl):**
   - Live session: Finish section per section, Edit to reopen a finished
     one, Finish workout only when all done (else "End workout early").
   - 0057 Not scored sections (builder tick; warm-up/cool-down default
