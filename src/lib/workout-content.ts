@@ -23,21 +23,23 @@ export const SEGMENT_TYPE_LABEL: Record<SegmentType, string> = {
 };
 
 /**
- * What a section is called on screen: its own label if Guy gave one;
- * otherwise warm-ups and cool-downs by name, and every other section
- * "Part A", "Part B"… in order — how Guy writes the board (2026-10-05).
+ * What a section is called on screen: "Part A", "Part B"… in order, plus
+ * Guy's title if he gave one ("Part A · Strength") — how he writes the
+ * board (2026-10-05). Warm-up / cool-down sections (older programmes;
+ * coach-led, no longer offered in the builder) keep their name, unlettered.
  */
 export function segmentDisplayLabel(
   segments: { type: SegmentType; label: string | null }[],
   index: number
 ): string {
   const segment = segments[index]!;
-  if (segment.label?.trim()) return segment.label.trim();
-  if (segment.type === "warmup" || segment.type === "cooldown") return SEGMENT_TYPE_LABEL[segment.type];
+  const title = segment.label?.trim();
+  if (segment.type === "warmup" || segment.type === "cooldown") return title || SEGMENT_TYPE_LABEL[segment.type];
   const position = segments
     .slice(0, index + 1)
     .filter((s) => s.type !== "warmup" && s.type !== "cooldown").length;
-  return `Part ${String.fromCharCode(64 + position)}`;
+  const part = `Part ${String.fromCharCode(64 + position)}`;
+  return title ? `${part} · ${title}` : part;
 }
 
 // A header-bar accent per segment type, so a wide multi-column layout of

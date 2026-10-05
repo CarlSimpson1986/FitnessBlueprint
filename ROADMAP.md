@@ -401,10 +401,11 @@ Carl gives the go-ahead — target end of this week / weekend):
   - 0056 Excused gives the credit back: coach taking the session (Today
     on) or Guy; roster flags late cancellations with an Excuse button;
     refund logged as excused_refund with who did it.
-  - Sections without their own name show as Part A / Part B / Part C
-    (warm-up and cool-down keep their names, unlettered) on the live
-    screen and previews; the builder shows the name members will see.
-    Warm-up/cool-down are optional, coach-led, not scored by default.
+  - Builder is just parts (Carl): fixed "Part A / B / C" heading, an
+    optional title underneath, exercises, "+ Add part". No type
+    dropdown; warm-up/cool-down are coach-led so not offered (old ones
+    keep their name). Members see "Part A · Title"; the live screen shows
+    every exercise in a part at once.
 - **Help & FAQs + new tour (2026-10-05):** /help (Profile -> Help &
   FAQs), written from Claude walking the app as Test Member. Same text
   (src/lib/faq.ts) is in Ted's prompt ("How the app works"): before it,

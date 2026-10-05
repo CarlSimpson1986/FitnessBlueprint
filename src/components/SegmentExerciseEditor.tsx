@@ -9,13 +9,11 @@ import {
   newSegmentDraft,
   METRIC_TYPE_LABEL,
   SEGMENT_TYPE_ACCENT,
-  SEGMENT_TYPE_LABEL,
   type ExerciseDraft,
   type ExerciseSetDraft,
   type MetricType,
   type SegmentDraft,
   type SegmentInput,
-  type SegmentType,
   type IntensityType,
   segmentDisplayLabel,
 } from "@/lib/workout-content";
@@ -28,6 +26,18 @@ function numberOrNull(value: string): number | null {
 
 function inputClass() {
   return "w-full bg-blueprint-bg border border-blueprint-line rounded text-sm text-blueprint-ink px-2 py-1.5 focus:outline-none focus:border-blueprint-accent";
+}
+
+/**
+ * "Part A", "Part B"… in order — the builder is just parts with an
+ * optional title, how Guy writes the board (2026-10-05). Warm-up /
+ * cool-down sections from before keep their name and aren't lettered.
+ */
+function sectionHeading(segments: SegmentDraft[], index: number) {
+  return segmentDisplayLabel(
+    segments.map((s) => ({ type: s.type, label: null })),
+    index
+  );
 }
 
 /**
@@ -44,21 +54,6 @@ function inputClass() {
  * target/rest, added one at a time — matches the Everfit-style reference
  * the owner asked to match (0020), rather than one shared rounds count.
  */
-/**
- * Dropdown wording for a section's type, in Guy's Part A/B/C terms
- * (2026-10-05). The type still decides how members log it: sets show one
- * exercise at a time, a circuit shows them all together, and warm-ups /
- * cool-downs start unscored.
- */
-function sectionTypeOption(segments: SegmentDraft[], index: number, type: SegmentType) {
-  if (type === "warmup" || type === "cooldown") return SEGMENT_TYPE_LABEL[type];
-  const letter = String.fromCharCode(
-    64 + segments.slice(0, index).filter((s) => s.type !== "warmup" && s.type !== "cooldown").length + 1
-  );
-  const how = type === "circuit" ? "circuit, all exercises together" : type === "finisher" ? "finisher" : "sets, one exercise at a time";
-  return `Part ${letter}: ${how}`;
-}
-
 export function SegmentExerciseEditor({
   initialSegments,
   onSave,
@@ -80,7 +75,7 @@ export function SegmentExerciseEditor({
   // Collapsed by default (existing content), expanded on click or right
   // after adding — tracked by exercise key so it survives reorders.
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
-  // "+ Add segment" appends to the end of a list that can already be long
+  // "+ Add part" appends to the end of a list that can already be long
   // — with no scroll, a new segment landing below the fold looked like the
   // button did nothing. Scrolled into view the moment its DOM node mounts.
   const justAddedSegmentKey = useRef<string | null>(null);
@@ -216,7 +211,7 @@ export function SegmentExerciseEditor({
           }}
           className="fb-btn-secondary"
         >
-          + Add segment
+          + Add part
         </button>
         <button
           type="button"
@@ -242,25 +237,12 @@ export function SegmentExerciseEditor({
           >
             <div className="flex items-start justify-between gap-3 px-4 py-3 bg-blueprint-raised/60">
               <div className="flex-1 space-y-2">
-                <select
-                  className="w-full bg-blueprint-bg border border-blueprint-line rounded text-sm font-medium px-2 py-1.5 focus:outline-none"
-                  style={{ color: SEGMENT_TYPE_ACCENT[segment.type] }}
-                  value={segment.type}
-                  onChange={(e) => {
-                    const type = e.target.value as SegmentType;
-                    // Warm-ups and cool-downs aren't scored by default (0057).
-                    updateSegment(segIndex, { type, isScored: type !== "warmup" && type !== "cooldown" });
-                  }}
-                >
-                  {(["straight", "circuit", "finisher", "warmup", "cooldown"] as SegmentType[]).map((t) => (
-                    <option key={t} value={t}>
-                      {sectionTypeOption(segments, segIndex, t)}
-                    </option>
-                  ))}
-                </select>
+                <p className="text-sm font-semibold" style={{ color: SEGMENT_TYPE_ACCENT[segment.type] }}>
+                  {sectionHeading(segments, segIndex)}
+                </p>
                 <input
                   className={inputClass()}
-                  placeholder={`Own name (optional) — blank shows as "${segmentDisplayLabel(segments, segIndex)}"`}
+                  placeholder="Title (optional), e.g. Strength"
                   value={segment.label}
                   onChange={(e) => updateSegment(segIndex, { label: e.target.value })}
                 />

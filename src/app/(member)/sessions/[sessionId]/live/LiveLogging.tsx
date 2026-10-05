@@ -316,12 +316,10 @@ export function LiveLogging({
               );
             }
 
-            // The active segment, or a finished one reopened to fix — that
-            // one shows every exercise rather than one at a time.
-            const isCircuit = segment.type === "circuit" || isReopened;
-            const exerciseActiveIndex = segment.exercises.findIndex((e) => !isExerciseComplete(e));
-            const exerciseReachedIndex =
-              exerciseActiveIndex === -1 ? segment.exercises.length : exerciseActiveIndex;
+            // The active part, or a finished one reopened to fix. Every
+            // exercise in the part shows at once (2026-10-05): parts no
+            // longer have a sets/circuit type, so members log in whatever
+            // order the class runs.
 
             return (
               <div
@@ -332,7 +330,7 @@ export function LiveLogging({
                 <div className="bg-blueprint-raised/60 px-4 py-2">
                   <p className="text-xs text-blueprint-muted">
                     {segmentDisplayLabel(segments, segIndex)}
-                    {isCircuit ? " · repeat as shown · log as you go" : ""}
+                    {segment.type === "circuit" ? " · repeat as shown · log as you go" : ""}
                   </p>
                 </div>
                 <div className="p-3 space-y-3">
@@ -352,27 +350,15 @@ export function LiveLogging({
                         </li>
                       ))}
                     </ul>
-                  ) : isCircuit
-                    ? segment.exercises.map((exercise) => (
-                        <ExerciseBlock
-                          key={exercise.id}
-                          exercise={exercise}
-                          onSetSave={(setId, patch) => handleSetSave(setId, exercise.id, patch)}
-                        />
-                      ))
-                    : segment.exercises.map((exercise, exIndex) => {
-                        if (exIndex > exerciseReachedIndex) return null;
-                        if (exIndex < exerciseReachedIndex) {
-                          return <DoneRow key={exercise.id} label={exercise.name} />;
-                        }
-                        return (
-                          <ExerciseBlock
-                            key={exercise.id}
-                            exercise={exercise}
-                            onSetSave={(setId, patch) => handleSetSave(setId, exercise.id, patch)}
-                          />
-                        );
-                      })}
+                  ) : (
+                    segment.exercises.map((exercise) => (
+                      <ExerciseBlock
+                        key={exercise.id}
+                        exercise={exercise}
+                        onSetSave={(setId, patch) => handleSetSave(setId, exercise.id, patch)}
+                      />
+                    ))
+                  )}
                   <button
                     type="button"
                     onClick={() => (isReopened ? setReopenedId(null) : finishSection(segment.id))}
