@@ -146,6 +146,30 @@ export function newSegmentDraft(): SegmentDraft {
   };
 }
 
+/**
+ * What a new template or empty session starts with: Warm-up, Part A,
+ * Part B, Part C, Cool-down — Guy fills in the blanks (Carl, 2026-10-05).
+ * Warm-up and cool-down are coach-led, so not scored.
+ */
+export function defaultSegmentDrafts(): SegmentDraft[] {
+  const section = (type: SegmentType): SegmentDraft => ({
+    ...newSegmentDraft(),
+    type,
+    isScored: type !== "warmup" && type !== "cooldown",
+  });
+  return [section("warmup"), section("straight"), section("straight"), section("straight"), section("cooldown")];
+}
+
+/**
+ * Drops exercises with no name, then sections left with no exercises, so
+ * the parts Guy didn't need don't block saving or reach members.
+ */
+export function withoutEmptySections(segments: SegmentDraft[]): SegmentDraft[] {
+  return segments
+    .map((s) => ({ ...s, exercises: s.exercises.filter((e) => e.name.trim()) }))
+    .filter((s) => s.exercises.length > 0);
+}
+
 export function draftsToInput(segments: SegmentDraft[]): SegmentInput[] {
   return segments.map((s) => ({
     type: s.type,

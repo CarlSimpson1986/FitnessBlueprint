@@ -405,7 +405,10 @@ Carl gives the go-ahead — target end of this week / weekend):
     optional title underneath, exercises, "+ Add part". No type
     dropdown; warm-up/cool-down are coach-led so not offered (old ones
     keep their name). Members see "Part A · Title"; the live screen shows
-    every exercise in a part at once.
+    every exercise in a part at once. New templates / empty sessions
+    start as Warm-up, Part A, B, C, Cool-down (warm-up/cool-down not
+    scored); empty parts are dropped on save; "+ Add part" goes before
+    the cool-down.
 - **Help & FAQs + new tour (2026-10-05):** /help (Profile -> Help &
   FAQs), written from Claude walking the app as Test Member. Same text
   (src/lib/faq.ts) is in Ted's prompt ("How the app works"): before it,

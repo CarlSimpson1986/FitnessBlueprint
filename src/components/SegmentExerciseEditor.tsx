@@ -3,7 +3,9 @@
 import { useRef, useState, useTransition } from "react";
 import { MemberWorkoutPreview } from "@/components/MemberWorkoutPreview";
 import {
+  defaultSegmentDrafts,
   draftsToInput,
+  withoutEmptySections,
   newExerciseDraft,
   newExerciseSetDraft,
   newSegmentDraft,
@@ -66,7 +68,7 @@ export function SegmentExerciseEditor({
   previewTitle?: string;
 }) {
   const [segments, setSegments] = useState<SegmentDraft[]>(
-    initialSegments.length > 0 ? initialSegments : [newSegmentDraft()]
+    initialSegments.length > 0 ? initialSegments : defaultSegmentDrafts()
   );
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -186,14 +188,21 @@ export function SegmentExerciseEditor({
   function handleSave() {
     setError(null);
     setSaved(false);
+    // Empty parts (no named exercise) are left out rather than blocking the save.
+    const filled = withoutEmptySections(segments);
+    if (filled.length === 0) {
+      setError("Add at least one exercise before saving.");
+      return;
+    }
     startTransition(async () => {
-      const result = await onSave(draftsToInput(segments));
+      const result = await onSave(draftsToInput(filled));
 
       if (result.error) {
         setError(result.error);
         return;
       }
 
+      setSegments(filled);
       setSaved(true);
     });
   }
@@ -207,7 +216,12 @@ export function SegmentExerciseEditor({
           onClick={() => {
             const fresh = newSegmentDraft();
             justAddedSegmentKey.current = fresh.key;
-            setSegments((prev) => [...prev, fresh]);
+            // A new part goes before the cool-down, so it stays last.
+            setSegments((prev) =>
+              prev.length > 0 && prev[prev.length - 1]!.type === "cooldown"
+                ? [...prev.slice(0, -1), fresh, prev[prev.length - 1]!]
+                : [...prev, fresh]
+            );
           }}
           className="fb-btn-secondary"
         >
