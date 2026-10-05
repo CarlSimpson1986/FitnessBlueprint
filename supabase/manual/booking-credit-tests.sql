@@ -51,6 +51,7 @@ declare
   v_bk_full bookings%rowtype;
   v_entry waitlist_entries%rowtype;
   v_bal integer;
+  v_bal_before integer;
   v_lines text[] := '{}';
   v_line text;
   v_pass integer := 0;
@@ -159,6 +160,14 @@ begin
     values (v_gcp, v_coach, v_today + 9, '10:00', 60, 10) returning id into s_6wk_late;
 
   -- --------------------------------------------------------------------------
+  -- Is the live cancel_booking the 0012 version (3-hour refund window)?
+  -- --------------------------------------------------------------------------
+  v_lines := v_lines || case when exists (
+      select 1 from pg_proc where proname = 'cancel_booking' and prosrc like '%3 hours%')
+    then 'PASS  Live cancel_booking has the 3-hour refund rule (0012)'::text
+    else 'FAIL  Live cancel_booking has NO 3-hour refund rule — 0012 isn''t applied (or was overwritten)'::text end;
+
+  -- --------------------------------------------------------------------------
   -- Who can book what
   -- --------------------------------------------------------------------------
   v_lines := v_lines || pg_temp.expect_error('No membership: can''t book', m_none,
@@ -190,7 +199,7 @@ begin
   begin
     perform pg_temp.sign_in_as(m_1x);
     select * into v_bk from book_session(s_week1);
-    v_lines := v_lines || 'PASS  1x a week: first session that week books';
+    v_lines := v_lines || 'PASS  1x a week: first session that week books'::text;
   exception when others then
     v_lines := v_lines || ('FAIL  1x a week: first session that week books — ' || sqlerrm);
   end;
@@ -245,11 +254,14 @@ begin
   begin
     perform pg_temp.sign_in_as(m_pack);
     select * into v_bk_soon from book_session(s_soon);
+    v_bal_before := pg_temp.balance(m_pack);
     select * into v_bk from cancel_booking(v_bk_soon.id);
     v_bal := pg_temp.balance(m_pack);
     v_lines := v_lines || case when v_bal = 0 and v_bk.status = 'cancelled'
       then 'PASS  Cancel within 3 hours: no refund (1 -> 0 -> 0)'
-      else 'FAIL  Cancel within 3 hours — balance ' || v_bal end;
+      else 'FAIL  Cancel within 3 hours — balance ' || v_bal_before || ' after booking, ' || v_bal
+        || ' after cancelling (class starts ' || to_char(v_soon, 'DD Mon HH24:MI') || ' UK, now '
+        || to_char(v_now_uk, 'DD Mon HH24:MI') || ')' end;
   exception when others then
     v_lines := v_lines || ('FAIL  Cancel within 3 hours — ' || sqlerrm);
   end;
@@ -275,7 +287,7 @@ begin
   begin
     perform pg_temp.sign_in_as(m_unl);
     select * into v_bk_full from book_session(s_full);
-    v_lines := v_lines || 'PASS  Last place in a class books';
+    v_lines := v_lines || 'PASS  Last place in a class books'::text;
   exception when others then
     v_lines := v_lines || ('FAIL  Last place in a class books — ' || sqlerrm);
   end;
