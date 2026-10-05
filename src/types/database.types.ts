@@ -658,6 +658,7 @@ export type Database = {
           was_served_from_cache: boolean
           created_at: string
           member_rating: "up" | "down" | null
+          member_rating_reason: string | null
           rated_at: string | null
           removed_items: string[]
           owner_reviewed_at: string | null
@@ -671,6 +672,7 @@ export type Database = {
           was_served_from_cache?: boolean
           created_at?: string
           member_rating?: "up" | "down" | null
+          member_rating_reason?: string | null
           rated_at?: string | null
           removed_items?: string[]
           owner_reviewed_at?: string | null
@@ -684,6 +686,7 @@ export type Database = {
           was_served_from_cache?: boolean
           created_at?: string
           member_rating?: "up" | "down" | null
+          member_rating_reason?: string | null
           rated_at?: string | null
           removed_items?: string[]
           owner_reviewed_at?: string | null
@@ -1527,7 +1530,7 @@ export type Database = {
         Returns: Database["public"]["Tables"]["bookings"]["Row"]
       }
       rate_ted_answer: {
-        Args: { p_conversation_id: string; p_rating: string | null }
+        Args: { p_conversation_id: string; p_rating: string | null; p_reason?: string | null }
         Returns: undefined
       }
       lookup_member_by_email: {

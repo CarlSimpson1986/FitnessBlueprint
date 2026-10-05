@@ -28,6 +28,10 @@ export function TedChat({ initialMessages }: { initialMessages: Message[] }) {
   const [question, setQuestion] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // The answer whose "What was wrong?" box is open, and what's typed in it.
+  const [reasonFor, setReasonFor] = useState<string | null>(null);
+  const [reason, setReason] = useState("");
+  const [reasonSent, setReasonSent] = useState<Set<string>>(new Set());
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -91,6 +95,8 @@ export function TedChat({ initialMessages }: { initialMessages: Message[] }) {
     const setRating = (value: Rating) =>
       setMessages((prev) => prev.map((m) => (m.id === message.id ? { ...m, rating: value } : m)));
     setRating(next);
+    setReasonFor(next === "down" ? message.id : null);
+    setReason("");
     const result = await rateTedAnswer(message.conversationId, next);
     if (result.error) {
       setRating(message.rating);
@@ -144,10 +150,42 @@ export function TedChat({ initialMessages }: { initialMessages: Message[] }) {
                     {value === "up" ? "Helpful" : "Not helpful"}
                   </button>
                 ))}
-                {message.rating === "down" && (
+                {message.rating === "down" && reasonFor !== message.id && (
                   <span className="text-xs text-blueprint-muted">Thanks, Guy will take a look.</span>
                 )}
               </div>
+            )}
+            {message.conversationId && message.rating === "down" && reasonFor === message.id && !reasonSent.has(message.id) && (
+              <form
+                className="mr-8 flex items-center gap-2 pl-1"
+                onSubmit={async (event) => {
+                  event.preventDefault();
+                  if (!message.conversationId || !reason.trim()) return;
+                  const result = await rateTedAnswer(message.conversationId, "down", reason);
+                  if (result.error) {
+                    setError(result.error);
+                    return;
+                  }
+                  setReasonSent((prev) => new Set(prev).add(message.id));
+                  setReasonFor(null);
+                }}
+              >
+                <input
+                  type="text"
+                  value={reason}
+                  onChange={(event) => setReason(event.target.value)}
+                  maxLength={300}
+                  placeholder="What was wrong? (optional)"
+                  className="flex-1 bg-blueprint-raised border border-blueprint-line rounded px-3 py-1.5 text-xs text-blueprint-ink placeholder:text-blueprint-muted focus:outline-none focus:border-blueprint-accent"
+                />
+                <button
+                  type="submit"
+                  disabled={!reason.trim()}
+                  className="text-xs font-mono uppercase tracking-wide text-blueprint-accent disabled:opacity-40"
+                >
+                  Send
+                </button>
+              </form>
             )}
           </div>
         ))}

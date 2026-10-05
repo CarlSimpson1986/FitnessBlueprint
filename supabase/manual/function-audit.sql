@@ -4,7 +4,7 @@
 --
 -- For every function the migrations define, compares the live body with
 -- the LATEST migration's version (by md5 fingerprint). Generated
--- 2026-10-05 from supabase/migrations/ (0001_init_core_schema.sql .. 0057_unscored_segments.sql).
+-- 2026-10-05 from supabase/migrations/ (0001_init_core_schema.sql .. 0058_ted_rating_reason.sql).
 --
 -- status:
 --   ok        live function matches the latest migration
@@ -44,7 +44,7 @@ with expected(name, arg_count, expected_from, body_md5) as (values
   ('match_qa_cache', 3, '0003_coach_ted_vectors.sql', '64a1300defbb42463c7e9f8c5108461f'),
   ('notify_waitlist_offer', 0, '0051_session_emails.sql', '592fbb5e0b33ce0c637cd10d9ff590ed'),
   ('promote_waitlist', 1, '0050_guest_invites.sql', 'd025867269312de9769f965f2ad47dc2'),
-  ('rate_ted_answer', 2, '0053_ted_answer_review.sql', '021dfd353980dde9c399118852f88417'),
+  ('rate_ted_answer', 3, '0058_ted_rating_reason.sql', '9b72ca4f06c0870a82b883772fb4af7d'),
   ('respond_guest_invite', 6, '0050_guest_invites.sql', '919e6fedd02fb541d39334ab6459d62a'),
   ('session_spots_taken', 1, '0050_guest_invites.sql', '9c9dbf6f6fac6528e1c5c9b52f3a645c'),
   ('set_health_choices', 2, '0043_health_consent.sql', '6d0987c142f9a2761a5bf4b19c3b213a'),

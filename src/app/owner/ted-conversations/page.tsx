@@ -38,7 +38,7 @@ export default async function TedConversationsPage({ searchParams }: { searchPar
 
   let listQuery = supabase
     .from("coach_ted_conversations")
-    .select("id, member_id, question, answer, created_at, member_rating, removed_items, owner_reviewed_at")
+    .select("id, member_id, question, answer, created_at, member_rating, member_rating_reason, removed_items, owner_reviewed_at")
     .order("created_at", { ascending: false })
     .limit(LIST_LIMIT);
   if (!showAll) {
@@ -132,6 +132,9 @@ export default async function TedConversationsPage({ searchParams }: { searchPar
                   <div className="border-l-2 border-blueprint-line pl-3">
                     <TedText text={row.answer} />
                   </div>
+                  {row.member_rating_reason && (
+                    <p className="text-xs text-red-400">What was wrong: &ldquo;{row.member_rating_reason}&rdquo;</p>
+                  )}
                   {row.removed_items.length > 0 && (
                     <p className="text-xs text-red-400">Removed: {row.removed_items.join(", ")}</p>
                   )}

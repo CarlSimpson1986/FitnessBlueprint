@@ -386,21 +386,23 @@ that far — src/lib/booking-window.ts).
 **Carl / Guy walkthrough 2026-10-05 — actions** (Guy has signed in and
 set up two-factor; he'll invite 5-10 tech-savvy members, e.g. Akil, once
 Carl gives the go-ahead — target end of this week / weekend):
-- Build (agreed on the call):
-  - Live session: "Finish section" not "Finish workout"; a way to go back
-    to an earlier section to fix what was logged.
-  - Programming: "Not scored" tick per segment (warm-up/cool-down) so
-    members only log the main lift, accessories and conditioning.
-  - Exercise notes are coach-only: currently nobody but Guy sees them —
-    show them to coaches (Today / programme), never members.
-  - Owner Account settings: calendar link etc. treat Guy like a member —
-    should be the owner's account settings.
-  - Ted "Not helpful": optional "what was wrong?" reason for Guy.
-  - Segment labels: Guy writes Part A / Part B / Part C on the board.
-- Gap found: marking a booking "Excused" does NOT refund the credit (Carl
-  told Guy it does — late cancellations agreed with the coach should get
-  the credit back). Needs a decision on who can refund.
-- Needs Guy's decision: an "admin" role (e.g. Hannah) — everything except
+- **Built 2026-10-05 (run 0056, 0057, 0058 BEFORE deploying):**
+  - Live session: Finish section per section, Edit to reopen a finished
+    one, Finish workout only when all done (else "End workout early").
+  - 0057 Not scored sections (builder tick; warm-up/cool-down default
+    off, existing ones backfilled); live screen lists them, no inputs.
+  - Exercise notes show as "Coach note" on Today + the coach's session
+    page; never on member screens. (Still readable by members through
+    the raw API — RLS is per row — so nothing private in them.)
+  - Staff account settings at /admin/account; /account/settings sends
+    coaches/owner there.
+  - 0058: optional "What was wrong?" after Not helpful, shown on
+    /owner/ted-conversations.
+  - 0056 Excused gives the credit back: coach taking the session (Today
+    on) or Guy; roster flags late cancellations with an Excuse button;
+    refund logged as excused_refund with who did it.
+  - Builder label placeholder now "e.g. Part A".
+- Needs Guy's decision (Carl: ask Guy first): an "admin" role (e.g. Hannah) — everything except
   the money pages? Can they edit, or view only? (CLAUDE.md: only the
   owner edits today.)
 - At launch: remove the demo-data button and email-check page.
