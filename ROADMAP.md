@@ -411,7 +411,14 @@ that far — src/lib/booking-window.ts).
   as booking (active membership covering that class/date, a credit if a
   pack) — members pay first, then get access (Carl), so nobody can hold a
   2-hour offer they can't use. supabase/manual/late-cancel-refunds.sql
-  lists refunds given within 3 hours before 0054.
+  lists refunds given within 3 hours before 0054. Booking tests 27/27
+  after 0055. **Ted eval re-run 2026-10-05 (current prompt):** Haiku 32/36
+  — real misses incl. deadline-faster-loss ("you'd comfortably get there"
+  for ~1.2kg/week) and pregnancy clearance; Sonnet 5.5 32/36 but all 4
+  were judge false positives (it doesn't know the gym facts in Ted's
+  prompt — warm room, 60-min sessions; fix JUDGE_SYSTEM in
+  evals/coach-ted/run.ts). Cost per answer ~$0.004 Haiku vs ~$0.012
+  Sonnet. Model choice is Carl's call.
 - `gemini-embedding-001` no longer appears on Google's pricing page
   (Gemini Embedding 2 is current) — may be retired next; if so switch
   EMBEDDING_MODEL and press Re-index on /admin/ted-answers.
