@@ -31,7 +31,7 @@ export default async function EditWorkoutTemplatePage({
 
   const { data: segments } = await supabase
     .from("template_segments")
-    .select("id, type, label, default_rounds, sort_order")
+    .select("id, type, label, default_rounds, is_scored, sort_order")
     .eq("template_id", templateId)
     .order("sort_order");
 
@@ -68,6 +68,7 @@ export default async function EditWorkoutTemplatePage({
     type: segment.type,
     label: segment.label ?? "",
     defaultRounds: segment.default_rounds,
+    isScored: segment.is_scored,
     exercises: (exercisesBySegment.get(segment.id) ?? []).map((exercise) => ({
       key: exercise.id,
       name: exercise.name,

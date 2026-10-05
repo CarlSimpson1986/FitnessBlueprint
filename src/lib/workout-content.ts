@@ -65,6 +65,8 @@ export type SegmentInput = {
   type: SegmentType;
   label: string | null;
   defaultRounds: number | null;
+  /** False = members don't log it (warm-up / cool-down), 0057. */
+  isScored: boolean;
   exercises: ExerciseInput[];
 };
 
@@ -92,6 +94,7 @@ export type SegmentDraft = {
   type: SegmentType;
   label: string;
   defaultRounds: number | null;
+  isScored: boolean;
   exercises: ExerciseDraft[];
 };
 
@@ -118,6 +121,7 @@ export function newSegmentDraft(): SegmentDraft {
     type: "straight",
     label: "",
     defaultRounds: null,
+    isScored: true,
     exercises: [newExerciseDraft()],
   };
 }
@@ -127,6 +131,7 @@ export function draftsToInput(segments: SegmentDraft[]): SegmentInput[] {
     type: s.type,
     label: s.label.trim() || null,
     defaultRounds: s.defaultRounds,
+    isScored: s.isScored,
     exercises: s.exercises.map((e) => ({
       name: e.name,
       metricType: e.metricType,

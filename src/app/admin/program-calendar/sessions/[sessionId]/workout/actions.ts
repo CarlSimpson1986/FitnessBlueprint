@@ -52,6 +52,7 @@ export async function saveSessionWorkout(sessionId: string, segments: SegmentInp
         type: segment.type,
         label: segment.label?.trim() || null,
         default_rounds: segment.defaultRounds,
+        is_scored: segment.isScored,
         sort_order: i,
       })
       .select("id")
@@ -113,7 +114,7 @@ async function loadSessionWorkout(
 ): Promise<{ segments?: SegmentInput[]; error?: string }> {
   const { data: segments, error: segmentsError } = await supabase
     .from("session_segments")
-    .select("id, type, label, default_rounds, sort_order")
+    .select("id, type, label, default_rounds, is_scored, sort_order")
     .eq("session_id", sessionId)
     .order("sort_order");
 
@@ -166,6 +167,7 @@ async function loadSessionWorkout(
       type: segment.type,
       label: segment.label,
       defaultRounds: segment.default_rounds,
+      isScored: segment.is_scored,
       exercises: (exercisesBySegment.get(segment.id) ?? []).map((exercise) => ({
         name: exercise.name,
         metricType: exercise.metric_type,

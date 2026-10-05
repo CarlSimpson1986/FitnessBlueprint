@@ -4,7 +4,7 @@
 --
 -- For every function the migrations define, compares the live body with
 -- the LATEST migration's version (by md5 fingerprint). Generated
--- 2026-10-05 from supabase/migrations/ (0001_init_core_schema.sql .. 0056_excuse_booking.sql).
+-- 2026-10-05 from supabase/migrations/ (0001_init_core_schema.sql .. 0057_unscored_segments.sql).
 --
 -- status:
 --   ok        live function matches the latest migration

@@ -29,7 +29,7 @@ export async function generateProgressionWeeks(
 
   const { data: segments, error: segmentsError } = await supabase
     .from("template_segments")
-    .select("id, type, label, default_rounds, sort_order")
+    .select("id, type, label, default_rounds, is_scored, sort_order")
     .eq("template_id", templateId)
     .order("sort_order");
 
@@ -81,6 +81,7 @@ export async function generateProgressionWeeks(
     type: segment.type,
     label: segment.label,
     defaultRounds: segment.default_rounds,
+    isScored: segment.is_scored,
     exercises: (exercisesBySegment.get(segment.id) ?? []).map((exercise) => ({
       name: exercise.name,
       metricType: exercise.metric_type,

@@ -293,6 +293,7 @@ export async function seedDemoData(admin: AdminClient): Promise<{ error?: string
         type: segment.type,
         label: segment.label,
         default_rounds: segment.rounds,
+        is_scored: segment.type !== "warmup" && segment.type !== "cooldown",
         sort_order: si,
       });
       segment.exercises.forEach((exercise, ei) => {

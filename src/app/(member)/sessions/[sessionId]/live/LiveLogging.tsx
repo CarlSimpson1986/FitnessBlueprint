@@ -34,6 +34,8 @@ export type LiveSegment = {
   id: string;
   type: SegmentType;
   label: string | null;
+  /** False = warm-up / cool-down style section: listed, nothing to log (0057). */
+  isScored: boolean;
   exercises: LiveExercise[];
 };
 
@@ -57,6 +59,9 @@ function isExerciseComplete(exercise: LiveExercise): boolean {
 }
 
 function isSegmentComplete(segment: LiveSegment): boolean {
+  // An unscored section has nothing to log, so it's done when the member
+  // taps "Finish section".
+  if (!segment.isScored) return false;
   return segment.exercises.length > 0 && segment.exercises.every(isExerciseComplete);
 }
 
@@ -178,10 +183,19 @@ function ExerciseBlock({
   );
 }
 
-function DoneRow({ label }: { label: string }) {
+function DoneRow({ label, onEdit }: { label: string; onEdit?: () => void }) {
   return (
     <div className="flex items-center justify-between py-1">
       <span className="text-sm text-blueprint-muted">{label}</span>
+      {onEdit && (
+        <button
+          type="button"
+          onClick={onEdit}
+          className="ml-auto mr-3 text-[11px] font-mono uppercase tracking-wide text-blueprint-muted hover:text-blueprint-accent"
+        >
+          Edit
+        </button>
+      )}
       <svg
         className="text-blueprint-accent"
         style={{ width: 16, height: 16 }}
@@ -214,6 +228,15 @@ export function LiveLogging({
   const [segments, setSegments] = useState(initialSegments);
   const [isPending, startTransition] = useTransition();
   const [finishError, setFinishError] = useState<string | null>(null);
+  // Sections the member moved on from with "Finish section" (not every set
+  // logged), and the one they've reopened to fix — Carl/Guy, 2026-10-05.
+  const [finishedIds, setFinishedIds] = useState<Set<string>>(new Set());
+  const [reopenedId, setReopenedId] = useState<string | null>(null);
+
+  function finishSection(segmentId: string) {
+    setFinishedIds((prev) => new Set(prev).add(segmentId));
+    setReopenedId(null);
+  }
 
   function handleSetSave(setId: string, exerciseId: string, patch: SetPatch) {
     setSegments((prev) =>
@@ -255,8 +278,10 @@ export function LiveLogging({
   // everything before the first incomplete segment renders collapsed
   // (done), that first incomplete segment renders fully, everything after
   // it is just previewed by name.
-  const activeSegmentIndex = segments.findIndex((s) => !isSegmentComplete(s));
+  const isDone = (s: LiveSegment) => isSegmentComplete(s) || finishedIds.has(s.id);
+  const activeSegmentIndex = segments.findIndex((s) => !isDone(s));
   const reachedIndex = activeSegmentIndex === -1 ? segments.length : activeSegmentIndex;
+  const allDone = reachedIndex === segments.length;
 
   return (
     <main className="min-h-screen px-5 py-8 pb-24">
@@ -279,16 +304,21 @@ export function LiveLogging({
               );
             }
 
-            if (segIndex < reachedIndex) {
+            const isReopened = segment.id === reopenedId;
+            if (segIndex < reachedIndex && !isReopened) {
               return (
                 <div key={segment.id} className="fb-card">
-                  <DoneRow label={segment.label || SEGMENT_TYPE_LABEL[segment.type]} />
+                  <DoneRow
+                    label={segment.label || SEGMENT_TYPE_LABEL[segment.type]}
+                    onEdit={segment.isScored ? () => setReopenedId(segment.id) : undefined}
+                  />
                 </div>
               );
             }
 
-            // The active segment.
-            const isCircuit = segment.type === "circuit";
+            // The active segment, or a finished one reopened to fix — that
+            // one shows every exercise rather than one at a time.
+            const isCircuit = segment.type === "circuit" || isReopened;
             const exerciseActiveIndex = segment.exercises.findIndex((e) => !isExerciseComplete(e));
             const exerciseReachedIndex =
               exerciseActiveIndex === -1 ? segment.exercises.length : exerciseActiveIndex;
@@ -306,7 +336,23 @@ export function LiveLogging({
                   </p>
                 </div>
                 <div className="p-3 space-y-3">
-                  {isCircuit
+                  {!segment.isScored ? (
+                    <ul className="space-y-1.5">
+                      {segment.exercises.map((exercise) => (
+                        <li key={exercise.id} className="text-sm text-blueprint-ink">
+                          {exercise.name}
+                          {exercise.eachSide ? " (each side)" : ""}
+                          {exercise.sets[0]?.target && (
+                            <span className="text-blueprint-muted">
+                              {" "}
+                              · {exercise.sets.length > 1 ? `${exercise.sets.length} x ` : ""}
+                              {exercise.sets[0].target}
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : isCircuit
                     ? segment.exercises.map((exercise) => (
                         <ExerciseBlock
                           key={exercise.id}
@@ -327,20 +373,33 @@ export function LiveLogging({
                           />
                         );
                       })}
+                  <button
+                    type="button"
+                    onClick={() => (isReopened ? setReopenedId(null) : finishSection(segment.id))}
+                    className="w-full text-xs font-mono uppercase tracking-wide text-blueprint-ink border border-blueprint-line rounded py-2 hover:border-blueprint-accent hover:text-blueprint-accent transition"
+                  >
+                    {isReopened ? "Done editing" : "Finish section"}
+                  </button>
                 </div>
               </div>
             );
           })}
         </div>
 
-        <button
-          type="button"
-          onClick={handleFinish}
-          disabled={isPending}
-          className="fb-btn-primary w-full mt-6"
-        >
-          {isPending ? "…" : "Finish workout"}
-        </button>
+        {allDone ? (
+          <button type="button" onClick={handleFinish} disabled={isPending} className="fb-btn-primary w-full mt-6">
+            {isPending ? "…" : "Finish workout"}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={handleFinish}
+            disabled={isPending}
+            className="block mx-auto mt-6 text-xs text-blueprint-muted underline hover:text-blueprint-accent"
+          >
+            {isPending ? "…" : "End workout early"}
+          </button>
+        )}
         {finishError && <p className="text-sm text-red-400 mt-2">{finishError}</p>}
       </div>
     </main>

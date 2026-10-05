@@ -46,7 +46,7 @@ export default async function LiveSessionPage({
 
   const { data: segments } = await supabase
     .from("session_segments")
-    .select("id, type, label, sort_order")
+    .select("id, type, label, is_scored, sort_order")
     .eq("session_id", sessionId)
     .order("sort_order");
 
@@ -125,6 +125,7 @@ export default async function LiveSessionPage({
     id: segment.id,
     type: segment.type as SegmentType,
     label: segment.label,
+    isScored: segment.is_scored,
     exercises: (exercisesBySegment.get(segment.id) ?? []).map((exercise) => ({
       id: exercise.id,
       name: exercise.name,

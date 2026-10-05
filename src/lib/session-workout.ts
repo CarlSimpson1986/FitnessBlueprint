@@ -13,7 +13,7 @@ type ServerClient = Awaited<ReturnType<typeof createClient>>;
 export async function loadSessionWorkout(supabase: ServerClient, sessionId: string): Promise<SegmentDraft[]> {
   const { data: segments } = await supabase
     .from("session_segments")
-    .select("id, type, label, default_rounds, sort_order")
+    .select("id, type, label, default_rounds, is_scored, sort_order")
     .eq("session_id", sessionId)
     .order("sort_order");
 
@@ -50,6 +50,7 @@ export async function loadSessionWorkout(supabase: ServerClient, sessionId: stri
     type: segment.type,
     label: segment.label ?? "",
     defaultRounds: segment.default_rounds,
+    isScored: segment.is_scored,
     exercises: (exercisesBySegment.get(segment.id) ?? []).map((exercise) => ({
       key: exercise.id,
       name: exercise.name,

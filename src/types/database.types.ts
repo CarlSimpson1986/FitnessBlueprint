@@ -775,6 +775,7 @@ export type Database = {
           type: Database['public']['Enums']['segment_type']
           label: string | null
           default_rounds: number | null
+          is_scored: boolean
           sort_order: number
         }
         Insert: {
@@ -783,6 +784,7 @@ export type Database = {
           type: Database['public']['Enums']['segment_type']
           label?: string | null
           default_rounds?: number | null
+          is_scored?: boolean
           sort_order: number
         }
         Update: {
@@ -791,6 +793,7 @@ export type Database = {
           type?: Database['public']['Enums']['segment_type']
           label?: string | null
           default_rounds?: number | null
+          is_scored?: boolean
           sort_order?: number
         }
         Relationships: []
@@ -1215,6 +1218,7 @@ export type Database = {
           type: Database['public']['Enums']['segment_type']
           label: string | null
           default_rounds: number | null
+          is_scored: boolean
           sort_order: number
         }
         Insert: {
@@ -1223,6 +1227,7 @@ export type Database = {
           type: Database['public']['Enums']['segment_type']
           label?: string | null
           default_rounds?: number | null
+          is_scored?: boolean
           sort_order: number
         }
         Update: {
@@ -1231,6 +1236,7 @@ export type Database = {
           type?: Database['public']['Enums']['segment_type']
           label?: string | null
           default_rounds?: number | null
+          is_scored?: boolean
           sort_order?: number
         }
         Relationships: []

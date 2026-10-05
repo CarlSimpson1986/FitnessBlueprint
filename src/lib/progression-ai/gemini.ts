@@ -57,6 +57,7 @@ const segmentSchema = z.object({
   type: z.enum(["warmup", "straight", "circuit", "finisher", "cooldown"]),
   label: z.string().max(200).nullable(),
   defaultRounds: z.number().int().min(1).max(50).nullable(),
+  isScored: z.boolean().optional(),
   exercises: z
     .array(
       z.object({
@@ -148,5 +149,15 @@ Generate exactly ${additionalWeeks} additional week(s) (week 2 through week ${we
     throw new Error("Gemini's response wasn't shaped as expected — try again.");
   }
 
-  return weeks.data;
+  // Scored or not follows week 1's section in the same place (or, failing
+  // that, warm-ups and cool-downs aren't scored — 0057's default).
+  return weeks.data.map((week) =>
+    week.map((segment, i) => ({
+      ...segment,
+      isScored:
+        week1[i]?.type === segment.type
+          ? week1[i]!.isScored
+          : (segment.isScored ?? !["warmup", "cooldown"].includes(segment.type)),
+    }))
+  );
 }

@@ -230,7 +230,11 @@ export function SegmentExerciseEditor({
                   className="w-full bg-blueprint-bg border border-blueprint-line rounded text-sm font-medium px-2 py-1.5 focus:outline-none"
                   style={{ color: SEGMENT_TYPE_ACCENT[segment.type] }}
                   value={segment.type}
-                  onChange={(e) => updateSegment(segIndex, { type: e.target.value as SegmentType })}
+                  onChange={(e) => {
+                    const type = e.target.value as SegmentType;
+                    // Warm-ups and cool-downs aren't scored by default (0057).
+                    updateSegment(segIndex, { type, isScored: type !== "warmup" && type !== "cooldown" });
+                  }}
                 >
                   {(Object.keys(SEGMENT_TYPE_LABEL) as SegmentType[]).map((t) => (
                     <option key={t} value={t}>
@@ -240,10 +244,18 @@ export function SegmentExerciseEditor({
                 </select>
                 <input
                   className={inputClass()}
-                  placeholder="Label (optional), e.g. Circuit A"
+                  placeholder="Label (optional), e.g. Part A"
                   value={segment.label}
                   onChange={(e) => updateSegment(segIndex, { label: e.target.value })}
                 />
+                <label className="flex items-center gap-2 text-xs text-blueprint-muted">
+                  <input
+                    type="checkbox"
+                    checked={!segment.isScored}
+                    onChange={(e) => updateSegment(segIndex, { isScored: !e.target.checked })}
+                  />
+                  Not scored (members don&apos;t log this section)
+                </label>
               </div>
               <div className="flex items-center gap-2 pt-1">
                 <button
