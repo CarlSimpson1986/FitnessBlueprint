@@ -448,12 +448,12 @@ Carl gives the go-ahead — target end of this week / weekend):
   migration (each gets the set-your-password email).
 
 **Open — needs a decision or action from the owner:**
-- **Monthly plan names — ask Guy.** Unlimited / 2x per week / 1x per
-  week (Stripe: "GCP - UNLIMITED" / "GCP - 2 per week" / "GCP - 1 per
-  week") look like the monthly continuation packages; rename (not retire)
-  once Guy confirms what they're called. Carl's keep-list (2026-10-05):
-  Hyrox, all 6-week plans, 21-day starter, drop-in. 5-pack retired in
-  **0052 (to run)**.
+- **Monthly plan names — confirmed 2026-10-06:** GCP-1 / GCP-2 /
+  GCP-Unlimited (the monthly continuation packages). Renamed in
+  0060 (run 2026-10-06); weekly limits unchanged, Stripe product matching
+  unchanged ("GCP - 1 per week" etc. — update stripe_product_name if Guy
+  renames them in Stripe). Carl's keep-list (2026-10-05): Hyrox, all
+  6-week plans, 21-day starter, drop-in. 5-pack retired in 0052.
 - **Architect review (2026-10-05) follow-ups:** Coach Ted now needs an
   active membership (staff exempt) — every member on the app has one until
   full migration, per Carl; the View-as Test Member needs one assigned to

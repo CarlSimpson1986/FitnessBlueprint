@@ -6,9 +6,9 @@
 -- ============================================================================
 
 insert into membership_plans (code, name, price_pence, billing_type, sessions_per_week, credit_pack_size, programme_length_days) values
-  ('unlimited',       'Unlimited',                 16000, 'recurring', null, null, null),
-  ('2x_week',         '2x per week',                12400, 'recurring', 2,    null, null),
-  ('1x_week',         '1x per week',                 7000, 'recurring', 1,    null, null),
+  ('unlimited',       'GCP-Unlimited',              16000, 'recurring', null, null, null),
+  ('2x_week',         'GCP-2',                      12400, 'recurring', 2,    null, null),
+  ('1x_week',         'GCP-1',                       7000, 'recurring', 1,    null, null),
   ('drop_in',         'Drop-in',                     2000, 'one_off',   null, 1,    null),
   ('pack_5',          '5-session pack',              8000, 'one_off',   null, 5,    null),
   ('6wk_2x',          '6-Week Programme (2x/week)', 18500, 'one_off',   2,    null, 42),

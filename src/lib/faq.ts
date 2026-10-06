@@ -73,7 +73,7 @@ export const FAQ: FaqSection[] = [
       {
         question: "How many classes can I book?",
         answer:
-          "It depends on your plan. Plans like 1x or 2x per week (including the 6-week programmes) cover that many classes each Monday to Sunday week, and Unlimited has no weekly cap; the top of My bookings shows how many you've used. Hyrox only covers Hyrox classes. A drop-in is one class.",
+          "It depends on your plan. GCP-1 and GCP-2 (and the 1x and 2x 6-week programmes) cover 1 or 2 classes each Monday to Sunday week, and GCP-Unlimited has no weekly cap; the top of My bookings shows how many you've used. Hyrox only covers Hyrox classes. A drop-in is one class.",
       },
       {
         question: "My programme is ending. What happens next?",
