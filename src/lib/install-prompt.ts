@@ -4,7 +4,8 @@
  * Chrome/Android fire `beforeinstallprompt` once, early — often before the
  * tab mounts — so it's captured here at module load and held for later.
  * iOS Safari never fires it (installing is manual: Share → Add to Home
- * Screen), so callers fall back to instructions there.
+ * Screen), so callers fall back to instructions there. Other Android
+ * browsers are sent to Chrome first — see isAndroidNotChrome().
  */
 
 type BeforeInstallPromptEvent = Event & {
@@ -64,4 +65,26 @@ export async function promptInstall() {
 
 export function isIos() {
   return /iphone|ipad|ipod/i.test(navigator.userAgent);
+}
+
+/**
+ * Android, but not Chrome itself. Installing from these goes wrong:
+ * Samsung Internet builds its own app package that Play Protect blocks as
+ * "Unsafe app blocked … built for an older version of Android" (a client
+ * hit this 2026-10-07), and in-app browsers (WhatsApp, Facebook,
+ * Instagram — the "; wv)" webview marker) can't install at all. Only
+ * Chrome's install gets a package Play Protect accepts.
+ */
+export function isAndroidNotChrome() {
+  const ua = navigator.userAgent;
+  if (!/android/i.test(ua)) return false;
+  if (!/Chrome\//.test(ua)) return true;
+  return /SamsungBrowser|EdgA|OPR\/|OPT\/|MiuiBrowser|HuaweiBrowser|YaBrowser|UCBrowser|DuckDuckGo|; wv\)/.test(ua);
+}
+
+/** Link that opens the current page in Chrome; falls back to Chrome's Play Store page. */
+export function openInChromeUrl() {
+  const { host, pathname, search } = window.location;
+  const fallback = encodeURIComponent("https://play.google.com/store/apps/details?id=com.android.chrome");
+  return `intent://${host}${pathname}${search}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${fallback};end`;
 }

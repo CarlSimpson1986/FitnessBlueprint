@@ -185,6 +185,7 @@ function welcomeEmailHtml(fullName: string, email: string, welcomeUrl: string, r
   <p style="margin:28px 0">
     <a href="${welcomeUrl}" style="background:#2e9bf0;color:#000;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:8px;display:inline-block">Set your password</a>
   </p>
+  <p style="font-size:15px;line-height:1.5"><strong>Getting the app on your phone:</strong> on Android, open the app in <strong>Chrome</strong> (not Samsung Internet — your phone may block that install as unsafe) and tap <strong>Get app</strong> at the bottom. On iPhone, use <strong>Safari</strong> and tap Get app.</p>
   <p style="font-size:13px;line-height:1.5;color:#666">Your sign-in email is <strong>${escapeHtml(email)}</strong>. This button works for ${WELCOME_LINK_DAYS} days. After that, choose "Email me a sign-in link" on the sign-in page instead.</p>
   <p style="font-size:13px;color:#666;margin-top:28px">Fitness Blueprint</p>
 </div>`.trim();

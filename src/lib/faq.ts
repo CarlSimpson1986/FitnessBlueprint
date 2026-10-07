@@ -35,7 +35,7 @@ export const FAQ: FaqSection[] = [
       {
         question: "How do I put the app on my phone?",
         answer:
-          "Tap Get app at the bottom of the screen and follow the steps. On iPhone: open the app in Safari, tap the Share button, then Add to Home Screen. On Android: open the browser menu (⋮) and tap Install app or Add to Home screen. It then opens like any other app.",
+          "Tap Get app at the bottom of the screen and follow the steps. On iPhone: open the app in Safari, tap the Share button, then Add to Home Screen. On Android: use Chrome (not Samsung Internet — your phone may block that install as unsafe), open the menu (⋮) and tap Install app. It then opens like any other app.",
       },
       {
         question: "How do I sign in?",
