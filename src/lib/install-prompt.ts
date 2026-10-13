@@ -52,15 +52,15 @@ export function canPromptInstall() {
   return deferredPrompt !== null;
 }
 
-/** Shows the browser's own install dialog. Returns false if unavailable. */
+/** Shows the browser's own install dialog. Returns null if unavailable. */
 export async function promptInstall() {
-  if (!deferredPrompt) return false;
+  if (!deferredPrompt) return null;
   const prompt = deferredPrompt;
   deferredPrompt = null;
   await prompt.prompt();
-  await prompt.userChoice;
+  const { outcome } = await prompt.userChoice;
   notify();
-  return true;
+  return outcome;
 }
 
 export function isIos() {

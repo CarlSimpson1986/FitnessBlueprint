@@ -22,9 +22,11 @@ export function InstallAppTab() {
   const installed = useSyncExternalStore(subscribeInstallState, isRunningInstalled, () => true);
   const [showSteps, setShowSteps] = useState(false);
   const [showChrome, setShowChrome] = useState(false);
+  const [showInstalling, setShowInstalling] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  if (installed) return null;
+  // The installing sheet outlives the tab: appinstalled flips `installed`.
+  if (installed && !showInstalling) return null;
 
   async function handleClick() {
     // Checked before promptInstall: Samsung Internet does offer its own
@@ -33,8 +35,11 @@ export function InstallAppTab() {
       setShowChrome(true);
       return;
     }
-    const prompted = await promptInstall();
-    if (!prompted) setShowSteps(true);
+    const outcome = await promptInstall();
+    if (outcome === null) setShowSteps(true);
+    // Chrome builds the app in the background with no visible download —
+    // a member read that as "it did nothing" (2026-10-13).
+    if (outcome === "accepted") setShowInstalling(true);
   }
 
   async function copyLink() {
@@ -48,19 +53,43 @@ export function InstallAppTab() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={handleClick}
-        data-tour="install"
-        className="flex flex-col items-center gap-1 px-3 text-blueprint-ink"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" width={20} height={20}>
-          <path d="M12 3v12" />
-          <path d="M7 10l5 5 5-5" />
-          <path d="M5 21h14" />
-        </svg>
-        <span className="text-[10px]">Get app</span>
-      </button>
+      {!installed && (
+        <button
+          type="button"
+          onClick={handleClick}
+          data-tour="install"
+          className="flex flex-col items-center gap-1 px-3 text-blueprint-ink"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" width={20} height={20}>
+            <path d="M12 3v12" />
+            <path d="M7 10l5 5 5-5" />
+            <path d="M5 21h14" />
+          </svg>
+          <span className="text-[10px]">Get app</span>
+        </button>
+      )}
+
+      {showInstalling && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 px-4 pb-8"
+          onClick={() => setShowInstalling(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-sm w-full bg-blueprint-raised border border-blueprint-line rounded-xl p-5 shadow-2xl"
+          >
+            <p className="text-lg font-semibold text-blueprint-ink mb-2">Installing…</p>
+            <p className="text-sm text-blueprint-muted mb-4">
+              Your phone is adding Fitness Blueprint now — it won&apos;t show up in Downloads. Give it up to a minute,
+              then look for the <span className="text-blueprint-ink">Fitness Blueprint</span> icon on your home screen
+              or in your app list (swipe up).
+            </p>
+            <button type="button" onClick={() => setShowInstalling(false)} className="fb-btn-primary w-full text-sm">
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
 
       {showChrome && (
         <div

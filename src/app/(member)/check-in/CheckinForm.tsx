@@ -47,18 +47,28 @@ export function CheckinForm({
   function handleSubmit() {
     if (!allRated) return;
     setError(null);
+    // "82,5" and "82kg" are what people actually type.
+    const weightText = weight.trim().replace(",", ".").replace(/\s*kgs?$/i, "");
     startTransition(async () => {
-      const result = await submitWeeklyCheckin({
-        weightKg: weight.trim() ? Number(weight) : null,
-        energy: ratings.energy!,
-        sleep: ratings.sleep!,
-        nutrition: ratings.nutrition!,
-        win,
-        struggle,
-        workaround,
-        nextWeekAction,
-        noteForCoach: note,
-      });
+      let result;
+      try {
+        result = await submitWeeklyCheckin({
+          weightKg: weightText ? Number(weightText) : null,
+          energy: ratings.energy!,
+          sleep: ratings.sleep!,
+          nutrition: ratings.nutrition!,
+          win,
+          struggle,
+          workaround,
+          nextWeekAction,
+          noteForCoach: note,
+        });
+      } catch {
+        // Usually a page left open across an app update — the old form can't
+        // reach the new server code until it's reloaded.
+        setError("Couldn't send — refresh the page and try again.");
+        return;
+      }
       if (result.error) {
         setError(result.error);
         return;

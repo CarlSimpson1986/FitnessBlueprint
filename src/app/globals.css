@@ -44,6 +44,17 @@ body {
   font-family: var(--font-body);
 }
 
+/* Native controls (date pickers above all) render for a dark page: without
+   this the calendar icon is black-on-black and pickers open light. */
+:root {
+  color-scheme: dark;
+}
+
+/* iOS collapses an empty date input to nothing — keep it a tappable box. */
+input[type="date"] {
+  min-height: 2.75rem;
+}
+
 @layer components {
   /* Small uppercase accent label — brand mark and card/section labels. */
   .fb-eyebrow {

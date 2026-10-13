@@ -18,6 +18,7 @@ import {
   formatValue,
   isBodyGoalMetric,
   parseLiftMetric,
+  unitOf,
   valueFor,
   type BodyGoalMetric,
   type LiftBest,
@@ -230,6 +231,12 @@ export function GoalWizard({
     setMessages((prev) => [...prev, { id: `${from}-${prev.length}`, from, text }]);
   }
 
+  // A bare "17" is ambiguous on the Goals card and to Ted — save it as "17kg".
+  const unit = unitOf(metric);
+  function withUnit(value: string) {
+    return unit && /^\d+(\.\d+)?$/.test(value) ? formatValue(Number(value), metric) : value;
+  }
+
   function currentGuidance(): { baseline: number; g: Guidance } | null {
     const g = goalGuidance(type, metric, startValue);
     return g && startValue !== null ? { baseline: startValue, g } : null;
@@ -333,7 +340,7 @@ export function GoalWizard({
   }
 
   function submitLongTarget() {
-    const value = textInput.trim();
+    const value = withUnit(textInput.trim());
     if (!value) return;
     setLongTarget(value);
     say("user", value);
@@ -370,7 +377,7 @@ export function GoalWizard({
   }
 
   function submitMicroTarget(picked?: string) {
-    const value = (picked ?? textInput).trim();
+    const value = withUnit((picked ?? textInput).trim());
     if (!value) return;
 
     say("user", value);
@@ -562,6 +569,7 @@ export function GoalWizard({
             placeholder="e.g. 82"
             className="flex-1 bg-blueprint-raised border border-blueprint-line rounded-lg px-4 py-3 text-sm text-blueprint-ink placeholder:text-blueprint-muted focus:outline-none focus:border-blueprint-accent"
           />
+          {unit && <span className="text-sm text-blueprint-muted">{unit}</span>}
           <button type="button" onClick={() => submitBaseline(false)} disabled={!textInput.trim()} className="fb-btn-primary disabled:opacity-50">
             Send
           </button>
@@ -580,6 +588,7 @@ export function GoalWizard({
             placeholder="e.g. 70"
             className="flex-1 bg-blueprint-raised border border-blueprint-line rounded-lg px-4 py-3 text-sm text-blueprint-ink placeholder:text-blueprint-muted focus:outline-none focus:border-blueprint-accent"
           />
+          {unit && <span className="text-sm text-blueprint-muted">{unit}</span>}
           <button type="button" onClick={submitLongTarget} disabled={!textInput.trim()} className="fb-btn-primary disabled:opacity-50">
             Send
           </button>
@@ -641,6 +650,7 @@ export function GoalWizard({
               placeholder={retryNote ? "New 6-week target" : "e.g. 74"}
               className="flex-1 bg-blueprint-raised border border-blueprint-line rounded-lg px-4 py-3 text-sm text-blueprint-ink placeholder:text-blueprint-muted focus:outline-none focus:border-blueprint-accent"
             />
+            {unit && <span className="text-sm text-blueprint-muted">{unit}</span>}
             <button type="button" onClick={() => submitMicroTarget()} disabled={!textInput.trim()} className="fb-btn-primary disabled:opacity-50">
               Send
             </button>
