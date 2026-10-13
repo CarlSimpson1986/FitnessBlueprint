@@ -15,7 +15,23 @@ export type EventItem = {
   isPaid: boolean;
   interestCount: number;
   isInterested: boolean;
+  /** First name of who posted a member event ("You" for your own); null for gym events. */
+  postedBy: string | null;
+  /** First names of everyone else going (event_people, 0061). */
+  othersGoing: string[];
 };
+
+const GOING_SHOWN = 5;
+
+/** "Sam, Jo and you" / "Sam, Jo, Ali, Mo, Bea +3 more". */
+function goingText(event: EventItem) {
+  const shown = event.othersGoing.slice(0, GOING_SHOWN);
+  const extra = event.othersGoing.length - shown.length;
+  const names = event.isInterested ? [...shown, "you"] : shown;
+  if (names.length === 0) return null;
+  if (extra > 0) return `${names.join(", ")} +${extra} more`;
+  return names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+}
 
 function formatEventDate(dateStr: string | null) {
   if (!dateStr) return "Date TBC";
@@ -62,6 +78,7 @@ function InterestButton({ event }: { event: EventItem }) {
 }
 
 function EventCard({ event }: { event: EventItem }) {
+  const going = goingText(event);
   return (
     <li className="fb-card">
       <div className="flex items-start justify-between gap-4">
@@ -70,6 +87,7 @@ function EventCard({ event }: { event: EventItem }) {
             {event.eventType === "gym" ? "Gym event" : "Member event"}
             {event.isPaid ? " · Paid" : ""}
           </p>
+          {event.postedBy && <p className="text-xs text-blueprint-muted mb-1">Posted by {event.postedBy}</p>}
           <p className="text-blueprint-ink font-medium">{event.title}</p>
           <p className="text-xs text-blueprint-muted mt-1">
             {formatEventDate(event.eventDate)}
@@ -77,6 +95,11 @@ function EventCard({ event }: { event: EventItem }) {
           </p>
           {event.description && (
             <p className="text-xs text-blueprint-muted mt-2">{event.description}</p>
+          )}
+          {going && (
+            <p className="text-xs text-blueprint-ink mt-2">
+              <span className="text-blueprint-muted">Going:</span> {going}
+            </p>
           )}
           {event.registrationUrl && (
             <a

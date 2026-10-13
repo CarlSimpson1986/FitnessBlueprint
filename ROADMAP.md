@@ -448,6 +448,16 @@ Carl gives the go-ahead — target end of this week / weekend):
   migration (each gets the set-your-password email).
 
 **Open — needs a decision or action from the owner:**
+- **Member feedback round (2026-10-13):** fixed — units beside Ted's goal
+  numbers (bare "17" saved as "17kg"), dark date pickers, "Installing…"
+  sheet after Get app (no APK; it lands on the home screen / app list),
+  check-in weight accepts "82,5"/"82kg" and a stale page says refresh.
+  Events show "Posted by" + "Going:" first names via event_people()
+  (**0061 — not yet run**; until then events just show counts). Check-in
+  error's actual wording still unknown. Waiting on Carl: gym TV page
+  (today's class workouts, portrait) — staff login on the tablet vs a
+  secret link. Parked: Garmin / smart-scale sync (John's idea; needs a
+  Garmin business API application).
 - **Monthly plan names — confirmed 2026-10-06:** GCP-1 / GCP-2 /
   GCP-Unlimited (the monthly continuation packages). Renamed in
   0060 (run 2026-10-06); weekly limits unchanged, Stripe product matching

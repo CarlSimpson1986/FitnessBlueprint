@@ -103,15 +103,31 @@ export default async function HomePage() {
   const eventRows = upcomingEvents ?? [];
   const eventIds = eventRows.map((e) => e.id);
 
-  const { data: interestRows } = eventIds.length
-    ? await supabase.from("event_interests").select("event_id, member_id").in("event_id", eventIds)
-    : { data: [] };
+  // event_people (0061): first names only — members can't read each other's
+  // profiles. Without it (migration not run yet) events just show counts.
+  const [{ data: interestRows }, { data: peopleRows }] = eventIds.length
+    ? await Promise.all([
+        supabase.from("event_interests").select("event_id, member_id").in("event_id", eventIds),
+        supabase.rpc("event_people", { p_event_ids: eventIds }),
+      ])
+    : [{ data: [] }, { data: [] }];
 
   const interestCountByEvent = new Map<string, number>();
   const myInterestSet = new Set<string>();
   for (const row of interestRows ?? []) {
     interestCountByEvent.set(row.event_id, (interestCountByEvent.get(row.event_id) ?? 0) + 1);
     if (row.member_id === user.id) myInterestSet.add(row.event_id);
+  }
+
+  const postedByEvent = new Map<string, string>();
+  const goingByEvent = new Map<string, string[]>();
+  for (const row of peopleRows ?? []) {
+    const name = row.person_id === user.id ? "You" : row.first_name;
+    if (row.is_creator) {
+      postedByEvent.set(row.event_id, name);
+    } else if (row.person_id !== user.id) {
+      goingByEvent.set(row.event_id, [...(goingByEvent.get(row.event_id) ?? []), name]);
+    }
   }
 
   const eventItems: EventItem[] = eventRows.map((e) => ({
@@ -125,6 +141,8 @@ export default async function HomePage() {
     isPaid: e.is_paid,
     interestCount: interestCountByEvent.get(e.id) ?? 0,
     isInterested: myInterestSet.has(e.id),
+    postedBy: postedByEvent.get(e.id) ?? null,
+    othersGoing: goingByEvent.get(e.id) ?? [],
   }));
 
   const [nextSession, ...restSessions] = sessionRows;

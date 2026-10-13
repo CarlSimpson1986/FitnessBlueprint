@@ -1542,6 +1542,15 @@ export type Database = {
           full_name: string
         }[]
       }
+      event_people: {
+        Args: { p_event_ids: string[] }
+        Returns: {
+          event_id: string
+          person_id: string
+          first_name: string
+          is_creator: boolean
+        }[]
+      }
       list_coach_names: {
         Args: Record<PropertyKey, never>
         Returns: {
