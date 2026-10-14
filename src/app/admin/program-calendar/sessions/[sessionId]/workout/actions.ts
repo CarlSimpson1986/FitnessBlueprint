@@ -289,3 +289,42 @@ export async function saveSessionWorkoutToLibrary(sessionId: string, name: strin
   const result = await saveWorkoutTemplate(name, workout.segments);
   return result.error ? { error: result.error } : {};
 }
+
+export type PasteWeekResult = ActionResult & { copied?: number; kept?: number; noClass?: number };
+
+/**
+ * "Copy week" (Guy, 2026-10-14): one week's class workouts onto the same
+ * class (weekday, class type, start time) in each target week. Week starts
+ * are Mondays (YYYY-MM-DD). All the work is copy_week_workouts (0063) —
+ * one transaction, so a 10-week block can't half-copy or time out. It runs
+ * as the caller: the owner-only session_segments/exercises/exercise_sets
+ * write policies (0046) authorize it.
+ */
+export async function pasteWeekWorkouts(
+  sourceWeekStart: string,
+  targetWeekStarts: string[],
+  replace: boolean
+): Promise<PasteWeekResult> {
+  const { supabase } = await requireOwner();
+
+  const targets = [...new Set(targetWeekStarts)].filter((w) => w !== sourceWeekStart);
+  if (targets.length === 0) {
+    return { error: "Pick at least one other week to paste into." };
+  }
+
+  const { data, error } = await supabase.rpc("copy_week_workouts", {
+    p_source_week: sourceWeekStart,
+    p_target_weeks: targets,
+    p_replace: replace,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  const counts = data?.[0];
+  if (!counts || counts.copied + counts.kept + counts.no_class === 0) {
+    return { error: "That week has no workouts to copy yet." };
+  }
+  return { copied: counts.copied, kept: counts.kept, noClass: counts.no_class };
+}

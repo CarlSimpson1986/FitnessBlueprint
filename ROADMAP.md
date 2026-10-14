@@ -461,6 +461,18 @@ Carl gives the go-ahead — target end of this week / weekend):
   member names or coach notes. Guy gets / resets it in Admin → Account
   settings → Gym TV. Parked: Garmin / smart-scale sync (John's idea; needs a
   Garmin business API application).
+- **Guy's timetable requests (2026-10-14):** recurring classes (Add a
+  class → Repeat weekly, any weekdays, up to 52 weeks; same day + time
+  already there is skipped), Change coach per class (this class only —
+  Carl: one-offs are enough, no "all future" option), Home icon below the
+  phone status bar (body safe-area padding). **Copy week** on the
+  programme calendar: one week's workouts onto the next N weeks, same
+  class/day/time; workouts only, keeps existing workouts unless
+  "replace", never replaces one members have logged —
+  copy_week_workouts (**0063 — not yet run**). Dropped: a standing
+  timetable page (recurring covers it). Later, if hand-tweaking each
+  week gets tedious: AI progression across a copied block (Autofinish
+  already does it for one workout; Gemini on prod still untested).
 - **Monthly plan names — confirmed 2026-10-06:** GCP-1 / GCP-2 /
   GCP-Unlimited (the monthly continuation packages). Renamed in
   0060 (run 2026-10-06); weekly limits unchanged, Stripe product matching

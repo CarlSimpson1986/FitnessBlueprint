@@ -4,7 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { assignTemplateToSession } from "../workout-templates/actions";
-import { pasteSessionToDate, saveSessionWorkoutToLibrary } from "./sessions/[sessionId]/workout/actions";
+import { pasteSessionToDate, pasteWeekWorkouts, saveSessionWorkoutToLibrary } from "./sessions/[sessionId]/workout/actions";
 import { CancelSessionButton } from "./CancelSessionButton";
 import { RepeatDays, weekdayOf } from "./RepeatDays";
 import { changeSessionCoach, createSessions } from "./schedule-actions";
@@ -187,6 +187,113 @@ function QuickAddModal({
 
 
 type CopySource = { sessionId: string; label: string; dateKey: string };
+
+function weekLabel(weekStart: string) {
+  return new Date(`${weekStart}T00:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+}
+
+function addWeeks(weekStart: string, weeks: number) {
+  const date = new Date(`${weekStart}T00:00:00`);
+  date.setDate(date.getDate() + weeks * 7);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+/**
+ * "Copy week": one week's workouts onto the following N weeks — build week
+ * 1 of a block, paste it over the rest, then tweak each week (Guy,
+ * 2026-10-14). Workouts only; see pasteWeekWorkouts.
+ */
+function CopyWeekModal({ weekStart, onClose }: { weekStart: string; onClose: () => void }) {
+  const router = useRouter();
+  const [weeks, setWeeks] = useState(9);
+  const [replace, setReplace] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState<string | null>(null);
+
+  const count = Math.min(Math.max(Math.trunc(weeks) || 1, 1), 52);
+
+  function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    setError(null);
+    const targets = Array.from({ length: count }, (_, i) => addWeeks(weekStart, i + 1));
+    startTransition(async () => {
+      const result = await pasteWeekWorkouts(weekStart, targets, replace);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      const copied = result.copied ?? 0;
+      const parts = [`Copied ${copied} workout${copied === 1 ? "" : "s"}.`];
+      if (result.kept)
+        parts.push(`${result.kept} class${result.kept === 1 ? "" : "es"} already had a workout (or members had logged it) — left as they were.`);
+      if (result.noClass) parts.push(`${result.noClass} had no matching class that week (cancelled or not on the timetable) — skipped.`);
+      setDone(parts.join(" "));
+      startTransition(() => {
+        router.refresh();
+      });
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-5" onClick={onClose}>
+      <form
+        onSubmit={handleSubmit}
+        onClick={(e) => e.stopPropagation()}
+        className="max-w-sm w-full bg-blueprint-raised border border-blueprint-line rounded-lg p-5 space-y-3"
+      >
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-sm font-semibold text-blueprint-ink">Copy week of {weekLabel(weekStart)}</p>
+          <button type="button" onClick={onClose} className="text-blueprint-muted hover:text-blueprint-ink text-sm">
+            ✕
+          </button>
+        </div>
+        <p className="text-xs text-blueprint-muted leading-relaxed">
+          Each workout goes onto the same class (same day, class and time) in the weeks after. Only workouts are
+          copied — no classes are added.
+        </p>
+        <label className="flex items-center gap-2 text-xs text-blueprint-ink">
+          Paste into the next
+          <input
+            type="number"
+            min={1}
+            max={52}
+            required
+            value={weeks}
+            onChange={(e) => setWeeks(Number(e.target.value))}
+            className="w-16 bg-blueprint-bg border border-blueprint-line rounded px-2 py-1 text-xs text-blueprint-ink focus:outline-none focus:border-blueprint-accent"
+          />
+          weeks
+        </label>
+        <p className="text-[10px] text-blueprint-muted">
+          Weeks of {weekLabel(addWeeks(weekStart, 1))} to {weekLabel(addWeeks(weekStart, count))}.
+        </p>
+        <label className="flex items-start gap-2 text-xs text-blueprint-ink">
+          <input type="checkbox" checked={replace} onChange={(e) => setReplace(e.target.checked)} className="mt-0.5" />
+          <span>
+            Replace workouts already there
+            <span className="block text-[10px] text-blueprint-muted">Off: classes that already have a workout keep it.</span>
+          </span>
+        </label>
+
+        {error && <p className="text-xs text-red-400">{error}</p>}
+
+        {done ? (
+          <>
+            <p className="text-xs text-blueprint-accent">{done}</p>
+            <button type="button" onClick={onClose} className="fb-btn-primary w-full">
+              Done
+            </button>
+          </>
+        ) : (
+          <button type="submit" disabled={isPending} className="fb-btn-primary w-full disabled:opacity-50">
+            {isPending ? "Copying…" : "Copy week"}
+          </button>
+        )}
+      </form>
+    </div>
+  );
+}
 
 const WEEKDAY_LABELS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 
@@ -476,6 +583,7 @@ export function ProgramCalendarClient({
   const [hoverDate, setHoverDate] = useState<string | null>(null);
   const [pasting, setPasting] = useState<{ dateKey: string; source: CopySource }[]>([]);
   const [pasteError, setPasteError] = useState<string | null>(null);
+  const [copyingWeek, setCopyingWeek] = useState<string | null>(null);
 
   const weeks: string[][] = [];
   for (let i = 0; i < dayKeys.length; i += 7) {
@@ -630,8 +738,21 @@ export function ProgramCalendarClient({
         </div>
 
         {weeks.map((week, weekIndex) => (
-          <div key={weekIndex} className="grid grid-cols-7 gap-2 mb-2">
-            {week.map((dateKey, dayIndex) => renderDay(dateKey, weekIndex * 7 + dayIndex, "grid"))}
+          <div key={weekIndex} className="mb-2">
+            {!readOnly && !copySource && week[0] && (
+              <div className="flex justify-end mb-1">
+                <button
+                  type="button"
+                  onClick={() => setCopyingWeek(week[0]!)}
+                  className="text-[10px] font-mono uppercase tracking-wide text-blueprint-muted hover:text-blueprint-accent"
+                >
+                  Copy week…
+                </button>
+              </div>
+            )}
+            <div className="grid grid-cols-7 gap-2">
+              {week.map((dateKey, dayIndex) => renderDay(dateKey, weekIndex * 7 + dayIndex, "grid"))}
+            </div>
           </div>
         ))}
       </div>
@@ -640,10 +761,26 @@ export function ProgramCalendarClient({
           Coaches only see days with sessions; the owner sees every day so
           "+ Add" and paste still work. */}
       <div className="md:hidden space-y-2">
-        {dayKeys.map((dateKey, index) =>
-          readOnly && (cardsByDate[dateKey] ?? []).length === 0 && !copySource ? null : renderDay(dateKey, index, "list")
-        )}
+        {dayKeys.map((dateKey, index) => (
+          <div key={dateKey}>
+            {/* dayKeys start on a Monday (page.tsx), so every 7th is a week start. */}
+            {index % 7 === 0 && !readOnly && !copySource && (
+              <div className="flex justify-end pt-1">
+                <button
+                  type="button"
+                  onClick={() => setCopyingWeek(dateKey)}
+                  className="text-[10px] font-mono uppercase tracking-wide text-blueprint-muted hover:text-blueprint-accent"
+                >
+                  Copy week of {weekLabel(dateKey)}…
+                </button>
+              </div>
+            )}
+            {readOnly && (cardsByDate[dateKey] ?? []).length === 0 && !copySource ? null : renderDay(dateKey, index, "list")}
+          </div>
+        ))}
       </div>
+
+      {copyingWeek && <CopyWeekModal weekStart={copyingWeek} onClose={() => setCopyingWeek(null)} />}
 
       {addingDate && (
         <QuickAddModal
