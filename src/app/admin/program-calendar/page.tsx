@@ -4,7 +4,6 @@ import { toLocalDateKey } from "@/lib/format";
 import { fetchTimeOff, isOff } from "@/lib/time-off";
 import { ProgramCalendarClient, type DayCard } from "./ProgramCalendarClient";
 import { ClassesPanel, type ClassRow } from "./ClassesPanel";
-import { ScheduleSessionPanel } from "./ScheduleSessionPanel";
 
 const WEEK_OPTIONS = [1, 2, 4, 6] as const;
 type WeekOption = (typeof WEEK_OPTIONS)[number];
@@ -18,6 +17,19 @@ function addDays(date: Date, days: number) {
   const next = new Date(date);
   next.setDate(next.getDate() + days);
   return next;
+}
+
+/** "12–25 Oct 2026", "28 Sep – 11 Oct 2026", "29 Dec 2026 – 11 Jan 2027". */
+function formatRange(start: Date, end: Date) {
+  const day = (d: Date) => d.getDate();
+  const month = (d: Date) => d.toLocaleDateString("en-GB", { month: "short" });
+  if (start.getFullYear() !== end.getFullYear()) {
+    return `${day(start)} ${month(start)} ${start.getFullYear()} – ${day(end)} ${month(end)} ${end.getFullYear()}`;
+  }
+  if (start.getMonth() !== end.getMonth()) {
+    return `${day(start)} ${month(start)} – ${day(end)} ${month(end)} ${end.getFullYear()}`;
+  }
+  return `${day(start)}–${day(end)} ${month(end)} ${end.getFullYear()}`;
 }
 
 export default async function ProgramCalendarPage({
@@ -140,11 +152,11 @@ export default async function ProgramCalendarPage({
         >
           ← Admin
         </Link>
-        <p className="fb-eyebrow mb-1">Coach</p>
+        <p className="fb-eyebrow mb-1">Programming</p>
         <h1 className="text-2xl font-semibold text-blueprint-ink mb-2">Program calendar</h1>
         <p className="text-blueprint-muted mb-6 text-sm leading-relaxed">
           {isOwner
-            ? "Classes, scheduling, and workout templates all live here now. Assign a saved template to any scheduled session, or open it to build one from scratch."
+            ? "Click + Add on a day to add a class (it can repeat weekly). Open a class to build its workout; its ⋯ menu copies it, assigns a template or changes the coach. Copy week pastes a whole week's workouts into the weeks after."
             : "The whole programme, view-only. Your sessions are highlighted — open one to see the workout, who's coming and how they're feeling."}
         </p>
 
@@ -181,10 +193,6 @@ export default async function ProgramCalendarPage({
                 )}
               </div>
 
-              <div>
-                <p className="fb-eyebrow mb-3">Schedule a session</p>
-                <ScheduleSessionPanel templates={activeClasses} coaches={allCoaches ?? []} />
-              </div>
             </aside>
           )}
 
@@ -210,7 +218,7 @@ export default async function ProgramCalendarPage({
                   →
                 </Link>
                 <span className="text-xs text-blueprint-muted ml-2">
-                  {startKey} – {endKey}
+                  {formatRange(start, end)}
                 </span>
               </div>
               <div className="flex gap-2">

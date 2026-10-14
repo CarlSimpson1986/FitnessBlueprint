@@ -1,6 +1,6 @@
 "use client";
 
-const DAYS = ["M", "T", "W", "T", "F", "S", "S"];
+const DAYS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 /** Mon = 0 … Sun = 6, matching createSessions' weekdays. */

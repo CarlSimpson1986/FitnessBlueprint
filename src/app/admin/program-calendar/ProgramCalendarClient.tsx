@@ -399,11 +399,16 @@ function SessionCard({
 
   return (
     <div
+      /* No workout yet = dashed and see-through, so the gaps stand out
+         while Guy programmes a block. */
       className={
-        "relative border rounded bg-blueprint-raised/60 p-2 text-left " +
+        "relative border rounded p-2 text-left " +
+        (hasWorkout ? "bg-blueprint-raised/60 " : "border-dashed bg-transparent ") +
         (isCopySource || (readOnly && card.isMine)
           ? "border-blueprint-accent ring-1 ring-blueprint-accent"
-          : "border-blueprint-line")
+          : hasWorkout
+            ? "border-blueprint-line"
+            : "border-blueprint-muted/50")
       }
     >
       <div className="flex items-start gap-1">
@@ -415,7 +420,7 @@ function SessionCard({
             {card.coachName}
             {card.coachOff && " · off, needs cover"}
           </p>
-          <p className="text-[10px] text-blueprint-muted mt-1">
+          <p className={"text-[10px] mt-1 " + (hasWorkout ? "text-blueprint-muted" : "text-amber-400/90")}>
             {hasWorkout
               ? `${card.segmentCount} segment${card.segmentCount === 1 ? "" : "s"} · ${card.exerciseCount} exercise${card.exerciseCount === 1 ? "" : "s"}`
               : "No workout yet"}
@@ -738,16 +743,19 @@ export function ProgramCalendarClient({
         </div>
 
         {weeks.map((week, weekIndex) => (
-          <div key={weekIndex} className="mb-2">
-            {!readOnly && !copySource && week[0] && (
-              <div className="flex justify-end mb-1">
-                <button
-                  type="button"
-                  onClick={() => setCopyingWeek(week[0]!)}
-                  className="text-[10px] font-mono uppercase tracking-wide text-blueprint-muted hover:text-blueprint-accent"
-                >
-                  Copy week…
-                </button>
+          <div key={weekIndex} className="mb-4">
+            {week[0] && (
+              <div className="flex items-center gap-3 mb-1.5 px-0.5">
+                <p className="text-[11px] text-blueprint-muted">Week of {weekLabel(week[0])}</p>
+                {!readOnly && !copySource && (
+                  <button
+                    type="button"
+                    onClick={() => setCopyingWeek(week[0]!)}
+                    className="text-[10px] font-mono uppercase tracking-wide text-blueprint-accent hover:opacity-80"
+                  >
+                    Copy week
+                  </button>
+                )}
               </div>
             )}
             <div className="grid grid-cols-7 gap-2">
@@ -771,7 +779,7 @@ export function ProgramCalendarClient({
                   onClick={() => setCopyingWeek(dateKey)}
                   className="text-[10px] font-mono uppercase tracking-wide text-blueprint-muted hover:text-blueprint-accent"
                 >
-                  Copy week of {weekLabel(dateKey)}…
+                  Copy week of {weekLabel(dateKey)}
                 </button>
               </div>
             )}

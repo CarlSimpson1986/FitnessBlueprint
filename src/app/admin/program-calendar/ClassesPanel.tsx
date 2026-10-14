@@ -118,6 +118,7 @@ export function ClassesPanel({ classes }: { classes: ClassRow[] }) {
   const router = useRouter();
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [menuId, setMenuId] = useState<string | null>(null);
 
   async function handleCreate(input: ClassInput) {
     const result = await createClass(input);
@@ -136,6 +137,7 @@ export function ClassesPanel({ classes }: { classes: ClassRow[] }) {
   }
 
   async function handleToggleActive(classId: string, isActive: boolean) {
+    setMenuId(null);
     await setClassActive(classId, isActive);
     router.refresh();
   }
@@ -182,21 +184,50 @@ export function ClassesPanel({ classes }: { classes: ClassRow[] }) {
             <li
               key={c.id}
               className={
-                "flex items-center justify-between gap-2 text-xs rounded px-2 py-1.5 " +
+                "relative flex items-center justify-between gap-2 text-xs rounded px-2 py-1.5 " +
                 (c.is_active ? "" : "opacity-50")
               }
             >
-              <button type="button" onClick={() => setEditingId(c.id)} className="text-left flex-1 min-w-0">
-                <span className="text-blueprint-ink">{c.name}</span>
-                <span className="text-blueprint-muted"> · {c.code}</span>
+              <button type="button" onClick={() => setEditingId(c.id)} className="text-left flex-1 min-w-0 text-blueprint-ink hover:text-blueprint-accent">
+                {c.name}
+                {!c.is_active && <span className="text-blueprint-muted"> (inactive)</span>}
               </button>
+              {/* Deactivate lives behind ⋯ so it can't be hit by accident. */}
               <button
                 type="button"
-                onClick={() => handleToggleActive(c.id, !c.is_active)}
-                className="text-[9px] font-mono uppercase text-blueprint-muted hover:text-blueprint-accent shrink-0"
+                aria-label={`${c.name} options`}
+                onClick={() => setMenuId(menuId === c.id ? null : c.id)}
+                className="shrink-0 px-1 leading-none text-blueprint-muted hover:text-blueprint-ink text-sm"
               >
-                {c.is_active ? "Deactivate" : "Activate"}
+                ⋯
               </button>
+              {menuId === c.id && (
+                <>
+                  <div className="fixed inset-0 z-30" onClick={() => setMenuId(null)} />
+                  <div className="absolute right-0 top-7 z-40 w-36 rounded-md border border-blueprint-line bg-blueprint-raised shadow-xl py-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuId(null);
+                        setEditingId(c.id);
+                      }}
+                      className="block w-full text-left px-3 py-1.5 text-xs text-blueprint-ink hover:bg-blueprint-accent/15"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleActive(c.id, !c.is_active)}
+                      className={
+                        "block w-full text-left px-3 py-1.5 text-xs hover:bg-blueprint-accent/15 " +
+                        (c.is_active ? "text-red-400" : "text-blueprint-ink")
+                      }
+                    >
+                      {c.is_active ? "Deactivate" : "Activate"}
+                    </button>
+                  </div>
+                </>
+              )}
             </li>
           )
         )}
