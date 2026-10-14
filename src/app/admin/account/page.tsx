@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireCoachOrOwner } from "@/lib/auth";
 import { SetPasswordForm } from "@/app/(member)/account/SetPasswordForm";
 import { CalendarFeedCard } from "@/app/(member)/account/settings/CalendarFeedCard";
+import { GymTvCard } from "./GymTvCard";
 
 /**
  * Account settings for coaches and the owner. The member page
@@ -37,6 +38,9 @@ export default async function StaffAccountPage() {
           <>
             <p className="fb-eyebrow mt-10 mb-3">Add the gym to your calendar</p>
             <CalendarFeedCard isOwner />
+
+            <p className="fb-eyebrow mt-10 mb-3">Gym TV</p>
+            <GymTvCard />
           </>
         )}
       </div>

@@ -888,6 +888,24 @@ export type Database = {
         }
         Relationships: []
       }
+      gym_tv_link: {
+        Row: {
+          id: boolean
+          token: string
+          created_at: string
+        }
+        Insert: {
+          id?: boolean
+          token: string
+          created_at?: string
+        }
+        Update: {
+          id?: boolean
+          token?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       programme_followups: {
         Row: {
           id: string
@@ -1550,6 +1568,10 @@ export type Database = {
           first_name: string
           is_creator: boolean
         }[]
+      }
+      gym_tv_board: {
+        Args: { p_token: string }
+        Returns: Json
       }
       list_coach_names: {
         Args: Record<PropertyKey, never>

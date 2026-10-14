@@ -454,9 +454,12 @@ Carl gives the go-ahead — target end of this week / weekend):
   check-in weight accepts "82,5"/"82kg" and a stale page says refresh.
   Events show "Posted by" + "Going:" first names via event_people()
   (0061 run by 2026-10-14 — confirmed live, anon calls refused). Check-in
-  error's actual wording still unknown. Waiting on Carl: gym TV page
-  (today's class workouts, portrait) — staff login on the tablet vs a
-  secret link. Parked: Garmin / smart-scale sync (John's idea; needs a
+  error's actual wording still unknown. Gym TV page built 2026-10-14
+  (**0062 — not yet run**): one secret link (/tv/<token>) left open on the
+  TV, landscape, today's class workout; moves to the next class 5 min
+  before it starts (back-to-back classes), reloads every minute; no
+  member names or coach notes. Guy gets / resets it in Admin → Account
+  settings → Gym TV. Parked: Garmin / smart-scale sync (John's idea; needs a
   Garmin business API application).
 - **Monthly plan names — confirmed 2026-10-06:** GCP-1 / GCP-2 /
   GCP-Unlimited (the monthly continuation packages). Renamed in
