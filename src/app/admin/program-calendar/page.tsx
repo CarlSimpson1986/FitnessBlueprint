@@ -114,6 +114,7 @@ export default async function ProgramCalendarPage({
       sessionId: session.id,
       time: session.start_time.slice(0, 5),
       className: classNameById.get(session.template_id) ?? "Session",
+      coachId: session.coach_id,
       coachName: coachNameById.get(session.coach_id) ?? "Coach TBC",
       isMine: session.coach_id === profile.id,
       coachOff: isOff(timeOff, session.coach_id, session.session_date),

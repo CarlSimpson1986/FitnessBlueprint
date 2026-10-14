@@ -38,6 +38,10 @@
 html,
 body {
   padding: 0;
+  /* The installed app draws under the phone's status bar (layout.tsx:
+     black-translucent + viewportFit cover), which hid the top-right Home
+     icon behind the clock/battery (Guy, 2026-10-14). Zero on desktop. */
+  padding-top: env(safe-area-inset-top);
   margin: 0;
   background-color: var(--fb-bg);
   color: var(--fb-ink);

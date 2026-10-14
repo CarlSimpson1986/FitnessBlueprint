@@ -2,6 +2,7 @@
 
 import { useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { RepeatDays, weekdayOf } from "./RepeatDays";
 import { createSessions } from "./schedule-actions";
 
 type Template = { id: string; name: string; default_capacity: number };
@@ -19,16 +20,17 @@ export function ScheduleSessionPanel({
   const [coachId, setCoachId] = useState(coaches[0]?.id ?? "");
   const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [startTime, setStartTime] = useState("");
-  const [weeksToRepeat, setWeeksToRepeat] = useState(1);
+  const [weekdays, setWeekdays] = useState<number[]>(() => [weekdayOf(new Date().toISOString().slice(0, 10))]);
+  const [weeks, setWeeks] = useState(1);
   const [capacity, setCapacity] = useState("");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    setSuccess(false);
+    setSuccess(null);
 
     startTransition(async () => {
       let succeeded = false;
@@ -39,16 +41,22 @@ export function ScheduleSessionPanel({
           coachId,
           startDate,
           startTime,
-          weeksToRepeat,
+          weekdays,
+          weeks,
           capacity: capacity ? Number(capacity) : null,
         });
 
         if (result.error) {
           setError(result.error);
         } else {
-          setSuccess(true);
+          const created = result.created ?? 0;
+          const skipped = result.skipped ?? 0;
+          setSuccess(
+            `Scheduled ${created} class${created === 1 ? "" : "es"}` +
+              (skipped > 0 ? ` (${skipped} already there, skipped).` : ".")
+          );
           setStartTime("");
-          setWeeksToRepeat(1);
+          setWeeks(1);
           setCapacity("");
           succeeded = true;
         }
@@ -93,36 +101,36 @@ export function ScheduleSessionPanel({
         ))}
       </select>
 
-      <input type="date" required value={startDate} onChange={(e) => setStartDate(e.target.value)} className={inputClass} />
+      <input
+        type="date"
+        required
+        value={startDate}
+        onChange={(e) => {
+          setStartDate(e.target.value);
+          if (e.target.value) setWeekdays([weekdayOf(e.target.value)]);
+        }}
+        className={inputClass}
+      />
       <input type="time" required value={startTime} onChange={(e) => setStartTime(e.target.value)} className={inputClass} />
 
-      <div className="flex gap-2">
-        <input
-          type="number"
-          min={1}
-          max={26}
-          required
-          value={weeksToRepeat}
-          onChange={(e) => setWeeksToRepeat(Number(e.target.value))}
-          className={inputClass}
-          title="Repeat weekly for N weeks"
-        />
-        <input
-          type="number"
-          min={1}
-          placeholder="Capacity"
-          value={capacity}
-          onChange={(e) => setCapacity(e.target.value)}
-          className={inputClass}
-        />
-      </div>
+      <input
+        type="number"
+        min={1}
+        placeholder="Capacity"
+        value={capacity}
+        onChange={(e) => setCapacity(e.target.value)}
+        className={inputClass}
+      />
+
+      <p className="text-[10px] text-blueprint-muted">Repeat on</p>
+      <RepeatDays weekdays={weekdays} onWeekdaysChange={setWeekdays} weeks={weeks} onWeeksChange={setWeeks} compact />
 
       {error && <p className="text-[10px] text-red-400">{error}</p>}
-      {success && <p className="text-[10px] text-blueprint-accent">Scheduled.</p>}
+      {success && <p className="text-[10px] text-blueprint-accent">{success}</p>}
 
       <button
         type="submit"
-        disabled={isPending}
+        disabled={isPending || weekdays.length === 0}
         className="w-full text-[10px] font-mono uppercase tracking-wide text-blueprint-bg bg-blueprint-accent rounded px-3 py-2 disabled:opacity-50"
       >
         {isPending ? "Scheduling…" : "Schedule session"}

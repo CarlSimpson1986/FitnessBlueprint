@@ -6,12 +6,14 @@ import { useRouter } from "next/navigation";
 import { assignTemplateToSession } from "../workout-templates/actions";
 import { pasteSessionToDate, saveSessionWorkoutToLibrary } from "./sessions/[sessionId]/workout/actions";
 import { CancelSessionButton } from "./CancelSessionButton";
-import { createSessions } from "./schedule-actions";
+import { RepeatDays, weekdayOf } from "./RepeatDays";
+import { changeSessionCoach, createSessions } from "./schedule-actions";
 
 export type DayCard = {
   sessionId: string;
   time: string;
   className: string;
+  coachId: string;
   coachName: string;
   /** Coached by whoever is viewing — highlighted for coaches. */
   isMine: boolean;
@@ -40,8 +42,12 @@ function QuickAddModal({
   const [coachId, setCoachId] = useState(coaches[0]?.id ?? "");
   const [startTime, setStartTime] = useState("");
   const [capacity, setCapacity] = useState("");
+  const [repeat, setRepeat] = useState(false);
+  const [weekdays, setWeekdays] = useState(() => [weekdayOf(dateKey)]);
+  const [weeks, setWeeks] = useState(12);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState<string | null>(null);
 
   const label = new Date(`${dateKey}T00:00:00`).toLocaleDateString("en-GB", {
     weekday: "long",
@@ -58,7 +64,8 @@ function QuickAddModal({
         coachId,
         startDate: dateKey,
         startTime,
-        weeksToRepeat: 1,
+        weekdays: repeat ? weekdays : [],
+        weeks: repeat ? weeks : 1,
         capacity: capacity ? Number(capacity) : null,
       });
 
@@ -67,10 +74,21 @@ function QuickAddModal({
         return;
       }
 
-      onClose();
       startTransition(() => {
         router.refresh();
       });
+      // A one-off just closes; a recurring add says what it did, since
+      // most of it lands in weeks that aren't on screen.
+      if (!repeat) {
+        onClose();
+        return;
+      }
+      const created = result.created ?? 0;
+      const skipped = result.skipped ?? 0;
+      setDone(
+        `Added ${created} class${created === 1 ? "" : "es"}` +
+          (skipped > 0 ? ` — ${skipped} already on the calendar, left as they were.` : ".")
+      );
     });
   }
 
@@ -134,11 +152,32 @@ function QuickAddModal({
               />
             </div>
 
+            <label className="flex items-center gap-2 text-xs text-blueprint-ink">
+              <input type="checkbox" checked={repeat} onChange={(e) => setRepeat(e.target.checked)} />
+              Repeat weekly
+            </label>
+            {repeat && (
+              <RepeatDays weekdays={weekdays} onWeekdaysChange={setWeekdays} weeks={weeks} onWeeksChange={setWeeks} />
+            )}
+
             {error && <p className="text-xs text-red-400">{error}</p>}
 
-            <button type="submit" disabled={isPending} className="fb-btn-primary w-full disabled:opacity-50">
-              {isPending ? "Adding…" : "Add class"}
-            </button>
+            {done ? (
+              <>
+                <p className="text-xs text-blueprint-accent">{done}</p>
+                <button type="button" onClick={onClose} className="fb-btn-primary w-full">
+                  Done
+                </button>
+              </>
+            ) : (
+              <button
+                type="submit"
+                disabled={isPending || (repeat && weekdays.length === 0)}
+                className="fb-btn-primary w-full disabled:opacity-50"
+              >
+                {isPending ? "Adding…" : repeat ? "Add recurring class" : "Add class"}
+              </button>
+            )}
           </>
         )}
       </form>
@@ -166,12 +205,14 @@ const menuItemClass =
 
 /**
  * Everfit-style card: the card itself opens the builder, everything else
- * lives behind the ⋯ menu (copy, save to library, assign template, cancel).
+ * lives behind the ⋯ menu (copy, save to library, assign template, change
+ * coach, cancel).
  */
 function SessionCard({
   card,
   dateKey,
   templates,
+  coaches,
   isCopySource,
   onCopy,
   readOnly,
@@ -179,6 +220,7 @@ function SessionCard({
   card: DayCard;
   dateKey: string;
   templates: { id: string; name: string }[];
+  coaches: CoachOption[];
   isCopySource: boolean;
   onCopy: (source: CopySource) => void;
   readOnly: boolean;
@@ -186,7 +228,8 @@ function SessionCard({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [panel, setPanel] = useState<"none" | "assign" | "library">("none");
+  const [panel, setPanel] = useState<"none" | "assign" | "library" | "coach">("none");
+  const [selectedCoach, setSelectedCoach] = useState(card.coachId);
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [libraryName, setLibraryName] = useState(card.className);
   const [error, setError] = useState<string | null>(null);
@@ -205,6 +248,21 @@ function SessionCard({
     setError(null);
     startTransition(async () => {
       const result = await assignTemplateToSession(selectedTemplate, card.sessionId);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      closeMenu();
+      startTransition(() => {
+        router.refresh();
+      });
+    });
+  }
+
+  function handleChangeCoach() {
+    setError(null);
+    startTransition(async () => {
+      const result = await changeSessionCoach(card.sessionId, selectedCoach);
       if (result.error) {
         setError(result.error);
         return;
@@ -299,6 +357,9 @@ function SessionCard({
                     Assign template…
                   </button>
                 )}
+                <button type="button" className={menuItemClass} onClick={() => setPanel("coach")}>
+                  Change coach…
+                </button>
                 <div className="border-t border-blueprint-line/60 mt-1 px-3 pt-2 pb-1">
                   <CancelSessionButton sessionId={card.sessionId} />
                 </div>
@@ -326,6 +387,31 @@ function SessionCard({
                   className="fb-btn-primary w-full text-xs disabled:opacity-50"
                 >
                   {isPending ? "Assigning…" : "Assign"}
+                </button>
+              </div>
+            )}
+
+            {panel === "coach" && (
+              <div className="px-3 py-2 space-y-2">
+                <p className="text-[10px] text-blueprint-muted">This class only — the rest of the week stays as it is.</p>
+                <select
+                  className="w-full bg-blueprint-bg border border-blueprint-line rounded text-xs text-blueprint-ink px-2 py-1.5"
+                  value={selectedCoach}
+                  onChange={(e) => setSelectedCoach(e.target.value)}
+                >
+                  {coaches.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.full_name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={handleChangeCoach}
+                  disabled={selectedCoach === card.coachId || isPending}
+                  className="fb-btn-primary w-full text-xs disabled:opacity-50"
+                >
+                  {isPending ? "Saving…" : "Change coach"}
                 </button>
               </div>
             )}
@@ -475,6 +561,7 @@ export function ProgramCalendarClient({
             card={card}
             dateKey={dateKey}
             templates={templates}
+            coaches={coaches}
             isCopySource={copySource?.sessionId === card.sessionId}
             readOnly={readOnly}
             onCopy={(source) => {
