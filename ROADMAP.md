@@ -455,7 +455,7 @@ Carl gives the go-ahead — target end of this week / weekend):
   Events show "Posted by" + "Going:" first names via event_people()
   (0061 run by 2026-10-14 — confirmed live, anon calls refused). Check-in
   error's actual wording still unknown. Gym TV page built 2026-10-14
-  (**0062 — not yet run**): one secret link (/tv/<token>) left open on the
+  (0062 run 2026-10-14): one secret link (/tv/<token>) left open on the
   TV, landscape, today's class workout; moves to the next class 5 min
   before it starts (back-to-back classes), reloads every minute; no
   member names or coach notes. Guy gets / resets it in Admin → Account
