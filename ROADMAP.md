@@ -469,7 +469,7 @@ Carl gives the go-ahead — target end of this week / weekend):
   programme calendar: one week's workouts onto the next N weeks, same
   class/day/time; workouts only, keeps existing workouts unless
   "replace", never replaces one members have logged —
-  copy_week_workouts (**0063 — not yet run**). Dropped: a standing
+  copy_week_workouts (0063 run 2026-10-14). Dropped: a standing
   timetable page (recurring covers it). Later, if hand-tweaking each
   week gets tedious: AI progression across a copied block (Autofinish
   already does it for one workout; Gemini on prod still untested).
