@@ -453,7 +453,7 @@ Carl gives the go-ahead — target end of this week / weekend):
   sheet after Get app (no APK; it lands on the home screen / app list),
   check-in weight accepts "82,5"/"82kg" and a stale page says refresh.
   Events show "Posted by" + "Going:" first names via event_people()
-  (**0061 — not yet run**; until then events just show counts). Check-in
+  (0061 run by 2026-10-14 — confirmed live, anon calls refused). Check-in
   error's actual wording still unknown. Waiting on Carl: gym TV page
   (today's class workouts, portrait) — staff login on the tablet vs a
   secret link. Parked: Garmin / smart-scale sync (John's idea; needs a
