@@ -479,7 +479,7 @@ Carl gives the go-ahead — target end of this week / weekend):
   class type + weekday + time, from that date on; reverses the 10-14
   "one-offs are enough" call). Cancel refunds anyone booked. A coach
   change overwrites one-off covers in the run. Workouts go forward via
-  copy_workout_forward (0064 — **not run yet**), never over a workout
+  copy_workout_forward (0064 run 2026-10-20; tested on dev with a throwaway class), never over a workout
   members have logged.
 - **Monthly plan names — confirmed 2026-10-06:** GCP-1 / GCP-2 /
   GCP-Unlimited (the monthly continuation packages). Renamed in

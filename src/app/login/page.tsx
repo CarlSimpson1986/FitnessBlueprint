@@ -123,7 +123,7 @@ function LoginForm() {
         )}
 
         {mode === "magic-link" ? (
-          <form onSubmit={handleMagicLinkSubmit} className="space-y-4">
+          <form method="post" onSubmit={handleMagicLinkSubmit} className="space-y-4">
             <div>
               <label
                 htmlFor="email"
@@ -159,7 +159,7 @@ function LoginForm() {
             </button>
           </form>
         ) : (
-          <form onSubmit={handlePasswordSubmit} className="space-y-4">
+          <form method="post" onSubmit={handlePasswordSubmit} className="space-y-4">
             <div>
               <label
                 htmlFor="email"
