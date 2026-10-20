@@ -473,6 +473,14 @@ Carl gives the go-ahead — target end of this week / weekend):
   timetable page (recurring covers it). Later, if hand-tweaking each
   week gets tedious: AI progression across a copied block (Autofinish
   already does it for one workout; Gemini on prod still untested).
+- **Bulk edit a run of classes (2026-10-20):** Guy fills 52 weeks, so
+  Change coach, Cancel class, Assign template and the builder's Save each
+  offer "This class only" / "This and every later Tuesday 06:00" (same
+  class type + weekday + time, from that date on; reverses the 10-14
+  "one-offs are enough" call). Cancel refunds anyone booked. A coach
+  change overwrites one-off covers in the run. Workouts go forward via
+  copy_workout_forward (0064 — **not run yet**), never over a workout
+  members have logged.
 - **Monthly plan names — confirmed 2026-10-06:** GCP-1 / GCP-2 /
   GCP-Unlimited (the monthly continuation packages). Renamed in
   0060 (run 2026-10-06); weekly limits unchanged, Stripe product matching

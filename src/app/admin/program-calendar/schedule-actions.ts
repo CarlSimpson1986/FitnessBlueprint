@@ -103,8 +103,65 @@ export async function createSessions(input: {
   return { created: rows.length, skipped: dates.length - rows.length };
 }
 
-/** Cover / holidays: one class gets a different coach. "sessions: change" (0046) is owner only. */
-export async function changeSessionCoach(sessionId: string, coachId: string): Promise<ActionResult> {
+/**
+ * "One" = just this class. "Following" = this class and every later one
+ * in its run: same class type, same weekday, same start time, not
+ * already cancelled — "all Tuesdays at 6pm" (Guy, 2026-10-20). Classes
+ * have no series id, so a run is matched by its shape; that also picks
+ * up a slot that was built from two separate "add class" runs.
+ */
+export type SeriesScope = "one" | "following";
+
+type OwnerClient = Awaited<ReturnType<typeof requireOwner>>["supabase"];
+
+async function sessionIdsInScope(
+  supabase: OwnerClient,
+  sessionId: string,
+  scope: SeriesScope,
+): Promise<{ ids: string[] } | { error: string }> {
+  if (scope === "one") return { ids: [sessionId] };
+
+  const { data: session, error } = await supabase
+    .from("sessions")
+    .select("template_id, session_date, start_time")
+    .eq("id", sessionId)
+    .maybeSingle();
+
+  if (error || !session) {
+    return { error: error?.message ?? "Class not found." };
+  }
+
+  const { data: later, error: laterError } = await supabase
+    .from("sessions")
+    .select("id, session_date")
+    .eq("template_id", session.template_id)
+    .eq("start_time", session.start_time)
+    .gte("session_date", session.session_date)
+    .neq("status", "cancelled");
+
+  if (laterError) {
+    return { error: laterError.message };
+  }
+
+  // Same weekday — PostgREST can't filter on extract(dow), and a run is at
+  // most a year of one slot, so filtering here is cheap.
+  const weekday = new Date(`${session.session_date}T00:00:00`).getDay();
+  const ids = (later ?? [])
+    .filter((s) => new Date(`${s.session_date}T00:00:00`).getDay() === weekday)
+    .map((s) => s.id);
+
+  return { ids: ids.includes(sessionId) ? ids : [sessionId, ...ids] };
+}
+
+/**
+ * Cover / holidays (this class only) or a rota change (every later class
+ * in the run). "sessions: change" (0046) is owner only.
+ */
+export async function changeSessionCoach(
+  sessionId: string,
+  coachId: string,
+  scope: SeriesScope = "one",
+): Promise<ActionResult & { changed?: number }> {
   const { supabase } = await requireOwner();
 
   const { data: coach } = await supabase
@@ -118,8 +175,11 @@ export async function changeSessionCoach(sessionId: string, coachId: string): Pr
     return { error: "Coach not found." };
   }
 
-  const { error } = await supabase.from("sessions").update({ coach_id: coachId }).eq("id", sessionId);
-  return error ? { error: error.message } : {};
+  const scoped = await sessionIdsInScope(supabase, sessionId, scope);
+  if ("error" in scoped) return { error: scoped.error };
+
+  const { error } = await supabase.from("sessions").update({ coach_id: coachId }).in("id", scoped.ids);
+  return error ? { error: error.message } : { changed: scoped.ids.length };
 }
 
 /**
@@ -128,17 +188,24 @@ export async function changeSessionCoach(sessionId: string, coachId: string): Pr
  * same as if they'd cancelled it themselves. That refund path touches
  * credit_ledger, which has no policy for anyone but the service role
  * (see 0001), so this needs the admin client even though the sessions
- * update alone wouldn't.
+ * update alone wouldn't. Finding which classes are in scope uses the
+ * owner's own client — only the writes need the admin one.
  */
-export async function cancelSession(sessionId: string): Promise<ActionResult> {
-  const { user: staff } = await requireOwner();
+export async function cancelSession(
+  sessionId: string,
+  scope: SeriesScope = "one",
+): Promise<ActionResult & { cancelled?: number }> {
+  const { supabase, user: staff } = await requireOwner();
+
+  const scoped = await sessionIdsInScope(supabase, sessionId, scope);
+  if ("error" in scoped) return { error: scoped.error };
 
   const admin = createAdminClient();
 
   const { error: sessionError } = await admin
     .from("sessions")
     .update({ status: "cancelled" })
-    .eq("id", sessionId);
+    .in("id", scoped.ids);
 
   if (sessionError) {
     return { error: sessionError.message };
@@ -147,7 +214,7 @@ export async function cancelSession(sessionId: string): Promise<ActionResult> {
   const { data: activeBookings, error: bookingsError } = await admin
     .from("bookings")
     .select("id, member_id, credit_ledger_id")
-    .eq("session_id", sessionId)
+    .in("session_id", scoped.ids)
     .eq("status", "booked");
 
   if (bookingsError) {
@@ -179,5 +246,5 @@ export async function cancelSession(sessionId: string): Promise<ActionResult> {
     }
   }
 
-  return {};
+  return { cancelled: scoped.ids.length };
 }

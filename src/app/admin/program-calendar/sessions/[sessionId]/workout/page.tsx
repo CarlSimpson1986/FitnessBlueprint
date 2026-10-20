@@ -99,6 +99,8 @@ export default async function SessionWorkoutPage({
 
         <WorkoutBuilder
           sessionId={sessionId}
+          sessionDate={session.session_date}
+          time={session.start_time.slice(0, 5)}
           initialSegments={initialSegments}
           previewTitle={template?.name ?? "Session"}
         />

@@ -1569,6 +1569,10 @@ export type Database = {
           is_creator: boolean
         }[]
       }
+      copy_workout_forward: {
+        Args: { p_source_session: string }
+        Returns: { copied: number; kept: number }[]
+      }
       copy_week_workouts: {
         Args: { p_source_week: string; p_target_weeks: string[]; p_replace: boolean }
         Returns: { copied: number; kept: number; no_class: number }[]

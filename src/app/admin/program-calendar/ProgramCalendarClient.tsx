@@ -5,9 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { assignTemplateToSession } from "../workout-templates/actions";
 import { pasteSessionToDate, pasteWeekWorkouts, saveSessionWorkoutToLibrary } from "./sessions/[sessionId]/workout/actions";
-import { CancelSessionButton } from "./CancelSessionButton";
 import { RepeatDays, weekdayOf } from "./RepeatDays";
-import { changeSessionCoach, createSessions } from "./schedule-actions";
+import { cancelSession, changeSessionCoach, createSessions, type SeriesScope } from "./schedule-actions";
+import { ScopePicker } from "./ScopePicker";
+import { copyWorkoutForward } from "./sessions/[sessionId]/workout/actions";
 
 export type DayCard = {
   sessionId: string;
@@ -335,7 +336,8 @@ function SessionCard({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [panel, setPanel] = useState<"none" | "assign" | "library" | "coach">("none");
+  const [panel, setPanel] = useState<"none" | "assign" | "library" | "coach" | "cancel">("none");
+  const [scope, setScope] = useState<SeriesScope>("one");
   const [selectedCoach, setSelectedCoach] = useState(card.coachId);
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [libraryName, setLibraryName] = useState(card.className);
@@ -347,6 +349,7 @@ function SessionCard({
   function closeMenu() {
     setMenuOpen(false);
     setPanel("none");
+    setScope("one");
     setError(null);
   }
 
@@ -359,6 +362,17 @@ function SessionCard({
         setError(result.error);
         return;
       }
+      if (scope === "following") {
+        const forward = await copyWorkoutForward(card.sessionId);
+        if (forward.error) {
+          setError(`Assigned to this class, but not the later ones: ${forward.error}`);
+          return;
+        }
+        setNotice(
+          `Assigned to ${(forward.copied ?? 0) + 1} classes` +
+            (forward.kept ? ` · ${forward.kept} kept (already logged)` : "")
+        );
+      }
       closeMenu();
       startTransition(() => {
         router.refresh();
@@ -369,7 +383,23 @@ function SessionCard({
   function handleChangeCoach() {
     setError(null);
     startTransition(async () => {
-      const result = await changeSessionCoach(card.sessionId, selectedCoach);
+      const result = await changeSessionCoach(card.sessionId, selectedCoach, scope);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      closeMenu();
+      if ((result.changed ?? 0) > 1) setNotice(`Coach changed on ${result.changed} classes`);
+      startTransition(() => {
+        router.refresh();
+      });
+    });
+  }
+
+  function handleCancel() {
+    setError(null);
+    startTransition(async () => {
+      const result = await cancelSession(card.sessionId, scope);
       if (result.error) {
         setError(result.error);
         return;
@@ -472,14 +502,27 @@ function SessionCard({
                 <button type="button" className={menuItemClass} onClick={() => setPanel("coach")}>
                   Change coach…
                 </button>
-                <div className="border-t border-blueprint-line/60 mt-1 px-3 pt-2 pb-1">
-                  <CancelSessionButton sessionId={card.sessionId} />
+                <div className="border-t border-blueprint-line/60 mt-1 pt-1">
+                  <button
+                    type="button"
+                    className={menuItemClass + " hover:!text-red-400"}
+                    onClick={() => setPanel("cancel")}
+                  >
+                    Cancel class…
+                  </button>
                 </div>
               </>
             )}
 
             {panel === "assign" && (
               <div className="px-3 py-2 space-y-2">
+                <ScopePicker
+                  name={`assign-scope-${card.sessionId}`}
+                  dateKey={dateKey}
+                  time={card.time}
+                  value={scope}
+                  onChange={setScope}
+                />
                 <select
                   className="w-full bg-blueprint-bg border border-blueprint-line rounded text-xs text-blueprint-ink px-2 py-1.5"
                   value={selectedTemplate}
@@ -505,7 +548,13 @@ function SessionCard({
 
             {panel === "coach" && (
               <div className="px-3 py-2 space-y-2">
-                <p className="text-[10px] text-blueprint-muted">This class only — the rest of the week stays as it is.</p>
+                <ScopePicker
+                  name={`coach-scope-${card.sessionId}`}
+                  dateKey={dateKey}
+                  time={card.time}
+                  value={scope}
+                  onChange={setScope}
+                />
                 <select
                   className="w-full bg-blueprint-bg border border-blueprint-line rounded text-xs text-blueprint-ink px-2 py-1.5"
                   value={selectedCoach}
@@ -524,6 +573,27 @@ function SessionCard({
                   className="fb-btn-primary w-full text-xs disabled:opacity-50"
                 >
                   {isPending ? "Saving…" : "Change coach"}
+                </button>
+              </div>
+            )}
+
+            {panel === "cancel" && (
+              <div className="px-3 py-2 space-y-2">
+                <ScopePicker
+                  name={`cancel-scope-${card.sessionId}`}
+                  dateKey={dateKey}
+                  time={card.time}
+                  value={scope}
+                  onChange={setScope}
+                />
+                <p className="text-[10px] text-blueprint-muted">Anyone booked gets their credit back.</p>
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  disabled={isPending}
+                  className="w-full rounded border border-red-400/60 px-2 py-1.5 text-xs text-red-400 hover:bg-red-400/10 disabled:opacity-50"
+                >
+                  {isPending ? "Cancelling…" : scope === "one" ? "Cancel this class" : "Cancel all of them"}
                 </button>
               </div>
             )}

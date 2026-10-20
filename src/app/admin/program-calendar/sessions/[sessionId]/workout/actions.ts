@@ -328,3 +328,25 @@ export async function pasteWeekWorkouts(
   }
   return { copied: counts.copied, kept: counts.kept, noClass: counts.no_class };
 }
+
+export type CopyForwardResult = ActionResult & { copied?: number; kept?: number };
+
+/**
+ * "This and every later Tuesday 06:00" (Guy, 2026-10-20): this class's
+ * workout onto every later class of the same type, weekday and time. All
+ * the work is copy_workout_forward (0064) — one transaction, same rules as
+ * Copy week: runs as the caller, so the owner-only session_segments/
+ * exercises/exercise_sets write policies (0046) authorize it, and a class
+ * members have already logged against is kept, not replaced.
+ */
+export async function copyWorkoutForward(sessionId: string): Promise<CopyForwardResult> {
+  const { supabase } = await requireOwner();
+
+  const { data, error } = await supabase.rpc("copy_workout_forward", { p_source_session: sessionId });
+  if (error) {
+    return { error: error.message };
+  }
+
+  const counts = data?.[0];
+  return { copied: counts?.copied ?? 0, kept: counts?.kept ?? 0 };
+}
