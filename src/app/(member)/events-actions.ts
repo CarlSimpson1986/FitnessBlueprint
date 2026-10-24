@@ -1,6 +1,8 @@
 "use server";
 
 import { requireProfile } from "@/lib/auth";
+import { hasActiveMembership } from "@/lib/coach-ted/access";
+import { eventTooLong } from "@/lib/events";
 
 export type ActionResult = { error?: string };
 
@@ -35,6 +37,12 @@ export async function postMemberEvent(input: {
   if (!title) {
     return { error: "Give your event a title." };
   }
+  // Same rule as "events: create" (0067), checked first for a clear message.
+  if (!(await hasActiveMembership(supabase, user.id))) {
+    return { error: "Only members with an active plan can post events." };
+  }
+  const tooLong = eventTooLong(title, input.description, input.location);
+  if (tooLong) return { error: tooLong };
 
   const { error } = await supabase.from("events").insert({
     title,

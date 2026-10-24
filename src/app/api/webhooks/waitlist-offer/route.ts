@@ -1,17 +1,11 @@
-import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isInternalAddress } from "@/lib/email";
 import { sendOnce } from "@/lib/email-log";
 import { serverEnv } from "@/lib/env";
+import { isAuthorisedBearer } from "@/lib/cron-auth";
 import { formatSessionTime } from "@/lib/format";
 import { waitlistOfferHtml } from "@/lib/session-emails";
-
-function authorised(header: string | null, secret: string) {
-  const expected = Buffer.from(`Bearer ${secret}`);
-  const given = Buffer.from(header ?? "");
-  return given.length === expected.length && timingSafeEqual(given, expected);
-}
 
 /**
  * Database webhook (0051): Postgres calls this the moment a waitlist entry
@@ -26,7 +20,7 @@ export async function POST(request: Request) {
   if (!env.CRON_SECRET) {
     return NextResponse.json({ error: "CRON_SECRET is not set" }, { status: 500 });
   }
-  if (!authorised(request.headers.get("authorization"), env.CRON_SECRET)) {
+  if (!isAuthorisedBearer(request.headers.get("authorization"), env.CRON_SECRET)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

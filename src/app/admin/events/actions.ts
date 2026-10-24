@@ -1,6 +1,7 @@
 "use server";
 
 import { requireOwner } from "@/lib/auth";
+import { eventTooLong } from "@/lib/events";
 
 export type ActionResult = { error?: string };
 
@@ -18,6 +19,12 @@ export async function createGymEvent(input: {
   if (!title) {
     return { error: "Give the event a title." };
   }
+  const tooLong = eventTooLong(title, input.description, input.location);
+  if (tooLong) return { error: tooLong };
+  const registrationUrl = input.registrationUrl.trim();
+  if (registrationUrl && !registrationUrl.startsWith("https://")) {
+    return { error: "The registration link must start with https://" };
+  }
 
   // Relies on RLS ("coaches and owner post gym events") to enforce who can
   // write here — the RLS-respecting client, not the admin client, since
@@ -28,7 +35,7 @@ export async function createGymEvent(input: {
     event_type: "gym",
     event_date: input.eventDate || null,
     location: input.location.trim() || null,
-    registration_url: input.registrationUrl.trim() || null,
+    registration_url: registrationUrl || null,
     is_paid: input.isPaid,
     created_by: user.id,
   });

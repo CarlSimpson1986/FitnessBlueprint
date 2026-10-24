@@ -71,3 +71,16 @@ export async function loadSessionWorkout(supabase: ServerClient, sessionId: stri
     })),
   }));
 }
+
+/**
+ * An error if members have logged sets or scores against this class
+ * (session_has_logs, 0066): replacing its workout deletes its exercises,
+ * and with them (on delete cascade, 0015 / 0066) what members logged.
+ */
+export async function refuseIfLogged(supabase: ServerClient, sessionId: string): Promise<{ error: string } | null> {
+  const { data: logged, error } = await supabase.rpc("session_has_logs", { p_session: sessionId });
+  if (error) return { error: error.message };
+  return logged
+    ? { error: "Members have already logged this class, so its workout can't be replaced: that would delete what they logged." }
+    : null;
+}

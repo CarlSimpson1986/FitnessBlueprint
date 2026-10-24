@@ -3,6 +3,7 @@
 import { requireOwner } from "@/lib/auth";
 import { type SegmentInput, toIntensityType, intensityColumns, toScoreType } from "@/lib/workout-content";
 import { saveWorkoutTemplate } from "@/app/admin/workout-templates/actions";
+import { refuseIfLogged } from "@/lib/session-workout";
 
 export type ActionResult = { error?: string };
 
@@ -34,6 +35,12 @@ export async function saveSessionWorkout(sessionId: string, segments: SegmentInp
       }
     }
   }
+
+  // Saving replaces the workout, and deleting its exercises deletes the
+  // sets and scores members logged against them (on delete cascade, 0015 /
+  // 0066). The copy functions already skip logged classes; so does this.
+  const blocked = await refuseIfLogged(supabase, sessionId);
+  if (blocked) return blocked;
 
   const { error: deleteError } = await supabase
     .from("session_segments")

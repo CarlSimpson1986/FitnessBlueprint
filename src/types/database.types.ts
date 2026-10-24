@@ -1134,6 +1134,27 @@ export type Database = {
         }
         Relationships: []
       }
+      password_resets: {
+        Row: {
+          id: string
+          person_id: string
+          reset_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          person_id: string
+          reset_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          person_id?: string
+          reset_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       segment_scores: {
         Row: {
           id: string
@@ -1613,6 +1634,10 @@ export type Database = {
           first_name: string
           is_creator: boolean
         }[]
+      }
+      session_has_logs: {
+        Args: { p_session: string }
+        Returns: boolean
       }
       copy_workout_same_day: {
         Args: { p_source_session: string }

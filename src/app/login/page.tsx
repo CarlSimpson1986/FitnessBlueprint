@@ -17,8 +17,8 @@ export default function LoginPage() {
 function LoginForm() {
   const router = useRouter();
   const callbackFailed = useSearchParams().get("error") === "auth_callback_failed";
-  // Password first: new members set one at /signup, and staff set one in
-  // Account settings. Magic link is one tap away for anyone without one.
+  // Password first: new accounts set one from their welcome email, and
+  // staff set one in Account settings. Magic link is one tap away for anyone without one.
   const [mode, setMode] = useState<"magic-link" | "password">("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,8 +35,8 @@ function LoginForm() {
       email,
       options: {
         emailRedirectTo: `${publicEnv.NEXT_PUBLIC_SITE_URL}/auth/callback`,
-        // New members create a password at /signup now — magic link is
-        // only a sign-in method for accounts that already exist.
+        // Public sign-up is closed (accounts come from Stripe or the owner),
+        // so a magic link only ever signs in an account that already exists.
         shouldCreateUser: false,
       },
     });
@@ -223,12 +223,9 @@ function LoginForm() {
           {mode === "magic-link" ? "Have a password instead?" : "Email me a sign-in link instead"}
         </button>
 
-        <a
-          href="/signup"
-          className="mt-3 block text-xs font-mono uppercase tracking-wide text-blueprint-muted hover:text-blueprint-accent transition"
-        >
-          New here? Create an account
-        </a>
+        <p className="mt-3 text-xs text-blueprint-muted">
+          New here? Your sign-in link arrives by email as soon as you buy a plan.
+        </p>
       </div>
     </main>
   );

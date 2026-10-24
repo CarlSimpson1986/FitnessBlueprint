@@ -1,6 +1,7 @@
 "use server";
 
 import { requireOwner } from "@/lib/auth";
+import { refuseIfLogged } from "@/lib/session-workout";
 import { type SegmentInput, toIntensityType, intensityColumns, toScoreType } from "@/lib/workout-content";
 
 export type ActionResult = { error?: string; templateId?: string };
@@ -266,6 +267,10 @@ export async function assignTemplateToSession(templateId: string, sessionId: str
   if (input.length === 0) {
     return { error: "That template has no content yet." };
   }
+
+  // Same guard as saveSessionWorkout: never replace a logged class's workout.
+  const blocked = await refuseIfLogged(supabase, sessionId);
+  if (blocked) return blocked;
 
   const { error: deleteError } = await supabase.from("session_segments").delete().eq("session_id", sessionId);
   if (deleteError) {

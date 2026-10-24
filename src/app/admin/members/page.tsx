@@ -107,7 +107,7 @@ export default async function OwnerMembersPage() {
 
         {(members ?? []).length === 0 && (
           <p className="text-blueprint-muted text-sm">
-            No members yet — they show up here once they sign up.
+            No members yet — they show up here once they buy a plan or you add them.
           </p>
         )}
 

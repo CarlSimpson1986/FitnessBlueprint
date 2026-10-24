@@ -4,6 +4,7 @@ import { escapeHtml } from "@/lib/html";
 import { isInternalAddress } from "@/lib/email";
 import { sendOnce } from "@/lib/email-log";
 import { publicEnv, serverEnv } from "@/lib/env";
+import { isAuthorisedBearer } from "@/lib/cron-auth";
 import { toLocalDateKey } from "@/lib/format";
 import { buildWeeklySummary } from "@/lib/coach-ted/weekly-summary";
 import { buildMondayDigest } from "@/lib/monday-digest";
@@ -67,7 +68,7 @@ export async function GET(request: Request) {
   if (!env.CRON_SECRET) {
     return NextResponse.json({ error: "CRON_SECRET is not set" }, { status: 500 });
   }
-  if (authHeader !== `Bearer ${env.CRON_SECRET}`) {
+  if (!isAuthorisedBearer(authHeader, env.CRON_SECRET)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

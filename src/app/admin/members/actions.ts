@@ -3,7 +3,8 @@
 import { randomBytes } from "crypto";
 import { requireOwner } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { activateMembership, createAccountWithWelcome } from "@/lib/accounts";
+import { activateMembership, createAccountWithWelcome, escapeHtml } from "@/lib/accounts";
+import { sendEmail } from "@/lib/email";
 import { COACH_AREAS, type CoachArea } from "@/lib/coach-permissions";
 
 // Deliberately no revalidatePath() in these — they're called directly
@@ -65,7 +66,7 @@ export async function createMemberAccount(
  * default mailer rate limit entirely.
  */
 export async function resetMemberPassword(memberId: string): Promise<ResetPasswordResult> {
-  await requireOwner();
+  const { user: owner } = await requireOwner();
 
   const admin = createAdminClient();
   const password = randomBytes(9).toString("base64url");
@@ -79,7 +80,35 @@ export async function resetMemberPassword(memberId: string): Promise<ResetPasswo
     return { error: error.message };
   }
 
+  // A reset signs the person out everywhere, so it's never silent (security
+  // audit, 2026-10-24): recorded in password_resets (0067, service role
+  // only) and the person is told by email. Neither blocks the reset.
+  const { error: logError } = await admin
+    .from("password_resets")
+    .insert({ person_id: memberId, reset_by: owner.id });
+  if (logError) console.error("resetMemberPassword: audit insert failed —", logError.message);
+
+  const { data: person } = await admin.from("profiles").select("email, full_name").eq("id", memberId).maybeSingle();
+  if (person?.email) {
+    const { error: emailError } = await sendEmail({
+      to: person.email,
+      subject: "Your Fitness Blueprint password was reset",
+      html: passwordResetNoticeHtml(person.full_name),
+    });
+    if (emailError) console.error("resetMemberPassword: notice email failed —", emailError);
+  }
+
   return { password };
+}
+
+function passwordResetNoticeHtml(fullName: string) {
+  const firstName = escapeHtml(fullName.split(" ")[0] ?? fullName);
+  return `
+<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px 16px;color:#111">
+  <p style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#2e9bf0;font-weight:700;margin:0 0 20px">Fitness Blueprint</p>
+  <p style="font-size:16px;line-height:1.5">Hi ${firstName}, your Fitness Blueprint password was just reset by the gym, and you've been signed out. The gym will give you a temporary password to sign in with; you'll then choose your own.</p>
+  <p style="font-size:16px;line-height:1.5">If you didn't ask for this, please tell the gym straight away.</p>
+</div>`.trim();
 }
 
 /**

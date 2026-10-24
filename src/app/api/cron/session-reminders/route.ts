@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isInternalAddress } from "@/lib/email";
 import { sendOnce } from "@/lib/email-log";
 import { serverEnv } from "@/lib/env";
+import { isAuthorisedBearer } from "@/lib/cron-auth";
 import { formatSessionTime } from "@/lib/format";
 import { sessionReminderHtml } from "@/lib/session-emails";
 
@@ -23,7 +24,7 @@ export async function GET(request: Request) {
   if (!env.CRON_SECRET) {
     return NextResponse.json({ error: "CRON_SECRET is not set" }, { status: 500 });
   }
-  if (request.headers.get("authorization") !== `Bearer ${env.CRON_SECRET}`) {
+  if (!isAuthorisedBearer(request.headers.get("authorization"), env.CRON_SECRET)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

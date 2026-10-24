@@ -507,6 +507,21 @@ Carl gives the go-ahead — target end of this week / weekend):
   "couldn't do two-factor" — still ask Guy which coach / phone / step.
   Same day: Next 16.3.8 → 16.4.3 (critical image-optimiser RCE). Left:
   zod 3 → 4 advisory (major upgrade, do separately).
+- **Security audit + pentest (2026-10-24):** anon pentest clean (42/42
+  tables RLS, no anon reads/writes, every definer function revoked from
+  anon except guest invite / TV, cron + webhooks refuse without secret).
+  Fixed (0067 run 2026-10-24, confirmed live): public sign-up closed (Supabase toggle off,
+  confirmed; /signup → /login); member events can't carry a link or be
+  paid and need an active plan; event / guest-answer length caps; every
+  owner "Reset password" logged in password_resets and the person
+  emailed; builder Save / Assign refuse a class members have logged
+  (used to delete their logs); constant-time cron secret check.
+  Open: coach can read check-in weight via the API after a member turns
+  off body metrics (needs a design choice: hide whole row vs a view);
+  logs/scores against classes not booked (fix with the leaderboard);
+  CSP 'unsafe-inline' → nonces; raw DB errors shown to users; zod 3 → 4;
+  no tests/CI; workout load/save duplicated in 6 files. Carl to check:
+  Supabase leaked-password protection + min length.
 - **21-day starter → Brevo (2026-10-24):** a paid 21-day starter checkout
   adds the buyer (first/last name) to the Brevo list in
   BREVO_STARTER_21D_LIST_ID; Guy's automation triggers on "added to
