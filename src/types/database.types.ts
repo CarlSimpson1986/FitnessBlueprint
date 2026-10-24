@@ -779,6 +779,8 @@ export type Database = {
           label: string | null
           default_rounds: number | null
           is_scored: boolean
+          text_content: string | null
+          score_type: string
           sort_order: number
         }
         Insert: {
@@ -788,6 +790,8 @@ export type Database = {
           label?: string | null
           default_rounds?: number | null
           is_scored?: boolean
+          text_content?: string | null
+          score_type?: string
           sort_order: number
         }
         Update: {
@@ -797,6 +801,8 @@ export type Database = {
           label?: string | null
           default_rounds?: number | null
           is_scored?: boolean
+          text_content?: string | null
+          score_type?: string
           sort_order?: number
         }
         Relationships: []
@@ -1128,6 +1134,39 @@ export type Database = {
         }
         Relationships: []
       }
+      segment_scores: {
+        Row: {
+          id: string
+          segment_id: string
+          member_id: string
+          rounds: number | null
+          reps: number | null
+          time_seconds: number | null
+          notes: string | null
+          logged_at: string
+        }
+        Insert: {
+          id?: string
+          segment_id: string
+          member_id: string
+          rounds?: number | null
+          reps?: number | null
+          time_seconds?: number | null
+          notes?: string | null
+          logged_at?: string
+        }
+        Update: {
+          id?: string
+          segment_id?: string
+          member_id?: string
+          rounds?: number | null
+          reps?: number | null
+          time_seconds?: number | null
+          notes?: string | null
+          logged_at?: string
+        }
+        Relationships: []
+      }
       guest_invites: {
         Row: {
           id: string
@@ -1240,6 +1279,8 @@ export type Database = {
           label: string | null
           default_rounds: number | null
           is_scored: boolean
+          text_content: string | null
+          score_type: string
           sort_order: number
         }
         Insert: {
@@ -1249,6 +1290,8 @@ export type Database = {
           label?: string | null
           default_rounds?: number | null
           is_scored?: boolean
+          text_content?: string | null
+          score_type?: string
           sort_order: number
         }
         Update: {
@@ -1258,6 +1301,8 @@ export type Database = {
           label?: string | null
           default_rounds?: number | null
           is_scored?: boolean
+          text_content?: string | null
+          score_type?: string
           sort_order?: number
         }
         Relationships: []
@@ -1568,6 +1613,10 @@ export type Database = {
           first_name: string
           is_creator: boolean
         }[]
+      }
+      copy_workout_same_day: {
+        Args: { p_source_session: string }
+        Returns: { copied: number; kept: number; copied_ids: string[] }[]
       }
       copy_workout_forward: {
         Args: { p_source_session: string }

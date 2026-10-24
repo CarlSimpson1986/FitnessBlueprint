@@ -21,6 +21,8 @@ export type TvSession = {
     type: SegmentType;
     label: string | null;
     is_scored: boolean;
+    /** Set = a text-only part (0065). */
+    text_content: string | null;
     exercises: {
       name: string;
       each_side: boolean;
@@ -158,6 +160,9 @@ export function TvBoard({ sessions, loadedAt }: { sessions: TvSession[]; loadedA
                       <span className="text-blueprint-muted font-normal"> · {segment.type === "circuit" ? "Circuit" : "Finisher"}</span>
                     ) : null}
                   </h2>
+                  {segment.text_content ? (
+                    <p className="px-[1vw] py-[0.8vw] font-medium leading-snug whitespace-pre-line">{segment.text_content}</p>
+                  ) : (
                   <ul className="px-[1vw] py-[0.8vw] space-y-[0.8vw]">
                     {segment.exercises.map((exercise, exIndex) => (
                       <li key={exIndex}>
@@ -178,6 +183,7 @@ export function TvBoard({ sessions, loadedAt }: { sessions: TvSession[]; loadedA
                       </li>
                     ))}
                   </ul>
+                  )}
                 </section>
               ))}
             </div>

@@ -6,6 +6,7 @@ import { WorkoutBuilder, type SegmentDraft } from "./WorkoutBuilder";
 import { MemberWorkoutPreview } from "@/components/MemberWorkoutPreview";
 import { SessionRoster } from "@/app/admin/today/SessionRoster";
 import { loadSessionWorkout } from "@/lib/session-workout";
+import { PartScores } from "@/components/PartScores";
 
 export default async function SessionWorkoutPage({
   params,
@@ -70,10 +71,23 @@ export default async function SessionWorkoutPage({
             )}
             <MemberWorkoutPreview title={template?.name ?? "Session"} segments={initialSegments} showCoachNotes />
           </div>
+          <div className="mt-8 max-w-md">
+            <PartScores supabase={supabase} segments={initialSegments} />
+          </div>
         </div>
       </main>
     );
   }
+
+  // Other classes of this type the same day, for "every GCP class this Monday".
+  const { data: sameDay } = await supabase
+    .from("sessions")
+    .select("start_time")
+    .eq("template_id", session.template_id)
+    .eq("session_date", session.session_date)
+    .eq("status", "scheduled")
+    .neq("id", sessionId)
+    .order("start_time");
 
   return (
     <main className="min-h-screen px-8 py-16">
@@ -101,9 +115,14 @@ export default async function SessionWorkoutPage({
           sessionId={sessionId}
           sessionDate={session.session_date}
           time={session.start_time.slice(0, 5)}
+          className={template?.name ?? "Session"}
+          sameDayTimes={(sameDay ?? []).map((s) => s.start_time.slice(0, 5))}
           initialSegments={initialSegments}
           previewTitle={template?.name ?? "Session"}
         />
+        <div className="mt-10 max-w-md">
+          <PartScores supabase={supabase} segments={initialSegments} />
+        </div>
       </div>
     </main>
   );

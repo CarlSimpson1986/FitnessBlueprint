@@ -61,6 +61,45 @@ export const METRIC_TYPE_LABEL: Record<MetricType, string> = {
   distance_m: "Distance (m)",
 };
 
+/**
+ * What members enter for a whole text part (0066): nothing, optional
+ * notes (accessories), AMRAP rounds + reps, or a time. The last two are
+ * what a leaderboard will rank.
+ */
+export type ScoreType = "none" | "notes" | "rounds_reps" | "time";
+
+export const SCORE_TYPE_LABEL: Record<ScoreType, string> = {
+  none: "No score",
+  notes: "Notes (optional)",
+  rounds_reps: "Rounds + reps (AMRAP)",
+  time: "For time",
+};
+
+export function toScoreType(value: string | null | undefined): ScoreType {
+  return value === "notes" || value === "rounds_reps" || value === "time" ? value : "none";
+}
+
+/** "6 rounds + 12 reps", "12:34", or the notes — how a part score reads. */
+export function formatPartScore(score: {
+  rounds: number | null;
+  reps: number | null;
+  timeSeconds: number | null;
+  notes: string | null;
+}): string {
+  if (score.timeSeconds !== null) {
+    const m = Math.floor(score.timeSeconds / 60);
+    const sec = score.timeSeconds % 60;
+    return `${m}:${String(sec).padStart(2, "0")}`;
+  }
+  if (score.rounds !== null || score.reps !== null) {
+    const parts = [];
+    if (score.rounds !== null) parts.push(`${score.rounds} round${score.rounds === 1 ? "" : "s"}`);
+    if (score.reps !== null) parts.push(`${score.reps} rep${score.reps === 1 ? "" : "s"}`);
+    return parts.join(" + ");
+  }
+  return score.notes?.trim() ?? "";
+}
+
 /** Per-set intensity (0027): % of 1RM or RPE, set by the owner in the builder. */
 export type IntensityType = "percent_1rm" | "rpe";
 
@@ -87,6 +126,10 @@ export type SegmentInput = {
   defaultRounds: number | null;
   /** False = members don't log it (warm-up / cool-down), 0057. */
   isScored: boolean;
+  /** Set = a text-only part with no exercises (0065). */
+  textContent: string | null;
+  /** Text parts only (0066); "none" for an exercise part. */
+  scoreType: ScoreType;
   exercises: ExerciseInput[];
 };
 
@@ -115,6 +158,9 @@ export type SegmentDraft = {
   label: string;
   defaultRounds: number | null;
   isScored: boolean;
+  /** Null = an exercise part; a string (even "") = a text-only part (0065). */
+  textContent: string | null;
+  scoreType: ScoreType;
   exercises: ExerciseDraft[];
 };
 
@@ -142,6 +188,8 @@ export function newSegmentDraft(): SegmentDraft {
     label: "",
     defaultRounds: null,
     isScored: true,
+    textContent: null,
+    scoreType: "none",
     exercises: [newExerciseDraft()],
   };
 }
@@ -161,13 +209,18 @@ export function defaultSegmentDrafts(): SegmentDraft[] {
 }
 
 /**
- * Drops exercises with no name, then sections left with no exercises, so
- * the parts Guy didn't need don't block saving or reach members.
+ * Drops exercises with no name, then sections left with no exercises (or
+ * text parts with no text), so the parts Guy didn't need don't block
+ * saving or reach members.
  */
 export function withoutEmptySections(segments: SegmentDraft[]): SegmentDraft[] {
   return segments
-    .map((s) => ({ ...s, exercises: s.exercises.filter((e) => e.name.trim()) }))
-    .filter((s) => s.exercises.length > 0);
+    .map((s) =>
+      s.textContent !== null
+        ? { ...s, exercises: [] }
+        : { ...s, exercises: s.exercises.filter((e) => e.name.trim()) }
+    )
+    .filter((s) => (s.textContent !== null ? s.textContent.trim() !== "" : s.exercises.length > 0));
 }
 
 export function draftsToInput(segments: SegmentDraft[]): SegmentInput[] {
@@ -176,6 +229,8 @@ export function draftsToInput(segments: SegmentDraft[]): SegmentInput[] {
     label: s.label.trim() || null,
     defaultRounds: s.defaultRounds,
     isScored: s.isScored,
+    textContent: s.textContent?.trim() || null,
+    scoreType: s.textContent !== null ? s.scoreType : "none",
     exercises: s.exercises.map((e) => ({
       name: e.name,
       metricType: e.metricType,

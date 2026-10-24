@@ -10,10 +10,12 @@ import {
   newExerciseSetDraft,
   newSegmentDraft,
   METRIC_TYPE_LABEL,
+  SCORE_TYPE_LABEL,
   SEGMENT_TYPE_ACCENT,
   type ExerciseDraft,
   type ExerciseSetDraft,
   type MetricType,
+  type ScoreType,
   type SegmentDraft,
   type SegmentInput,
   type IntensityType,
@@ -260,14 +262,62 @@ export function SegmentExerciseEditor({
                   value={segment.label}
                   onChange={(e) => updateSegment(segIndex, { label: e.target.value })}
                 />
-                <label className="flex items-center gap-2 text-xs text-blueprint-muted">
-                  <input
-                    type="checkbox"
-                    checked={!segment.isScored}
-                    onChange={(e) => updateSegment(segIndex, { isScored: !e.target.checked })}
-                  />
-                  Not scored (members don&apos;t log this section)
-                </label>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                  <div className="flex rounded border border-blueprint-line overflow-hidden text-[10px] font-mono uppercase tracking-wide">
+                    {(["Exercises", "Text"] as const).map((mode) => {
+                      const active = (segment.textContent !== null) === (mode === "Text");
+                      return (
+                        <button
+                          key={mode}
+                          type="button"
+                          aria-pressed={active}
+                          onClick={() => {
+                            if (active) return;
+                            // A text part is scored by its own Score choice (0066),
+                            // not is_scored. Exercises are kept in the draft, so
+                            // switching back restores them.
+                            updateSegment(
+                              segIndex,
+                              mode === "Text"
+                                ? { textContent: "", isScored: false }
+                                : { textContent: null, isScored: segment.type !== "warmup" && segment.type !== "cooldown" }
+                            );
+                          }}
+                          className={`px-2.5 py-1 ${
+                            active ? "bg-blueprint-accent text-black" : "text-blueprint-muted hover:text-blueprint-accent"
+                          }`}
+                        >
+                          {mode}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {segment.textContent === null ? (
+                    <label className="flex items-center gap-2 text-xs text-blueprint-muted">
+                      <input
+                        type="checkbox"
+                        checked={!segment.isScored}
+                        onChange={(e) => updateSegment(segIndex, { isScored: !e.target.checked })}
+                      />
+                      Not scored (members don&apos;t log this section)
+                    </label>
+                  ) : (
+                    <label className="flex items-center gap-2 text-xs text-blueprint-muted">
+                      Score
+                      <select
+                        className={inputClass().replace("w-full", "w-auto")}
+                        value={segment.scoreType}
+                        onChange={(e) => updateSegment(segIndex, { scoreType: e.target.value as ScoreType })}
+                      >
+                        {(Object.keys(SCORE_TYPE_LABEL) as ScoreType[]).map((t) => (
+                          <option key={t} value={t}>
+                            {SCORE_TYPE_LABEL[t]}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-2 pt-1">
                 <button
@@ -299,6 +349,18 @@ export function SegmentExerciseEditor({
               </div>
             </div>
 
+            {segment.textContent !== null ? (
+              <div className="bg-blueprint-raised/40 p-3">
+                <textarea
+                  className={inputClass() + " font-mono leading-relaxed"}
+                  rows={Math.max(4, segment.textContent.split("\n").length + 1)}
+                  placeholder={"One per line, e.g.\nSeated Z press 3x12 e/s\nCalf raises 3x20\nPlank 3x60s"}
+                  value={segment.textContent}
+                  onChange={(e) => updateSegment(segIndex, { textContent: e.target.value })}
+                  aria-label="Part text"
+                />
+              </div>
+            ) : (
             <div className="bg-blueprint-raised/40 p-3 space-y-2">
               {segment.exercises.map((exercise, exIndex) => {
                 const isExpanded = expandedKeys.has(exercise.key);
@@ -477,6 +539,7 @@ export function SegmentExerciseEditor({
                 + Add exercise
               </button>
             </div>
+            )}
           </div>
         ))}
       </div>

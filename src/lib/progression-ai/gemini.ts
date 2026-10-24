@@ -150,14 +150,20 @@ Generate exactly ${additionalWeeks} additional week(s) (week 2 through week ${we
   }
 
   // Scored or not follows week 1's section in the same place (or, failing
-  // that, warm-ups and cool-downs aren't scored — 0057's default).
+  // that, warm-ups and cool-downs aren't scored — 0057's default). A
+  // text-only part (0065) is carried over as written, with its score type
+  // (0066) and no exercises.
   return weeks.data.map((week) =>
-    week.map((segment, i) => ({
-      ...segment,
-      isScored:
-        week1[i]?.type === segment.type
-          ? week1[i]!.isScored
-          : (segment.isScored ?? !["warmup", "cooldown"].includes(segment.type)),
-    }))
+    week.map((segment, i) => {
+      const same = week1[i]?.type === segment.type ? week1[i]! : null;
+      const textContent = same?.textContent ?? null;
+      return {
+        ...segment,
+        isScored: same ? same.isScored : (segment.isScored ?? !["warmup", "cooldown"].includes(segment.type)),
+        textContent,
+        scoreType: textContent !== null ? same!.scoreType : "none",
+        exercises: textContent !== null ? [] : segment.exercises,
+      };
+    })
   );
 }

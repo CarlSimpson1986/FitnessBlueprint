@@ -1,7 +1,7 @@
 "use server";
 
 import { requireOwner } from "@/lib/auth";
-import { type SegmentInput, toIntensityType, intensityColumns } from "@/lib/workout-content";
+import { type SegmentInput, toIntensityType, intensityColumns, toScoreType } from "@/lib/workout-content";
 import { saveWorkoutTemplate } from "@/app/admin/workout-templates/actions";
 
 export type ActionResult = { error?: string };
@@ -22,7 +22,7 @@ export async function saveSessionWorkout(sessionId: string, segments: SegmentInp
     return { error: "Add at least one segment." };
   }
   for (const segment of segments) {
-    if (segment.exercises.length === 0) {
+    if (segment.textContent === null && segment.exercises.length === 0) {
       return { error: "Every segment needs at least one exercise." };
     }
     for (const exercise of segment.exercises) {
@@ -53,6 +53,8 @@ export async function saveSessionWorkout(sessionId: string, segments: SegmentInp
         label: segment.label?.trim() || null,
         default_rounds: segment.defaultRounds,
         is_scored: segment.isScored,
+        text_content: segment.textContent?.trim() || null,
+        score_type: segment.scoreType,
         sort_order: i,
       })
       .select("id")
@@ -114,7 +116,7 @@ async function loadSessionWorkout(
 ): Promise<{ segments?: SegmentInput[]; error?: string }> {
   const { data: segments, error: segmentsError } = await supabase
     .from("session_segments")
-    .select("id, type, label, default_rounds, is_scored, sort_order")
+    .select("id, type, label, default_rounds, is_scored, text_content, score_type, sort_order")
     .eq("session_id", sessionId)
     .order("sort_order");
 
@@ -168,6 +170,8 @@ async function loadSessionWorkout(
       label: segment.label,
       defaultRounds: segment.default_rounds,
       isScored: segment.is_scored,
+      textContent: segment.text_content,
+      scoreType: toScoreType(segment.score_type),
       exercises: (exercisesBySegment.get(segment.id) ?? []).map((exercise) => ({
         name: exercise.name,
         metricType: exercise.metric_type,
@@ -349,4 +353,25 @@ export async function copyWorkoutForward(sessionId: string): Promise<CopyForward
 
   const counts = data?.[0];
   return { copied: counts?.copied ?? 0, kept: counts?.kept ?? 0 };
+}
+
+export type CopySameDayResult = ActionResult & { copied?: number; kept?: number; copiedIds?: string[] };
+
+/**
+ * "Every GCP class this Monday" (Guy, 2026-10-24): this class's workout
+ * onto every other class of the same type that date. All the work is
+ * copy_workout_same_day (0065) — same rules and same policies as
+ * copyWorkoutForward. Returns the classes copied to, so the builder can
+ * run "and every later" from each of them as well.
+ */
+export async function copyWorkoutSameDay(sessionId: string): Promise<CopySameDayResult> {
+  const { supabase } = await requireOwner();
+
+  const { data, error } = await supabase.rpc("copy_workout_same_day", { p_source_session: sessionId });
+  if (error) {
+    return { error: error.message };
+  }
+
+  const counts = data?.[0];
+  return { copied: counts?.copied ?? 0, kept: counts?.kept ?? 0, copiedIds: counts?.copied_ids ?? [] };
 }

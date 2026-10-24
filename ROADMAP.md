@@ -481,6 +481,39 @@ Carl gives the go-ahead — target end of this week / weekend):
   change overwrites one-off covers in the run. Workouts go forward via
   copy_workout_forward (0064 run 2026-10-20; tested on dev with a throwaway class), never over a workout
   members have logged.
+- **Guy's builder speed-ups (2026-10-24, 0065 run 2026-10-24 — confirmed live;
+  the live screen reads the new column):** (1) Save to
+  → "Also every other GCP class this Monday (07:00, 18:00…)", combinable
+  with "every later Monday" (copy_workout_same_day, then forward from
+  each). (2) Each part has an Exercises / Text switch: a text part is
+  one box typed as a list (accessories, an AMRAP), shown as written on
+  the live screen, preview and gym TV, nothing to log. Copy week /
+  every later / templates / Autofinish all carry the text (copies now
+  share copy_session_workout).
+- **Part scores (2026-10-24, 0066 run 2026-10-24 — confirmed live, anon insert refused):** a
+  text part has Score: none / Notes (optional, for accessories) /
+  Rounds + reps (AMRAP) / For time. Members enter one score per part on
+  the live screen (segment_scores; own row only). Coaches and Guy see
+  every score on the class's session page, AMRAPs most-first and times
+  fastest-first (Carl: coaches can see scores). Copies never overwrite a
+  class with scores. Guy (2026-10-24): AMRAP / for-time scores should go
+  on a leaderboard — not built; still needs ranked on what (per class?
+  per week?) and opt-out. Accessories built as exercises are already
+  optional to log (Finish section without logging every set).
+- **Sign-in links 404'd (found 2026-10-24):** Supabase Site URL had
+  become `…vercel.app/login`, so every emailed link (sign-in, welcome,
+  reset) went to /login/auth/confirm. Carl reset it to
+  `https://fitnessblueprints.vercel.app` 2026-10-24. Likely why coaches
+  "couldn't do two-factor" — still ask Guy which coach / phone / step.
+  Same day: Next 16.3.8 → 16.4.3 (critical image-optimiser RCE). Left:
+  zod 3 → 4 advisory (major upgrade, do separately).
+- **21-day starter → Brevo (2026-10-24):** a paid 21-day starter checkout
+  adds the buyer (first/last name) to the Brevo list in
+  BREVO_STARTER_21D_LIST_ID; Guy's automation triggers on "added to
+  list". If it fails or the env var is missing, Guy is emailed to add
+  them by hand. **Waiting on Carl:** create the list, put its ID in
+  Vercel. Guy's automation shouldn't send a welcome — the app already
+  sends the set-your-password one.
 - **Monthly plan names — confirmed 2026-10-06:** GCP-1 / GCP-2 /
   GCP-Unlimited (the monthly continuation packages). Renamed in
   0060 (run 2026-10-06); weekly limits unchanged, Stripe product matching

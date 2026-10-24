@@ -1,7 +1,7 @@
 "use server";
 
 import { requireOwner } from "@/lib/auth";
-import { type SegmentInput, toIntensityType, intensityColumns } from "@/lib/workout-content";
+import { type SegmentInput, toIntensityType, intensityColumns, toScoreType } from "@/lib/workout-content";
 
 export type ActionResult = { error?: string; templateId?: string };
 
@@ -28,7 +28,7 @@ export async function saveWorkoutTemplate(
     return { error: "Add at least one segment." };
   }
   for (const segment of segments) {
-    if (segment.exercises.length === 0) {
+    if (segment.textContent === null && segment.exercises.length === 0) {
       return { error: "Every segment needs at least one exercise." };
     }
     for (const exercise of segment.exercises) {
@@ -79,6 +79,8 @@ export async function saveWorkoutTemplate(
         label: segment.label?.trim() || null,
         default_rounds: segment.defaultRounds,
         is_scored: segment.isScored,
+        text_content: segment.textContent?.trim() || null,
+        score_type: segment.scoreType,
         sort_order: i,
       })
       .select("id")
@@ -194,7 +196,7 @@ export async function assignTemplateToSession(templateId: string, sessionId: str
 
   const { data: segments, error: segmentsError } = await supabase
     .from("template_segments")
-    .select("id, type, label, default_rounds, is_scored, sort_order")
+    .select("id, type, label, default_rounds, is_scored, text_content, score_type, sort_order")
     .eq("template_id", templateId)
     .order("sort_order");
 
@@ -243,6 +245,8 @@ export async function assignTemplateToSession(templateId: string, sessionId: str
     label: segment.label,
     defaultRounds: segment.default_rounds,
     isScored: segment.is_scored,
+    textContent: segment.text_content,
+    scoreType: toScoreType(segment.score_type),
     exercises: (exercisesBySegment.get(segment.id) ?? []).map((exercise) => ({
       name: exercise.name,
       metricType: exercise.metric_type,
@@ -277,6 +281,8 @@ export async function assignTemplateToSession(templateId: string, sessionId: str
         label: segment.label,
         default_rounds: segment.defaultRounds,
         is_scored: segment.isScored,
+        text_content: segment.textContent?.trim() || null,
+        score_type: segment.scoreType,
         sort_order: i,
       })
       .select("id")

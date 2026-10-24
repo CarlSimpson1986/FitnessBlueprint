@@ -1,6 +1,6 @@
 import "server-only";
 import type { createClient } from "@/lib/supabase/server";
-import { toIntensityType, type SegmentDraft } from "@/lib/workout-content";
+import { toIntensityType, type SegmentDraft, toScoreType } from "@/lib/workout-content";
 
 type ServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -13,7 +13,7 @@ type ServerClient = Awaited<ReturnType<typeof createClient>>;
 export async function loadSessionWorkout(supabase: ServerClient, sessionId: string): Promise<SegmentDraft[]> {
   const { data: segments } = await supabase
     .from("session_segments")
-    .select("id, type, label, default_rounds, is_scored, sort_order")
+    .select("id, type, label, default_rounds, is_scored, text_content, score_type, sort_order")
     .eq("session_id", sessionId)
     .order("sort_order");
 
@@ -51,6 +51,8 @@ export async function loadSessionWorkout(supabase: ServerClient, sessionId: stri
     label: segment.label ?? "",
     defaultRounds: segment.default_rounds,
     isScored: segment.is_scored,
+    textContent: segment.text_content,
+    scoreType: toScoreType(segment.score_type),
     exercises: (exercisesBySegment.get(segment.id) ?? []).map((exercise) => ({
       key: exercise.id,
       name: exercise.name,

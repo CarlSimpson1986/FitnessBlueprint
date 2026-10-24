@@ -37,6 +37,8 @@ function segmentsToDrafts(segments: SegmentInput[]): SegmentDraft[] {
     label: segment.label ?? "",
     defaultRounds: segment.defaultRounds,
     isScored: segment.isScored,
+    textContent: segment.textContent,
+    scoreType: segment.scoreType,
     exercises: segment.exercises.map(toDraftExercise),
   }));
 }

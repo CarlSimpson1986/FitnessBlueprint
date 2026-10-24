@@ -3,8 +3,14 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { SEGMENT_TYPE_ACCENT, segmentDisplayLabel, type MetricType, type SegmentType } from "@/lib/workout-content";
-import { finishWorkout, logExerciseSet } from "./actions";
+import {
+  SEGMENT_TYPE_ACCENT,
+  segmentDisplayLabel,
+  type MetricType,
+  type ScoreType,
+  type SegmentType,
+} from "@/lib/workout-content";
+import { finishWorkout, logExerciseSet, savePartScore } from "./actions";
 
 export type LiveSet = {
   id: string;
@@ -36,7 +42,19 @@ export type LiveSegment = {
   label: string | null;
   /** False = warm-up / cool-down style section: listed, nothing to log (0057). */
   isScored: boolean;
+  /** Set = a text-only part (0065): shown as written, nothing to log. */
+  textContent: string | null;
+  /** Text parts only (0066): what the member enters for the whole part. */
+  scoreType: ScoreType;
+  score: PartScore | null;
   exercises: LiveExercise[];
+};
+
+export type PartScore = {
+  rounds: number | null;
+  reps: number | null;
+  timeSeconds: number | null;
+  notes: string | null;
 };
 
 function isSetLogged(set: LiveSet, metricType: MetricType): boolean {
@@ -149,6 +167,87 @@ function SetRow({ set, metricType, onSave }: { set: LiveSet; metricType: MetricT
           )}
         </p>
       )}
+    </div>
+  );
+}
+
+/**
+ * One score for a whole text part (0066): AMRAP rounds + reps, a time
+ * (entered as minutes and seconds), or optional notes. Saves on blur,
+ * like SetRow.
+ */
+function PartScoreBlock({
+  segmentId,
+  scoreType,
+  score,
+  onSaved,
+}: {
+  segmentId: string;
+  scoreType: ScoreType;
+  score: PartScore | null;
+  /** Keeps the parent's copy current, so reopening the part shows it. */
+  onSaved: (score: PartScore) => void;
+}) {
+  const [rounds, setRounds] = useState(score?.rounds?.toString() ?? "");
+  const [reps, setReps] = useState(score?.reps?.toString() ?? "");
+  const [minutes, setMinutes] = useState(score?.timeSeconds != null ? Math.floor(score.timeSeconds / 60).toString() : "");
+  const [seconds, setSeconds] = useState(score?.timeSeconds != null ? (score.timeSeconds % 60).toString() : "");
+  const [notes, setNotes] = useState(score?.notes ?? "");
+  const [error, setError] = useState<string | null>(null);
+
+  const fieldClass =
+    "w-16 bg-blueprint-raised border border-blueprint-line rounded text-sm text-center text-blueprint-ink px-1 py-1.5 focus:outline-none focus:border-blueprint-accent";
+
+  async function save() {
+    setError(null);
+    const m = numberOrNull(minutes);
+    const sec = numberOrNull(seconds);
+    const timeSeconds = m === null && sec === null ? null : Math.round((m ?? 0) * 60 + (sec ?? 0));
+    const next: PartScore = {
+      rounds: scoreType === "rounds_reps" ? numberOrNull(rounds) : null,
+      reps: scoreType === "rounds_reps" ? numberOrNull(reps) : null,
+      timeSeconds: scoreType === "time" && timeSeconds ? timeSeconds : null,
+      notes: scoreType === "notes" ? notes : null,
+    };
+    onSaved(next);
+    const result = await savePartScore({ segmentId, ...next });
+    if (result.error) setError("Couldn't save your score. Try again.");
+  }
+
+  return (
+    <div className="space-y-1">
+      <p className="text-[10px] font-mono uppercase tracking-wide text-blueprint-muted">
+        {scoreType === "notes" ? "Your notes (optional)" : "Your score"}
+      </p>
+      {scoreType === "rounds_reps" && (
+        <div className="flex items-center gap-2 text-xs text-blueprint-muted">
+          <input type="number" inputMode="numeric" min={0} placeholder="rounds" value={rounds}
+            onChange={(e) => setRounds(e.target.value)} onBlur={save} className={fieldClass} />
+          +
+          <input type="number" inputMode="numeric" min={0} placeholder="reps" value={reps}
+            onChange={(e) => setReps(e.target.value)} onBlur={save} className={fieldClass} />
+        </div>
+      )}
+      {scoreType === "time" && (
+        <div className="flex items-center gap-2 text-xs text-blueprint-muted">
+          <input type="number" inputMode="numeric" min={0} placeholder="min" value={minutes}
+            onChange={(e) => setMinutes(e.target.value)} onBlur={save} className={fieldClass} />
+          :
+          <input type="number" inputMode="numeric" min={0} max={59} placeholder="sec" value={seconds}
+            onChange={(e) => setSeconds(e.target.value)} onBlur={save} className={fieldClass} />
+        </div>
+      )}
+      {scoreType === "notes" && (
+        <textarea
+          rows={3}
+          placeholder="e.g. Z press 20kg, calves 3x20"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          onBlur={save}
+          className="w-full bg-blueprint-raised border border-blueprint-line rounded text-sm text-blueprint-ink px-2 py-1.5 focus:outline-none focus:border-blueprint-accent"
+        />
+      )}
+      {error && <p className="text-xs text-red-400">{error}</p>}
     </div>
   );
 }
@@ -334,7 +433,21 @@ export function LiveLogging({
                   </p>
                 </div>
                 <div className="p-3 space-y-3">
-                  {!segment.isScored ? (
+                  {segment.textContent !== null ? (
+                    <>
+                      <p className="text-sm text-blueprint-ink whitespace-pre-line">{segment.textContent}</p>
+                      {segment.scoreType !== "none" && (
+                        <PartScoreBlock
+                          segmentId={segment.id}
+                          scoreType={segment.scoreType}
+                          score={segment.score}
+                          onSaved={(score) =>
+                            setSegments((prev) => prev.map((seg) => (seg.id === segment.id ? { ...seg, score } : seg)))
+                          }
+                        />
+                      )}
+                    </>
+                  ) : !segment.isScored ? (
                     <ul className="space-y-1.5">
                       {segment.exercises.map((exercise) => (
                         <li key={exercise.id} className="text-sm text-blueprint-ink">

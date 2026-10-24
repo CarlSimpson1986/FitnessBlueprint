@@ -95,3 +95,46 @@ export async function sendEmail(input: {
 
   return {};
 }
+
+/**
+ * Adds (or updates) a contact in a Brevo list — Brevo's "contact added to
+ * list" trigger is what starts Guy's marketing automations. Same API key
+ * as sendEmail. Skips .invalid test accounts.
+ */
+export async function addContactToBrevoList(input: {
+  email: string;
+  firstName: string;
+  lastName: string;
+  listId: number;
+}): Promise<{ error?: string }> {
+  const env = serverEnv();
+  if (isInternalAddress(input.email)) {
+    return {};
+  }
+  if (!env.BREVO_API_KEY) {
+    return { error: "Brevo isn't configured (BREVO_API_KEY missing in Vercel)." };
+  }
+
+  const res = await fetch("https://api.brevo.com/v3/contacts", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "api-key": env.BREVO_API_KEY,
+    },
+    body: JSON.stringify({
+      email: input.email,
+      attributes: { FIRSTNAME: input.firstName, LASTNAME: input.lastName },
+      listIds: [input.listId],
+      // An existing contact (e.g. already on the newsletter) is added to the list, not refused.
+      updateEnabled: true,
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    return { error: `Brevo contact add failed (${res.status}): ${body}` };
+  }
+
+  return {};
+}

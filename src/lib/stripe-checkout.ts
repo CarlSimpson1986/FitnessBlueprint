@@ -2,8 +2,8 @@ import "server-only";
 import type Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { activateMembership, createAccountWithWelcome, escapeHtml } from "@/lib/accounts";
-import { sendEmail } from "@/lib/email";
-import { publicEnv } from "@/lib/env";
+import { addContactToBrevoList, sendEmail } from "@/lib/email";
+import { publicEnv, serverEnv } from "@/lib/env";
 
 /**
  * Stripe payment -> app access (decided 2026-10-01, see ROADMAP).
@@ -58,7 +58,7 @@ export async function handleCheckoutCompleted(stripe: Stripe, session: Stripe.Ch
 
   const { data: plans, error: plansError } = await admin
     .from("membership_plans")
-    .select("id, name, price_pence, stripe_product_name")
+    .select("id, code, name, price_pence, stripe_product_name")
     .not("stripe_product_name", "is", null);
   if (plansError) throw new Error(plansError.message);
 
@@ -119,6 +119,30 @@ export async function handleCheckoutCompleted(stripe: Stripe, session: Stripe.Ch
       subject: `Your ${plan.name} plan is active`,
       html: planActiveEmailHtml(member.existingName, plan.name),
     });
+  }
+
+  if (plan.code === "starter_21d") {
+    await addToStarterList(email, member.existingName ?? customerName, plan.name, who, ref);
+  }
+}
+
+/**
+ * 21-day starter buyers join Guy's Brevo list, which starts his follow-up
+ * automation (2026-10-24). Never throws: the plan is already active, and a
+ * Stripe retry would stop at the already-handled check above, so a failure
+ * is emailed to the owner to add them by hand instead.
+ */
+async function addToStarterList(email: string, fullName: string, planName: string, who: string, ref: string) {
+  const listId = serverEnv().BREVO_STARTER_21D_LIST_ID;
+  const [firstName = "", ...rest] = fullName.trim().split(/\s+/);
+  const { error } = listId
+    ? await addContactToBrevoList({ email, firstName, lastName: rest.join(" "), listId })
+    : { error: "BREVO_STARTER_21D_LIST_ID isn't set in Vercel." };
+  if (error) {
+    await notifyOwners(
+      "Add a 21-day starter to Brevo by hand",
+      `${who} bought <strong>${escapeHtml(planName)}</strong> and their account is ready, but they couldn't be added to the Brevo list, so your automation won't start for them: ${escapeHtml(error)}<br><br>${ref}`
+    );
   }
 }
 

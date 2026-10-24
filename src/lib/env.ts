@@ -29,6 +29,8 @@ const serverOnlySchema = z.object({
   PUBMED_API_KEY: z.string().optional(),
   BREVO_API_KEY: z.string().optional(),
   BREVO_SENDER_EMAIL: z.string().optional(),
+  // Brevo contact list a 21-day starter buyer joins; Guy's automation starts from it.
+  BREVO_STARTER_21D_LIST_ID: z.coerce.number().int().positive().optional(),
   CRON_SECRET: z.string().optional(),
   // Set by Vercel itself, not by us: "production" | "preview" | "development".
   VERCEL_ENV: z.enum(["production", "preview", "development"]).optional(),
@@ -76,6 +78,7 @@ function parseServerEnv() {
     PUBMED_API_KEY: process.env.PUBMED_API_KEY,
     BREVO_API_KEY: process.env.BREVO_API_KEY,
     BREVO_SENDER_EMAIL: process.env.BREVO_SENDER_EMAIL,
+    BREVO_STARTER_21D_LIST_ID: process.env.BREVO_STARTER_21D_LIST_ID || undefined,
     CRON_SECRET: process.env.CRON_SECRET,
     VERCEL_ENV: process.env.VERCEL_ENV,
   });

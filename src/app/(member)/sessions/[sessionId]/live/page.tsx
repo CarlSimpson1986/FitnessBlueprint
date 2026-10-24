@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
-import { type MetricType, type SegmentType, describeSet, toIntensityType } from "@/lib/workout-content";
+import { type MetricType, type SegmentType, describeSet, toIntensityType, toScoreType } from "@/lib/workout-content";
 import { suggestNextWeight } from "@/lib/exercise-progression";
 import { LiveLogging, type LiveSegment } from "./LiveLogging";
 
@@ -46,7 +46,7 @@ export default async function LiveSessionPage({
 
   const { data: segments } = await supabase
     .from("session_segments")
-    .select("id, type, label, is_scored, sort_order")
+    .select("id, type, label, is_scored, text_content, score_type, sort_order")
     .eq("session_id", sessionId)
     .order("sort_order");
 
@@ -71,6 +71,18 @@ export default async function LiveSessionPage({
     .in("exercise_id", exerciseIds.length > 0 ? exerciseIds : [""]);
 
   const logBySet = new Map((logs ?? []).map((l) => [l.set_id, l]));
+
+  // The member's own score for each text part (0066, "segment_scores: read").
+  const { data: partScores } = await supabase
+    .from("segment_scores")
+    .select("segment_id, rounds, reps, time_seconds, notes")
+    .eq("member_id", user.id)
+    .in("segment_id", segmentIds.length > 0 ? segmentIds : [""]);
+  const scoreBySegment = new Map((partScores ?? []).map((sc) => [sc.segment_id, sc]));
+  const scoreFor = (segmentId: string) => {
+    const sc = scoreBySegment.get(segmentId);
+    return sc ? { rounds: sc.rounds, reps: sc.reps, timeSeconds: sc.time_seconds, notes: sc.notes } : null;
+  };
 
   // "Last time you did X" reference — matched by exercise NAME, not id,
   // since the same movement gets a brand-new session_exercises row every
@@ -125,7 +137,11 @@ export default async function LiveSessionPage({
     id: segment.id,
     type: segment.type as SegmentType,
     label: segment.label,
-    isScored: segment.is_scored,
+    // A text part (0065) is scored only by its own score type (0066).
+    isScored: segment.text_content === null ? segment.is_scored : toScoreType(segment.score_type) !== "none",
+    textContent: segment.text_content,
+    scoreType: segment.text_content === null ? "none" : toScoreType(segment.score_type),
+    score: scoreFor(segment.id),
     exercises: (exercisesBySegment.get(segment.id) ?? []).map((exercise) => ({
       id: exercise.id,
       name: exercise.name,

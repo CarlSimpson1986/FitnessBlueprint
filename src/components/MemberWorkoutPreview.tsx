@@ -1,4 +1,4 @@
-import { SEGMENT_TYPE_ACCENT, describeSet, segmentDisplayLabel, type SegmentDraft } from "@/lib/workout-content";
+import { SCORE_TYPE_LABEL, SEGMENT_TYPE_ACCENT, describeSet, segmentDisplayLabel, type SegmentDraft } from "@/lib/workout-content";
 
 /**
  * Read-only "what a member would see" preview, phone-framed. Renders
@@ -47,6 +47,16 @@ export function MemberWorkoutPreview({
                         {segmentDisplayLabel(segments, segIndex)}
                       </p>
                     </div>
+                    {segment.textContent !== null ? (
+                      <div className="p-2 space-y-1.5">
+                        <p className="text-xs text-blueprint-ink whitespace-pre-line">
+                          {segment.textContent.trim() || "Nothing written yet."}
+                        </p>
+                        {segment.scoreType !== "none" && (
+                          <p className="text-[10px] text-blueprint-accent">Score: {SCORE_TYPE_LABEL[segment.scoreType]}</p>
+                        )}
+                      </div>
+                    ) : (
                     <div className="p-2 space-y-2.5">
                       {segment.exercises.map((exercise) => (
                         <div key={exercise.key}>
@@ -73,6 +83,7 @@ export function MemberWorkoutPreview({
                         </div>
                       ))}
                     </div>
+                    )}
                   </div>
                 ))}
               </div>

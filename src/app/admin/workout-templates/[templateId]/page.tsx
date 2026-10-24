@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOwner } from "@/lib/auth";
-import { type SegmentDraft, toIntensityType } from "@/lib/workout-content";
+import { type SegmentDraft, toIntensityType, toScoreType } from "@/lib/workout-content";
 import { TemplateEditor } from "../TemplateEditor";
 import { AutofinishPanel } from "../AutofinishPanel";
 
@@ -31,7 +31,7 @@ export default async function EditWorkoutTemplatePage({
 
   const { data: segments } = await supabase
     .from("template_segments")
-    .select("id, type, label, default_rounds, is_scored, sort_order")
+    .select("id, type, label, default_rounds, is_scored, text_content, score_type, sort_order")
     .eq("template_id", templateId)
     .order("sort_order");
 
@@ -69,6 +69,8 @@ export default async function EditWorkoutTemplatePage({
     label: segment.label ?? "",
     defaultRounds: segment.default_rounds,
     isScored: segment.is_scored,
+    textContent: segment.text_content,
+    scoreType: toScoreType(segment.score_type),
     exercises: (exercisesBySegment.get(segment.id) ?? []).map((exercise) => ({
       key: exercise.id,
       name: exercise.name,
