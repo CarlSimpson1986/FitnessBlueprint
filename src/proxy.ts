@@ -124,7 +124,9 @@ function applySecurityHeaders(response: NextResponse) {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https://*.supabase.co",
     "font-src 'self' data:",
-    "connect-src 'self' https://*.supabase.co https://api.stripe.com",
+    // api.pwnedpasswords.com: the leaked-password check on the password
+    // forms (src/lib/pwned-password.ts) — only a 5-character hash prefix is sent.
+    "connect-src 'self' https://*.supabase.co https://api.stripe.com https://api.pwnedpasswords.com",
     "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
     "object-src 'none'",
     "base-uri 'self'",

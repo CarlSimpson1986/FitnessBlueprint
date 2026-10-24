@@ -520,8 +520,10 @@ Carl gives the go-ahead — target end of this week / weekend):
   off body metrics (needs a design choice: hide whole row vs a view);
   logs/scores against classes not booked (fix with the leaderboard);
   CSP 'unsafe-inline' → nonces; raw DB errors shown to users; zod 3 → 4;
-  no tests/CI; workout load/save duplicated in 6 files. Carl to check:
-  Supabase leaked-password protection + min length.
+  no tests/CI; workout load/save duplicated in 6 files. Leaked-password
+  protection is Pro-only in Supabase, so the set/change password forms
+  check HaveIBeenPwned in the browser (k-anonymity, 5-char hash prefix;
+  fails open) and require 10+ characters. Carl: set Supabase min length 10.
 - **21-day starter → Brevo (2026-10-24):** a paid 21-day starter checkout
   adds the buyer (first/last name) to the Brevo list in
   BREVO_STARTER_21D_LIST_ID; Guy's automation triggers on "added to

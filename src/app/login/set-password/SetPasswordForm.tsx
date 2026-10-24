@@ -3,6 +3,7 @@
 import { useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { MIN_PASSWORD_LENGTH, newPasswordProblem } from "@/lib/pwned-password";
 import { clearMustChangePasswordFlag } from "./actions";
 
 export function SetPasswordForm() {
@@ -16,16 +17,14 @@ export function SetPasswordForm() {
     event.preventDefault();
     setError(null);
 
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError("Passwords don't match.");
-      return;
-    }
-
     startTransition(async () => {
+      // Length, match, and the leaked-password check (src/lib/pwned-password.ts).
+      const problem = await newPasswordProblem(password, confirmPassword);
+      if (problem) {
+        setError(problem);
+        return;
+      }
+
       const supabase = createClient();
       const { error: updateError } = await supabase.auth.updateUser({ password });
 
@@ -57,7 +56,7 @@ export function SetPasswordForm() {
           id="password"
           type="password"
           required
-          minLength={8}
+          minLength={MIN_PASSWORD_LENGTH}
           autoComplete="new-password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
@@ -75,7 +74,7 @@ export function SetPasswordForm() {
           id="confirm_password"
           type="password"
           required
-          minLength={8}
+          minLength={MIN_PASSWORD_LENGTH}
           autoComplete="new-password"
           value={confirmPassword}
           onChange={(event) => setConfirmPassword(event.target.value)}
