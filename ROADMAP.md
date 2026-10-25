@@ -522,7 +522,9 @@ Carl gives the go-ahead — target end of this week / weekend):
   Open: coach can read check-in weight via the API after a member turns
   off body metrics (needs a design choice: hide whole row vs a view);
   logs/scores against classes not booked (fix with the leaderboard);
-  no tests/CI. Done 2026-10-25: zod 3 → 4; raw DB errors →
+  Done 2026-10-25: tests/CI — `npm test` (node:test via tsx, tests/unit/)
+  and GitHub Actions CI (verify + tests, .github/workflows/ci.yml); the
+  anon RLS check is `npm run test:rls` (local, read-only, live DB); zod 3 → 4; raw DB errors →
   userFacingError(); workout load/save → src/lib/workout-store.ts; CSP
   scripts nonce + 'strict-dynamic' instead of 'unsafe-inline' (proxy.ts;
   root layout calls connection() so no page is prerendered without a

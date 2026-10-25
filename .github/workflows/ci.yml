@@ -1,0 +1,27 @@
+# Typecheck, lint and unit tests on every push to main and every pull
+# request (Dependabot's included). No secrets: nothing here talks to
+# Supabase, Stripe or Brevo. The anon RLS check (npm run test:rls) runs
+# locally against the live database — see scripts/rls-anon-check.ts.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run verify
+      - run: npm test
