@@ -508,6 +508,14 @@ Carl gives the go-ahead — target end of this week / weekend):
   reset) went to /login/auth/confirm. Carl reset it to
   `https://fitnessblueprints.vercel.app` 2026-10-24. Likely why coaches
   "couldn't do two-factor" — still ask Guy which coach / phone / step.
+  **Update 2026-10-25:** it wasn't the links. Trish, Kishan and Ricki each
+  reached the code step and had their code refused; the server verified
+  a correct code fine (Test Coach repro), two of their devices' clocks
+  were a minute+ off. Fixes: clock warning + Android hint on setup
+  (9f6bcdb), and **0068 (run 2026-10-25, tested live)**: "Email me a code
+  instead" as a backup to the authenticator, enforced in RLS via
+  staff_session_verified(); codes hash-only in staff_signin_codes, tied
+  to the auth session (FK, gone at sign-out).
   Same day: Next 16.3.8 → 16.4.3 (critical image-optimiser RCE). Left:
   zod 3 → 4 advisory (major upgrade, do separately).
 - **Security audit + pentest (2026-10-24):** anon pentest clean (42/42
