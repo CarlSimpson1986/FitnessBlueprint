@@ -3,6 +3,7 @@
 import { requireOwner } from "@/lib/auth";
 import { eventTooLong } from "@/lib/events";
 
+import { userFacingError } from "@/lib/user-facing-error";
 export type ActionResult = { error?: string };
 
 export async function createGymEvent(input: {
@@ -41,7 +42,7 @@ export async function createGymEvent(input: {
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   return {};

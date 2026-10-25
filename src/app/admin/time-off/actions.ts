@@ -2,6 +2,7 @@
 
 import { requireOwner } from "@/lib/auth";
 
+import { userFacingError } from "@/lib/user-facing-error";
 export type ActionResult = { error?: string };
 
 // Both writes go through the owner's RLS-respecting client — the
@@ -19,13 +20,13 @@ export async function addTimeOff(input: { coachId: string; startsOn: string; end
     note: input.note.trim() || null,
     created_by: user.id,
   });
-  return error ? { error: error.message } : {};
+  return error ? { error: userFacingError(error) } : {};
 }
 
 export async function deleteTimeOff(id: string): Promise<ActionResult> {
   const { supabase } = await requireOwner();
   const { error } = await supabase.from("coach_time_off").delete().eq("id", id);
-  return error ? { error: error.message } : {};
+  return error ? { error: userFacingError(error) } : {};
 }
 
 /**
@@ -37,5 +38,5 @@ export async function assignCover(sessionId: string, coachId: string): Promise<A
   const { supabase } = await requireOwner();
   if (!coachId) return { error: "Pick a coach." };
   const { error } = await supabase.from("sessions").update({ coach_id: coachId }).eq("id", sessionId);
-  return error ? { error: error.message } : {};
+  return error ? { error: userFacingError(error) } : {};
 }

@@ -6,6 +6,7 @@ import { sendEmail } from "@/lib/email";
 import { guestInviteEmailHtml } from "@/lib/guest-invites";
 import { sendBookingConfirmation } from "@/lib/session-emails";
 
+import { userFacingError } from "@/lib/user-facing-error";
 export type ActionResult = { error?: string };
 export type BookResult = ActionResult & { needsHealthAnswer?: boolean };
 
@@ -34,7 +35,7 @@ export async function bookSession(sessionId: string): Promise<BookResult> {
   const { error } = await supabase.rpc("book_session", { p_session_id: sessionId });
 
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   await sendBookingConfirmation(supabase, sessionId);
@@ -46,7 +47,7 @@ export async function cancelBooking(bookingId: string): Promise<ActionResult> {
   const { error } = await supabase.rpc("cancel_booking", { p_booking_id: bookingId });
 
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   return {};
@@ -66,7 +67,7 @@ export async function joinWaitlist(
     });
 
     if (error) {
-      return { error: error.message };
+      return { error: userFacingError(error) };
     }
 
     const buddy = data?.[0];
@@ -83,7 +84,7 @@ export async function joinWaitlist(
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   return {};
@@ -94,7 +95,7 @@ export async function leaveWaitlist(entryId: string): Promise<ActionResult> {
   const { error } = await supabase.rpc("leave_waitlist", { p_entry_id: entryId });
 
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   return {};
@@ -105,7 +106,7 @@ export async function acceptWaitlistOffer(entryId: string): Promise<ActionResult
   const { data: booking, error } = await supabase.rpc("accept_waitlist_offer", { p_entry_id: entryId });
 
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   if (booking?.session_id) await sendBookingConfirmation(supabase, booking.session_id);
@@ -134,7 +135,7 @@ export async function inviteGuest(sessionId: string, guestName: string, guestEma
     p_email: guestEmail,
   });
   if (error) {
-    return { error: error.message, full: error.message.startsWith("This class is full") };
+    return { error: userFacingError(error), full: error.message.startsWith("This class is full") };
   }
   const token = data?.[0]?.token;
   if (!token) return { error: "Couldn't create the invite — try again." };
@@ -177,7 +178,7 @@ export async function cancelGuestInvite(inviteId: string): Promise<ActionResult>
   const { error } = await supabase.rpc("cancel_guest_invite", { p_invite_id: inviteId });
 
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   return {};
@@ -188,7 +189,7 @@ export async function acceptBookingInvite(bookingId: string): Promise<ActionResu
   const { data: booking, error } = await supabase.rpc("accept_booking_invite", { p_booking_id: bookingId });
 
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   if (booking?.session_id) await sendBookingConfirmation(supabase, booking.session_id);
@@ -200,7 +201,7 @@ export async function declineBookingInvite(bookingId: string): Promise<ActionRes
   const { error } = await supabase.rpc("decline_booking_invite", { p_booking_id: bookingId });
 
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   return {};

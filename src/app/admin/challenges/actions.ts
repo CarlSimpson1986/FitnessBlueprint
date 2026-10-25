@@ -3,6 +3,7 @@
 import { requireOwner } from "@/lib/auth";
 import type { ChallengeType } from "@/lib/challenges";
 
+import { userFacingError } from "@/lib/user-facing-error";
 export type ActionResult = { error?: string };
 
 export async function createChallenge(input: {
@@ -44,7 +45,7 @@ export async function createChallenge(input: {
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   return {};

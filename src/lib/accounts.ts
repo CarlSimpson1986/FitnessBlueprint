@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email";
 import { publicEnv } from "@/lib/env";
 
+import { userFacingError } from "@/lib/user-facing-error";
 /**
  * Account creation and membership activation, shared by the owner's
  * Members page (src/app/admin/members/actions.ts, gated by
@@ -62,7 +63,7 @@ export async function createAccountWithWelcome(
   });
 
   if (createError || !data.user) {
-    return { error: createError?.message ?? "Failed to create account." };
+    return { error: userFacingError(createError, "Failed to create account.") };
   }
 
   const { error: profileError } = await admin.from("profiles").insert({
@@ -73,7 +74,7 @@ export async function createAccountWithWelcome(
   });
 
   if (profileError) {
-    return { error: `Account created but profile setup failed: ${profileError.message}`, userId: data.user.id };
+    return { error: `Account created but profile setup failed: ${userFacingError(profileError)}`, userId: data.user.id };
   }
 
   const welcomeUrl = `${publicEnv.NEXT_PUBLIC_SITE_URL}/auth/welcome?u=${data.user.id}&t=${welcomeToken}`;
@@ -121,7 +122,7 @@ export async function activateMembership(
     .eq("status", "active");
 
   if (retireError) {
-    return { error: retireError.message };
+    return { error: userFacingError(retireError) };
   }
 
   const { error: membershipError } = await admin.from("member_memberships").insert({
@@ -134,7 +135,7 @@ export async function activateMembership(
   });
 
   if (membershipError) {
-    return { error: membershipError.message };
+    return { error: userFacingError(membershipError) };
   }
 
   if (plan.credit_pack_size) {
@@ -146,7 +147,7 @@ export async function activateMembership(
     });
 
     if (creditError) {
-      return { error: `Membership created but credit grant failed: ${creditError.message}` };
+      return { error: `Membership created but credit grant failed: ${userFacingError(creditError)}` };
     }
   }
 

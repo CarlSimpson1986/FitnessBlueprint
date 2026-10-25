@@ -7,6 +7,7 @@ import { activateMembership, createAccountWithWelcome, escapeHtml } from "@/lib/
 import { sendEmail } from "@/lib/email";
 import { COACH_AREAS, type CoachArea } from "@/lib/coach-permissions";
 
+import { userFacingError } from "@/lib/user-facing-error";
 // Deliberately no revalidatePath() in these — they're called directly
 // from a client startTransition (not a <form action>), and pairing that
 // with revalidatePath caused the transition's pending state to hang
@@ -77,7 +78,7 @@ export async function resetMemberPassword(memberId: string): Promise<ResetPasswo
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   // A reset signs the person out everywhere, so it's never silent (security
@@ -182,12 +183,12 @@ export async function deletePerson(personId: string): Promise<ActionResult> {
   ]);
   const cleanupError = cleanup.find((r) => r.error)?.error;
   if (cleanupError) {
-    return { error: cleanupError.message };
+    return { error: userFacingError(cleanupError) };
   }
 
   const { error } = await admin.auth.admin.deleteUser(personId);
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
   return {};
 }
@@ -205,12 +206,12 @@ export async function resetTwoFactor(personId: string): Promise<ActionResult> {
 
   const { data, error } = await admin.auth.admin.mfa.listFactors({ userId: personId });
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
   for (const factor of data?.factors ?? []) {
     const { error: deleteError } = await admin.auth.admin.mfa.deleteFactor({ id: factor.id, userId: personId });
     if (deleteError) {
-      return { error: deleteError.message };
+      return { error: userFacingError(deleteError) };
     }
   }
   return {};
@@ -249,7 +250,7 @@ export async function setCoachArea(coachId: string, area: CoachArea, enabled: bo
     updated_at: new Date().toISOString(),
   });
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
   return {};
 }

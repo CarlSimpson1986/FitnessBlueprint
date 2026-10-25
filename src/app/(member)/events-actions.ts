@@ -4,6 +4,7 @@ import { requireProfile } from "@/lib/auth";
 import { hasActiveMembership } from "@/lib/coach-ted/access";
 import { eventTooLong } from "@/lib/events";
 
+import { userFacingError } from "@/lib/user-facing-error";
 export type ActionResult = { error?: string };
 
 /**
@@ -19,7 +20,7 @@ export async function expressInterest(eventId: string): Promise<ActionResult> {
     .insert({ event_id: eventId, member_id: user.id });
 
   if (error && error.code !== "23505") {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   return {};
@@ -54,7 +55,7 @@ export async function postMemberEvent(input: {
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   return {};

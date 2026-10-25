@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 
+import { userFacingError } from "@/lib/user-facing-error";
 export type GuestResponse = {
   accept: boolean;
   phone?: string;
@@ -26,5 +27,5 @@ export async function respondToGuestInvite(token: string, input: GuestResponse):
     p_health_notes: input.healthNotes,
     p_consent: input.consent,
   });
-  return error ? { error: error.message } : {};
+  return error ? { error: userFacingError(error) } : {};
 }

@@ -3,6 +3,7 @@
 import { requireProfile } from "@/lib/auth";
 import { openCheckinWeek } from "@/lib/weekly-checkin";
 
+import { userFacingError } from "@/lib/user-facing-error";
 export type ActionResult = { error?: string };
 
 export type WeeklyCheckinInput = {
@@ -63,7 +64,7 @@ export async function submitWeeklyCheckin(rawInput: WeeklyCheckinInput): Promise
 
   if (error) {
     return {
-      error: error.code === "23505" ? "You've already checked in this week — nice." : error.message,
+      error: error.code === "23505" ? "You've already checked in this week — nice." : userFacingError(error),
     };
   }
 

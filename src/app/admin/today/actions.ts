@@ -4,6 +4,7 @@ import { requireStaffAccess } from "@/lib/coach-permissions";
 import { LATE_CANCEL_MS, ukSessionStart } from "@/lib/booking-window";
 import { SESSION_NOTE_MAX_LENGTH, SESSION_NOTE_TAGS, type SessionNote } from "@/lib/session-notes";
 
+import { userFacingError } from "@/lib/user-facing-error";
 export type ActionResult = { error?: string };
 
 export type Feeling = "great" | "okay" | "rough";
@@ -93,7 +94,7 @@ export async function getSessionRoster(
   ]);
 
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   const memberIds = (bookings ?? []).map((b) => b.member_id);
@@ -107,7 +108,7 @@ export async function getSessionRoster(
     ]);
 
   if (membersError) {
-    return { error: membersError.message };
+    return { error: userFacingError(membersError) };
   }
 
   const lengthByPlan = new Map((programmePlans ?? []).map((p) => [p.id, p.programme_length_days ?? 0]));
@@ -241,7 +242,7 @@ export async function excuseBooking(bookingId: string): Promise<ActionResult> {
   if (!access.today) return { error: NO_TODAY_ACCESS };
 
   const { error } = await supabase.rpc("excuse_booking", { p_booking_id: bookingId });
-  return error ? { error: error.message } : {};
+  return error ? { error: userFacingError(error) } : {};
 }
 
 const MARKABLE_STATUSES = ["attended", "no_show"] as const;
@@ -270,7 +271,7 @@ export async function markAttendance(bookingId: string, status: MarkableStatus):
     .select("id");
 
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   if (!data || data.length === 0) {
@@ -310,7 +311,7 @@ export async function saveSessionNote(
       .delete()
       .eq("session_id", sessionId)
       .eq("member_id", memberId);
-    return error ? { error: error.message } : {};
+    return error ? { error: userFacingError(error) } : {};
   }
 
   const { data, error } = await supabase
@@ -330,7 +331,7 @@ export async function saveSessionNote(
 
   if (error) {
     return {
-      error: error.code === "42501" ? "You can't add notes for this member on this session." : error.message,
+      error: error.code === "42501" ? "You can't add notes for this member on this session." : userFacingError(error),
     };
   }
   if (!data || data.length === 0) {

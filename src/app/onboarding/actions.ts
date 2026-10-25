@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
+import { userFacingError } from "@/lib/user-facing-error";
 export type CreateProfileState = { error?: string };
 
 export async function createProfile(
@@ -44,7 +45,7 @@ export async function createProfile(
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   redirect("/");

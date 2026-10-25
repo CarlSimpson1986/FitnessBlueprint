@@ -5,6 +5,7 @@ import { type SegmentInput, toIntensityType, toScoreType } from "@/lib/workout-c
 import { generateProgressionWeeks as generateWeeksFromAI } from "@/lib/progression-ai/gemini";
 import { saveWorkoutTemplate, assignTemplateToSessionsInWeek } from "./actions";
 
+import { userFacingError } from "@/lib/user-facing-error";
 export type GenerateResult = { weeks?: SegmentInput[][]; error?: string };
 
 /**
@@ -34,7 +35,7 @@ export async function generateProgressionWeeks(
     .order("sort_order");
 
   if (segmentsError) {
-    return { error: segmentsError.message };
+    return { error: userFacingError(segmentsError) };
   }
 
   const segmentRows = segments ?? [];
@@ -49,7 +50,7 @@ export async function generateProgressionWeeks(
     .order("sort_order");
 
   if (exercisesError) {
-    return { error: exercisesError.message };
+    return { error: userFacingError(exercisesError) };
   }
 
   const exerciseRows = exercises ?? [];
@@ -60,7 +61,7 @@ export async function generateProgressionWeeks(
     .order("sort_order");
 
   if (setsError) {
-    return { error: setsError.message };
+    return { error: userFacingError(setsError) };
   }
 
   const setsByExercise = new Map<string, typeof sets>();

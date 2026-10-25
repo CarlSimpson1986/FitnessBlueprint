@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireOwner } from "@/lib/auth";
 import { FOLLOW_UP_STATUSES, type FollowUpStatus } from "@/lib/conversions";
 
+import { userFacingError } from "@/lib/user-facing-error";
 export type ActionResult = { error?: string };
 
 /**
@@ -23,7 +24,7 @@ export async function saveFollowUp(input: {
 
   if (input.status === null) {
     const { error } = await supabase.from("programme_followups").delete().eq("membership_id", input.membershipId);
-    if (error) return { error: error.message };
+    if (error) return { error: userFacingError(error) };
     revalidatePath("/owner/conversions");
     return {};
   }
@@ -47,7 +48,7 @@ export async function saveFollowUp(input: {
     },
     { onConflict: "membership_id" }
   );
-  if (error) return { error: error.message };
+  if (error) return { error: userFacingError(error) };
 
   revalidatePath("/owner/conversions");
   return {};

@@ -4,6 +4,7 @@ import { requireOwner } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { embedText } from "@/lib/coach-ted/gemini";
 
+import { userFacingError } from "@/lib/user-facing-error";
 export type ActionResult = { error?: string };
 
 /*
@@ -19,7 +20,7 @@ export async function updateTedAnswer(id: string, answer: string): Promise<Actio
   const { supabase } = await requireOwner();
   if (!answer.trim()) return { error: "The answer can't be empty." };
   const { error } = await supabase.from("coach_ted_qa_cache").update({ answer: answer.trim() }).eq("id", id);
-  return error ? { error: error.message } : {};
+  return error ? { error: userFacingError(error) } : {};
 }
 
 export async function setTedAnswerFlags(
@@ -28,13 +29,13 @@ export async function setTedAnswerFlags(
 ): Promise<ActionResult> {
   const { supabase } = await requireOwner();
   const { error } = await supabase.from("coach_ted_qa_cache").update(flags).eq("id", id);
-  return error ? { error: error.message } : {};
+  return error ? { error: userFacingError(error) } : {};
 }
 
 export async function deleteTedAnswer(id: string): Promise<ActionResult> {
   const { supabase } = await requireOwner();
   const { error } = await supabase.from("coach_ted_qa_cache").delete().eq("id", id);
-  return error ? { error: error.message } : {};
+  return error ? { error: userFacingError(error) } : {};
 }
 
 /** Guy's own answer: pinned, and served for any similar question from now on. */
@@ -49,7 +50,7 @@ export async function addTedAnswer(question: string, answer: string): Promise<Ac
     answer: answer.trim(),
     is_pinned: true,
   });
-  return error ? { error: error.message } : {};
+  return error ? { error: userFacingError(error) } : {};
 }
 
 export type SimilarityMatch = { question: string; similarity: number };
@@ -67,7 +68,7 @@ export async function testTedQuestion(
     match_threshold: -1,
     match_count: 5,
   });
-  if (error) return { error: error.message };
+  if (error) return { error: userFacingError(error) };
   return {
     matches: (data ?? []).map((m: { question: string; similarity: number }) => ({
       question: m.question,
@@ -84,7 +85,7 @@ export async function testTedQuestion(
 export async function reindexTedAnswers(): Promise<{ error?: string; count?: number }> {
   const { supabase } = await requireOwner();
   const { data: rows, error } = await supabase.from("coach_ted_qa_cache").select("id, question");
-  if (error) return { error: error.message };
+  if (error) return { error: userFacingError(error) };
 
   for (const row of rows ?? []) {
     const embedding = await embedText(row.question);
@@ -92,7 +93,7 @@ export async function reindexTedAnswers(): Promise<{ error?: string; count?: num
       .from("coach_ted_qa_cache")
       .update({ question_embedding: embedding })
       .eq("id", row.id);
-    if (updateError) return { error: updateError.message };
+    if (updateError) return { error: userFacingError(updateError) };
   }
   return { count: (rows ?? []).length };
 }

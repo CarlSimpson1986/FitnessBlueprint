@@ -5,6 +5,7 @@ import { type SegmentInput, toIntensityType, intensityColumns, toScoreType } fro
 import { saveWorkoutTemplate } from "@/app/admin/workout-templates/actions";
 import { refuseIfLogged } from "@/lib/session-workout";
 
+import { userFacingError } from "@/lib/user-facing-error";
 export type ActionResult = { error?: string };
 
 /**
@@ -48,7 +49,7 @@ export async function saveSessionWorkout(sessionId: string, segments: SegmentInp
     .eq("session_id", sessionId);
 
   if (deleteError) {
-    return { error: deleteError.message };
+    return { error: userFacingError(deleteError) };
   }
 
   for (const [i, segment] of segments.entries()) {
@@ -68,7 +69,7 @@ export async function saveSessionWorkout(sessionId: string, segments: SegmentInp
       .single();
 
     if (segmentError || !insertedSegment) {
-      return { error: segmentError?.message ?? "Could not save segment." };
+      return { error: userFacingError(segmentError, "Could not save segment.") };
     }
 
     for (const [j, exercise] of segment.exercises.entries()) {
@@ -88,7 +89,7 @@ export async function saveSessionWorkout(sessionId: string, segments: SegmentInp
         .single();
 
       if (exerciseError || !insertedExercise) {
-        return { error: exerciseError?.message ?? "Could not save exercise." };
+        return { error: userFacingError(exerciseError, "Could not save exercise.") };
       }
 
       const setRows = exercise.sets.map((set, k) => ({
@@ -102,7 +103,7 @@ export async function saveSessionWorkout(sessionId: string, segments: SegmentInp
 
       const { error: setsError } = await supabase.from("session_exercise_sets").insert(setRows);
       if (setsError) {
-        return { error: setsError.message };
+        return { error: userFacingError(setsError) };
       }
     }
   }
@@ -128,7 +129,7 @@ async function loadSessionWorkout(
     .order("sort_order");
 
   if (segmentsError) {
-    return { error: segmentsError.message };
+    return { error: userFacingError(segmentsError) };
   }
 
   const segmentRows = segments ?? [];
@@ -143,7 +144,7 @@ async function loadSessionWorkout(
     .order("sort_order");
 
   if (exercisesError) {
-    return { error: exercisesError.message };
+    return { error: userFacingError(exercisesError) };
   }
 
   const exerciseRows = exercises ?? [];
@@ -154,7 +155,7 @@ async function loadSessionWorkout(
     .order("sort_order");
 
   if (setsError) {
-    return { error: setsError.message };
+    return { error: userFacingError(setsError) };
   }
 
   const setsByExercise = new Map<string, typeof sets>();
@@ -242,7 +243,7 @@ export async function pasteSessionToDate(sourceSessionId: string, dateKey: strin
     .maybeSingle();
 
   if (existingError) {
-    return { error: existingError.message };
+    return { error: userFacingError(existingError) };
   }
 
   if (existing) {
@@ -267,7 +268,7 @@ export async function pasteSessionToDate(sourceSessionId: string, dateKey: strin
     .single();
 
   if (insertError || !created) {
-    return { error: insertError?.message ?? "Could not schedule the session." };
+    return { error: userFacingError(insertError, "Could not schedule the session.") };
   }
 
   if (workout.segments.length === 0) {
@@ -330,7 +331,7 @@ export async function pasteWeekWorkouts(
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   const counts = data?.[0];
@@ -355,7 +356,7 @@ export async function copyWorkoutForward(sessionId: string): Promise<CopyForward
 
   const { data, error } = await supabase.rpc("copy_workout_forward", { p_source_session: sessionId });
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   const counts = data?.[0];
@@ -376,7 +377,7 @@ export async function copyWorkoutSameDay(sessionId: string): Promise<CopySameDay
 
   const { data, error } = await supabase.rpc("copy_workout_same_day", { p_source_session: sessionId });
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   const counts = data?.[0];

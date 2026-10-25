@@ -2,6 +2,7 @@
 
 import { requireProfile } from "@/lib/auth";
 
+import { userFacingError } from "@/lib/user-facing-error";
 export type ActionResult = { error?: string };
 
 export type LogSetInput = {
@@ -39,7 +40,7 @@ export async function logExerciseSet(input: LogSetInput): Promise<ActionResult> 
     );
 
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   return {};
@@ -69,7 +70,7 @@ export async function savePartScore(input: PartScoreInput): Promise<ActionResult
       .delete()
       .eq("segment_id", input.segmentId)
       .eq("member_id", user.id);
-    return error ? { error: error.message } : {};
+    return error ? { error: userFacingError(error) } : {};
   }
 
   const { error } = await supabase.from("segment_scores").upsert(
@@ -85,7 +86,7 @@ export async function savePartScore(input: PartScoreInput): Promise<ActionResult
     { onConflict: "segment_id,member_id" }
   );
 
-  return error ? { error: error.message } : {};
+  return error ? { error: userFacingError(error) } : {};
 }
 
 /**
@@ -100,7 +101,7 @@ export async function finishWorkout(sessionId: string): Promise<ActionResult> {
   const { error } = await supabase.rpc("mark_self_attended", { p_session_id: sessionId });
 
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   return {};

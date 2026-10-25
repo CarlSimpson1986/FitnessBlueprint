@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 
+import { userFacingError } from "@/lib/user-facing-error";
 export type ActionResult = { error?: string };
 
 /**
@@ -19,7 +20,7 @@ export async function markTedTourSeen(): Promise<ActionResult> {
     .eq("id", user.id);
 
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   return {};

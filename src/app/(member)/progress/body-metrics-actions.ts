@@ -2,6 +2,7 @@
 
 import { requireProfile } from "@/lib/auth";
 
+import { userFacingError } from "@/lib/user-facing-error";
 export type LogBodyMetricsResult = { error?: string };
 
 export async function logBodyMetrics(input: {
@@ -37,7 +38,7 @@ export async function logBodyMetrics(input: {
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
   return {};
 }

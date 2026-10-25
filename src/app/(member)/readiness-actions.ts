@@ -2,6 +2,7 @@
 
 import { requireProfile } from "@/lib/auth";
 
+import { userFacingError } from "@/lib/user-facing-error";
 export type ActionResult = { error?: string };
 
 const FEELINGS = ["great", "okay", "rough"] as const;
@@ -34,7 +35,7 @@ export async function submitReadinessCheckin(input: {
     if (error.code === "23505") {
       return {};
     }
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   return {};

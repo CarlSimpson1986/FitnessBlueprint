@@ -3,6 +3,7 @@
 import { requireProfile } from "@/lib/auth";
 import { BODY_GOAL_METRICS, isBodyGoalMetric } from "@/lib/goal-tracking";
 
+import { userFacingError } from "@/lib/user-facing-error";
 export type ActionResult = { error?: string };
 
 export type GoalType = "lose_weight" | "build_muscle" | "build_strength" | "general_fitness" | "event_prep";
@@ -49,7 +50,7 @@ export async function saveGoal(input: SaveGoalInput): Promise<ActionResult> {
     .eq("status", "active");
 
   if (abandonError) {
-    return { error: abandonError.message };
+    return { error: userFacingError(abandonError) };
   }
 
   const { error } = await supabase.from("goals").insert({
@@ -68,7 +69,7 @@ export async function saveGoal(input: SaveGoalInput): Promise<ActionResult> {
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   // Log it as a body metric so Progress has a starting point. RLS

@@ -3,6 +3,7 @@
 import { requireProfile } from "@/lib/auth";
 import { FEEDBACK_QUESTIONS, type FeedbackRatings } from "@/lib/session-feedback";
 
+import { userFacingError } from "@/lib/user-facing-error";
 export type SubmitFeedbackResult = { error?: string; alreadySubmitted?: boolean };
 
 /**
@@ -36,7 +37,7 @@ export async function submitFeedback(input: {
     .maybeSingle();
 
   if (bookingError) {
-    return { error: bookingError.message };
+    return { error: userFacingError(bookingError) };
   }
 
   if (!booking) {
@@ -57,7 +58,7 @@ export async function submitFeedback(input: {
     if (error.code === "23505") {
       return { alreadySubmitted: true };
     }
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   return {};

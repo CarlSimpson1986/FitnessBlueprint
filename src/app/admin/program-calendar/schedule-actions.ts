@@ -4,6 +4,7 @@ import { requireOwner } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { toLocalDateKey } from "@/lib/format";
 
+import { userFacingError } from "@/lib/user-facing-error";
 export type ActionResult = { error?: string };
 export type ScheduleResult = ActionResult & { created?: number; skipped?: number };
 
@@ -73,7 +74,7 @@ export async function createSessions(input: {
     .in("session_date", dates);
 
   if (existingError) {
-    return { error: existingError.message };
+    return { error: userFacingError(existingError) };
   }
 
   const taken = new Set((existing ?? []).map((s) => `${s.session_date} ${s.start_time.slice(0, 5)}`));
@@ -96,7 +97,7 @@ export async function createSessions(input: {
     const { error } = await supabase.from("sessions").insert(rows);
 
     if (error) {
-      return { error: error.message };
+      return { error: userFacingError(error) };
     }
   }
 
@@ -128,7 +129,7 @@ async function sessionIdsInScope(
     .maybeSingle();
 
   if (error || !session) {
-    return { error: error?.message ?? "Class not found." };
+    return { error: userFacingError(error, "Class not found.") };
   }
 
   const { data: later, error: laterError } = await supabase
@@ -140,7 +141,7 @@ async function sessionIdsInScope(
     .neq("status", "cancelled");
 
   if (laterError) {
-    return { error: laterError.message };
+    return { error: userFacingError(laterError) };
   }
 
   // Same weekday — PostgREST can't filter on extract(dow), and a run is at
@@ -179,7 +180,7 @@ export async function changeSessionCoach(
   if ("error" in scoped) return { error: scoped.error };
 
   const { error } = await supabase.from("sessions").update({ coach_id: coachId }).in("id", scoped.ids);
-  return error ? { error: error.message } : { changed: scoped.ids.length };
+  return error ? { error: userFacingError(error) } : { changed: scoped.ids.length };
 }
 
 /**
@@ -208,7 +209,7 @@ export async function cancelSession(
     .in("id", scoped.ids);
 
   if (sessionError) {
-    return { error: sessionError.message };
+    return { error: userFacingError(sessionError) };
   }
 
   const { data: activeBookings, error: bookingsError } = await admin
@@ -218,7 +219,7 @@ export async function cancelSession(
     .eq("status", "booked");
 
   if (bookingsError) {
-    return { error: bookingsError.message };
+    return { error: userFacingError(bookingsError) };
   }
 
   for (const booking of activeBookings ?? []) {
@@ -228,7 +229,7 @@ export async function cancelSession(
       .eq("id", booking.id);
 
     if (cancelError) {
-      return { error: cancelError.message };
+      return { error: userFacingError(cancelError) };
     }
 
     if (booking.credit_ledger_id) {
@@ -241,7 +242,7 @@ export async function cancelSession(
       });
 
       if (refundError) {
-        return { error: refundError.message };
+        return { error: userFacingError(refundError) };
       }
     }
   }

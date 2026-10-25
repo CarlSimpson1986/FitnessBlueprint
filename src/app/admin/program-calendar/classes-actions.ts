@@ -2,6 +2,7 @@
 
 import { requireOwner } from "@/lib/auth";
 
+import { userFacingError } from "@/lib/user-facing-error";
 export type ActionResult = { error?: string };
 
 export type ClassInput = {
@@ -33,7 +34,7 @@ export async function createClass(input: ClassInput): Promise<ActionResult> {
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   return {};
@@ -58,7 +59,7 @@ export async function updateClass(classId: string, input: ClassInput): Promise<A
     .eq("id", classId);
 
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   return {};
@@ -77,7 +78,7 @@ export async function setClassActive(classId: string, isActive: boolean): Promis
   const { error } = await supabase.from("session_templates").update({ is_active: isActive }).eq("id", classId);
 
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   return {};

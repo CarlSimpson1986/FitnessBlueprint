@@ -2,6 +2,7 @@ import "server-only";
 import type { createClient } from "@/lib/supabase/server";
 import { toIntensityType, type SegmentDraft, toScoreType } from "@/lib/workout-content";
 
+import { userFacingError } from "@/lib/user-facing-error";
 type ServerClient = Awaited<ReturnType<typeof createClient>>;
 
 /**
@@ -79,7 +80,7 @@ export async function loadSessionWorkout(supabase: ServerClient, sessionId: stri
  */
 export async function refuseIfLogged(supabase: ServerClient, sessionId: string): Promise<{ error: string } | null> {
   const { data: logged, error } = await supabase.rpc("session_has_logs", { p_session: sessionId });
-  if (error) return { error: error.message };
+  if (error) return { error: userFacingError(error) };
   return logged
     ? { error: "Members have already logged this class, so its workout can't be replaced: that would delete what they logged." }
     : null;

@@ -4,6 +4,7 @@ import { requireOwner } from "@/lib/auth";
 import { refuseIfLogged } from "@/lib/session-workout";
 import { type SegmentInput, toIntensityType, intensityColumns, toScoreType } from "@/lib/workout-content";
 
+import { userFacingError } from "@/lib/user-facing-error";
 export type ActionResult = { error?: string; templateId?: string };
 
 /**
@@ -51,12 +52,12 @@ export async function saveWorkoutTemplate(
       .eq("id", id);
 
     if (updateError) {
-      return { error: updateError.message };
+      return { error: userFacingError(updateError) };
     }
 
     const { error: deleteError } = await supabase.from("template_segments").delete().eq("template_id", id);
     if (deleteError) {
-      return { error: deleteError.message };
+      return { error: userFacingError(deleteError) };
     }
   } else {
     const { data: inserted, error: insertError } = await supabase
@@ -66,7 +67,7 @@ export async function saveWorkoutTemplate(
       .single();
 
     if (insertError || !inserted) {
-      return { error: insertError?.message ?? "Could not create template." };
+      return { error: userFacingError(insertError, "Could not create template.") };
     }
     id = inserted.id;
   }
@@ -88,7 +89,7 @@ export async function saveWorkoutTemplate(
       .single();
 
     if (segmentError || !insertedSegment) {
-      return { error: segmentError?.message ?? "Could not save segment." };
+      return { error: userFacingError(segmentError, "Could not save segment.") };
     }
 
     for (const [j, exercise] of segment.exercises.entries()) {
@@ -108,7 +109,7 @@ export async function saveWorkoutTemplate(
         .single();
 
       if (exerciseError || !insertedExercise) {
-        return { error: exerciseError?.message ?? "Could not save exercise." };
+        return { error: userFacingError(exerciseError, "Could not save exercise.") };
       }
 
       const setRows = exercise.sets.map((set, k) => ({
@@ -122,7 +123,7 @@ export async function saveWorkoutTemplate(
 
       const { error: setsError } = await supabase.from("template_exercise_sets").insert(setRows);
       if (setsError) {
-        return { error: setsError.message };
+        return { error: userFacingError(setsError) };
       }
     }
   }
@@ -158,7 +159,7 @@ export async function assignTemplateToSessionsInWeek(
     .lte("session_date", weekEnd.toISOString().slice(0, 10));
 
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
 
   if (!sessions || sessions.length === 0) {
@@ -180,7 +181,7 @@ export async function deleteWorkoutTemplate(templateId: string): Promise<ActionR
 
   const { error } = await supabase.from("workout_templates").delete().eq("id", templateId);
   if (error) {
-    return { error: error.message };
+    return { error: userFacingError(error) };
   }
   return {};
 }
@@ -202,7 +203,7 @@ export async function assignTemplateToSession(templateId: string, sessionId: str
     .order("sort_order");
 
   if (segmentsError) {
-    return { error: segmentsError.message };
+    return { error: userFacingError(segmentsError) };
   }
 
   const segmentRows = segments ?? [];
@@ -213,7 +214,7 @@ export async function assignTemplateToSession(templateId: string, sessionId: str
     .order("sort_order");
 
   if (exercisesError) {
-    return { error: exercisesError.message };
+    return { error: userFacingError(exercisesError) };
   }
 
   const exerciseRows = exercises ?? [];
@@ -224,7 +225,7 @@ export async function assignTemplateToSession(templateId: string, sessionId: str
     .order("sort_order");
 
   if (setsError) {
-    return { error: setsError.message };
+    return { error: userFacingError(setsError) };
   }
 
   const setsByExercise = new Map<string, typeof sets>();
@@ -274,7 +275,7 @@ export async function assignTemplateToSession(templateId: string, sessionId: str
 
   const { error: deleteError } = await supabase.from("session_segments").delete().eq("session_id", sessionId);
   if (deleteError) {
-    return { error: deleteError.message };
+    return { error: userFacingError(deleteError) };
   }
 
   for (const [i, segment] of input.entries()) {
@@ -294,7 +295,7 @@ export async function assignTemplateToSession(templateId: string, sessionId: str
       .single();
 
     if (segmentError || !insertedSegment) {
-      return { error: segmentError?.message ?? "Could not assign segment." };
+      return { error: userFacingError(segmentError, "Could not assign segment.") };
     }
 
     for (const [j, exercise] of segment.exercises.entries()) {
@@ -314,7 +315,7 @@ export async function assignTemplateToSession(templateId: string, sessionId: str
         .single();
 
       if (exerciseError || !insertedExercise) {
-        return { error: exerciseError?.message ?? "Could not assign exercise." };
+        return { error: userFacingError(exerciseError, "Could not assign exercise.") };
       }
 
       const setRows = exercise.sets.map((set, k) => ({
@@ -328,7 +329,7 @@ export async function assignTemplateToSession(templateId: string, sessionId: str
 
       const { error: insertSetsError } = await supabase.from("session_exercise_sets").insert(setRows);
       if (insertSetsError) {
-        return { error: insertSetsError.message };
+        return { error: userFacingError(insertSetsError) };
       }
     }
   }
