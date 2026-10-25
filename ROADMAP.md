@@ -140,8 +140,8 @@ switches; session_feedback accepts a rating for any session, not just
 ones they attended; a coach can still read weekly_checkins.weight_kg
 via the API after a member turns off measurements (RLS is per row; the
 coach page hides it); the health question is only re-asked on a direct
-booking, not on join-waitlist or accepting a buddy invite; CSP still allows 'unsafe-inline' scripts (needs
-Next nonces); Semgrep doesn't run on Windows (CodeQL covers it); ZAP
+booking, not on join-waitlist or accepting a buddy invite; CSP 'unsafe-inline'
+scripts replaced by a per-request nonce (2026-10-25); Semgrep doesn't run on Windows (CodeQL covers it); ZAP
 not run (needs Java/Docker). **For Carl:** enable Dependabot alerts +
 CodeQL default setup (GitHub → Settings → Code security), Supabase
 leaked-password protection (Auth → Attack Protection), and note the
@@ -522,8 +522,11 @@ Carl gives the go-ahead — target end of this week / weekend):
   Open: coach can read check-in weight via the API after a member turns
   off body metrics (needs a design choice: hide whole row vs a view);
   logs/scores against classes not booked (fix with the leaderboard);
-  CSP 'unsafe-inline' → nonces; raw DB errors shown to users; zod 3 → 4;
-  no tests/CI; workout load/save duplicated in 6 files. Leaked-password
+  no tests/CI. Done 2026-10-25: zod 3 → 4; raw DB errors →
+  userFacingError(); workout load/save → src/lib/workout-store.ts; CSP
+  scripts nonce + 'strict-dynamic' instead of 'unsafe-inline' (proxy.ts;
+  root layout calls connection() so no page is prerendered without a
+  nonce — /login, /signup, /privacy were static). Leaked-password
   protection is Pro-only in Supabase, so the set/change password forms
   check HaveIBeenPwned in the browser (k-anonymity, 5-char hash prefix;
   fails open) and require 10+ characters. Carl: set Supabase min length 10.

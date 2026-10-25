@@ -17,7 +17,8 @@ import { OWNER_RETURN_COOKIE } from "@/lib/test-accounts";
  *  2. Refresh the Supabase auth session so server components always see
  *     a valid (or correctly expired) user — this is what makes RLS work
  *     reliably rather than intermittently.
- *  3. Attach security headers to every response, including API routes.
+ *  3. Attach security headers to every response, including API routes,
+ *     with a fresh CSP nonce per request so only Next.js's own scripts run.
  *  4. While the owner is in "view as" (signed into a test account), send
  *     top-level page loads to /view-as so the app shows inside the phone
  *     frame. Requests from inside that frame (Sec-Fetch-Dest: iframe) and
@@ -66,7 +67,16 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  const sessionResponse = await updateSession(request);
+  // Next.js reads the nonce from the request's CSP header while rendering
+  // and puts it on its own scripts (node_modules/next/dist/docs/01-app/
+  // 02-guides/content-security-policy.md). Needs every page rendered per
+  // request — the root layout calls connection() for that.
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  const csp = contentSecurityPolicy(nonce);
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("Content-Security-Policy", csp);
+
+  const sessionResponse = await updateSession(request, requestHeaders);
   const needsAdminRewrite =
     isCoachHost && !request.nextUrl.pathname.startsWith("/admin");
 
@@ -74,7 +84,8 @@ export async function proxy(request: NextRequest) {
 
   if (needsAdminRewrite) {
     response = NextResponse.rewrite(
-      new URL(`/admin${request.nextUrl.pathname}`, request.url)
+      new URL(`/admin${request.nextUrl.pathname}`, request.url),
+      { request: { headers: requestHeaders } }
     );
     // Carry the refreshed-session cookies onto the rewritten response —
     // the rewrite replaces sessionResponse rather than building on it.
@@ -83,12 +94,12 @@ export async function proxy(request: NextRequest) {
     });
   }
 
-  applySecurityHeaders(response);
+  applySecurityHeaders(response, csp);
 
   return response;
 }
 
-function applySecurityHeaders(response: NextResponse) {
+function applySecurityHeaders(response: NextResponse, csp: string) {
   // Prevents the app being framed by another site (clickjacking). Same-
   // origin framing is allowed only for /view-as's phone preview.
   response.headers.set("X-Frame-Options", "SAMEORIGIN");
@@ -113,14 +124,27 @@ function applySecurityHeaders(response: NextResponse) {
     "max-age=31536000; includeSubDomains"
   );
 
-  // Content-Security-Policy — start restrictive, widen deliberately.
-  // Add each external domain here as an integration is wired up
-  // (Stripe.js, Firebase, Supabase storage, etc.) rather than using
-  // wildcards. A CSP you had to loosen for a reason is safer than
-  // one that was permissive from day one.
-  const csp = [
+  response.headers.set("Content-Security-Policy", csp);
+}
+
+// Content-Security-Policy — start restrictive, widen deliberately.
+// Add each external domain here as an integration is wired up
+// (Stripe.js, Firebase, Supabase storage, etc.) rather than using
+// wildcards. A CSP you had to loosen for a reason is safer than
+// one that was permissive from day one.
+//
+// Scripts: only ones carrying this request's nonce, plus what they load
+// ('strict-dynamic'). That replaced 'unsafe-inline' (security audit
+// 2026-10-24) — an injected <script> can't guess the nonce. 'self' and
+// js.stripe.com are fallbacks for browsers without 'strict-dynamic'.
+// Dev needs 'unsafe-eval' for React's error stacks; production doesn't.
+// Styles keep 'unsafe-inline': React style={…} attributes can't carry a
+// nonce, and style injection can't run code.
+function contentSecurityPolicy(nonce: string) {
+  const isDev = process.env.NODE_ENV === "development";
+  return [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' https://js.stripe.com",
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://js.stripe.com${isDev ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https://*.supabase.co",
     "font-src 'self' data:",
@@ -133,7 +157,6 @@ function applySecurityHeaders(response: NextResponse) {
     "form-action 'self'",
     "frame-ancestors 'self'",
   ].join("; ");
-  response.headers.set("Content-Security-Policy", csp);
 }
 
 export const config = {

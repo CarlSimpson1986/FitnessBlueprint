@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { connection } from "next/server";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import "./globals.css";
 
@@ -22,11 +23,16 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Render every page per request, never at build time: the CSP's script
+  // nonce is made fresh per request (proxy.ts), and a page prerendered at
+  // build time has no nonce on its scripts, so the browser would block them
+  // (/login, /signup and /privacy were static).
+  await connection();
   return (
     <html lang="en">
       <body>
