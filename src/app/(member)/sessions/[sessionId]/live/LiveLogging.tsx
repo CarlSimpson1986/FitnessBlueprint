@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { loadFinishedSections, saveFinishedSections } from "@/lib/finished-sections";
 import {
   SEGMENT_TYPE_ACCENT,
   segmentDisplayLabel,
@@ -81,6 +82,13 @@ function isSegmentComplete(segment: LiveSegment): boolean {
   // taps "Finish section".
   if (!segment.isScored) return false;
   return segment.exercises.length > 0 && segment.exercises.every(isExerciseComplete);
+}
+
+/** A section with something to log that the member hasn't logged any of yet. */
+function isSegmentUntouched(segment: LiveSegment): boolean {
+  if (segment.textContent !== null) return segment.scoreType !== "none" && segment.score === null;
+  if (!segment.isScored) return false;
+  return segment.exercises.every((ex) => ex.sets.every((s) => !isSetLogged(s, ex.metricType)));
 }
 
 function numberOrNull(value: string): number | null {
@@ -332,8 +340,18 @@ export function LiveLogging({
   const [finishedIds, setFinishedIds] = useState<Set<string>>(new Set());
   const [reopenedId, setReopenedId] = useState<string | null>(null);
 
+  useEffect(() => {
+    // One-time client-only localStorage read (no SSR value exists to seed
+    // this with) — the resulting extra render is intentional, not the
+    // cascading-render pattern this rule otherwise guards against.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFinishedIds(loadFinishedSections(sessionId));
+  }, [sessionId]);
+
   function finishSection(segmentId: string) {
-    setFinishedIds((prev) => new Set(prev).add(segmentId));
+    const next = new Set(finishedIds).add(segmentId);
+    setFinishedIds(next);
+    saveFinishedSections(sessionId, next);
     setReopenedId(null);
   }
 
@@ -477,7 +495,7 @@ export function LiveLogging({
                     onClick={() => (isReopened ? setReopenedId(null) : finishSection(segment.id))}
                     className="w-full text-xs font-mono uppercase tracking-wide text-blueprint-ink border border-blueprint-line rounded py-2 hover:border-blueprint-accent hover:text-blueprint-accent transition"
                   >
-                    {isReopened ? "Done editing" : "Finish section"}
+                    {isReopened ? "Done editing" : isSegmentUntouched(segment) ? "Skip / finish section" : "Finish section"}
                   </button>
                 </div>
               </div>

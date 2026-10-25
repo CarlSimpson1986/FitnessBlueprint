@@ -499,7 +499,10 @@ Carl gives the go-ahead — target end of this week / weekend):
   class with scores. Guy (2026-10-24): AMRAP / for-time scores should go
   on a leaderboard — not built; still needs ranked on what (per class?
   per week?) and opt-out. Accessories built as exercises are already
-  optional to log (Finish section without logging every set).
+  optional to log (Finish section without logging every set). 2026-10-25:
+  the button reads "Skip / finish section" while nothing in it is logged,
+  and skipped sections survive a refresh (localStorage, this workout only,
+  src/lib/finished-sections.ts).
 - **Sign-in links 404'd (found 2026-10-24):** Supabase Site URL had
   become `…vercel.app/login`, so every emailed link (sign-in, welcome,
   reset) went to /login/auth/confirm. Carl reset it to
