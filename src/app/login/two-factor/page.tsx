@@ -38,7 +38,8 @@ export default async function TwoFactorPage() {
             ? "Open your authenticator (on iPhone, it can fill in automatically) and enter the 6-digit code for Fitness Blueprint."
             : "Staff accounts can see members' details, so they need a second step: a 6-digit code from your phone. It takes a minute to set up, once."}
         </p>
-        <TwoFactorForm mode={hasCode ? "verify" : "enrol"} />
+        {/* Server time, so the form can warn about a wrong device clock. */}
+        <TwoFactorForm mode={hasCode ? "verify" : "enrol"} serverNow={new Date().getTime()} />
       </div>
     </main>
   );

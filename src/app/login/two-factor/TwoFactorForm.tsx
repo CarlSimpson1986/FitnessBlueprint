@@ -1,10 +1,16 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 type Setup = { factorId: string; qrCode: string; secret: string; uri: string };
+
+// Codes are worked out from the time, and Supabase accepts one 30-second
+// step either side. Three coaches' first codes were all refused
+// (2026-10-22/23) while the server checked out fine, and two of their
+// devices were a minute or more off — so say so before they try.
+const CLOCK_WARNING_SECONDS = 25;
 
 const inputClass =
   "w-full bg-blueprint-raised border border-blueprint-line rounded px-4 py-3 text-blueprint-ink tracking-[0.3em] text-center text-lg focus:outline-none focus:border-blueprint-accent";
@@ -17,13 +23,29 @@ const buttonClass =
  * (QR code / "add to this phone" link + first code), "verify" = enter the
  * code at sign-in.
  */
-export function TwoFactorForm({ mode }: { mode: "enrol" | "verify" }) {
+export function TwoFactorForm({ mode, serverNow }: { mode: "enrol" | "verify"; serverNow: number }) {
   const router = useRouter();
+  const [clockSkewSeconds, setClockSkewSeconds] = useState(0);
   const [setup, setSetup] = useState<Setup | null>(null);
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [showSecret, setShowSecret] = useState(false);
+
+  useEffect(() => {
+    // Includes the page's load time, so it can only overstate a slow clock
+    // by a second or two — well inside the warning threshold.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setClockSkewSeconds(Math.round((Date.now() - serverNow) / 1000));
+  }, [serverNow]);
+
+  const clockWarning =
+    Math.abs(clockSkewSeconds) >= CLOCK_WARNING_SECONDS ? (
+      <p role="alert" className="text-sm text-amber-300 leading-relaxed">
+        This device&apos;s clock is about {formatSkew(clockSkewSeconds)}. If your codes come from this device, they
+        won&apos;t work until its date &amp; time is set to automatic (in Settings).
+      </p>
+    ) : null;
 
   async function startSetup() {
     setError(null);
@@ -79,8 +101,8 @@ export function TwoFactorForm({ mode }: { mode: "enrol" | "verify" }) {
     if (verifyError) {
       setIsPending(false);
       setError(
-        verifyError.message.toLowerCase().includes("invalid")
-          ? "That code didn't work. Codes change every 30 seconds — try the current one."
+        verifyError.code === "mfa_verification_failed"
+          ? "That code wasn't accepted. Type the code your authenticator shows for Fitness Blueprint right now — not one suggested from a text message — and check your phone's time is set to automatic."
           : verifyError.message
       );
       return;
@@ -108,6 +130,10 @@ export function TwoFactorForm({ mode }: { mode: "enrol" | "verify" }) {
           </li>
           <li>Enter the 6-digit code it shows.</li>
         </ol>
+        <p className="text-xs text-blueprint-muted leading-relaxed">
+          On Android, install Google Authenticator from the Play Store first — &quot;Add to this phone&quot; needs it.
+        </p>
+        {clockWarning}
         {error && (
           <p role="alert" className="text-sm text-red-400">
             {error}
@@ -145,6 +171,7 @@ export function TwoFactorForm({ mode }: { mode: "enrol" | "verify" }) {
           )}
         </div>
       )}
+      {clockWarning}
       <div>
         <label htmlFor="code" className="block text-xs font-mono uppercase tracking-wide text-blueprint-muted mb-2">
           6-digit code
@@ -174,4 +201,9 @@ export function TwoFactorForm({ mode }: { mode: "enrol" | "verify" }) {
       </button>
     </form>
   );
+}
+
+function formatSkew(seconds: number) {
+  const amount = Math.abs(seconds) >= 90 ? `${Math.round(Math.abs(seconds) / 60)} minutes` : `${Math.abs(seconds)} seconds`;
+  return `${amount} ${seconds > 0 ? "fast" : "slow"}`;
 }
