@@ -1,8 +1,8 @@
 "use server";
 
 import { requireProfile } from "@/lib/auth";
-
 import { userFacingError } from "@/lib/user-facing-error";
+
 export type ActionResult = { error?: string };
 
 const FEELINGS = ["great", "okay", "rough"] as const;

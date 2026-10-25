@@ -1,11 +1,11 @@
 "use server";
 
 import { requireOwner } from "@/lib/auth";
-import { type SegmentInput, toIntensityType, toScoreType } from "@/lib/workout-content";
+import { type SegmentInput } from "@/lib/workout-content";
 import { generateProgressionWeeks as generateWeeksFromAI } from "@/lib/progression-ai/gemini";
+import { loadWorkout } from "@/lib/workout-store";
 import { saveWorkoutTemplate, assignTemplateToSessionsInWeek } from "./actions";
 
-import { userFacingError } from "@/lib/user-facing-error";
 export type GenerateResult = { weeks?: SegmentInput[][]; error?: string };
 
 /**
@@ -28,78 +28,14 @@ export async function generateProgressionWeeks(
     return { error: "Describe how you want the block to progress." };
   }
 
-  const { data: segments, error: segmentsError } = await supabase
-    .from("template_segments")
-    .select("id, type, label, default_rounds, is_scored, text_content, score_type, sort_order")
-    .eq("template_id", templateId)
-    .order("sort_order");
-
-  if (segmentsError) {
-    return { error: userFacingError(segmentsError) };
+  const template = await loadWorkout(supabase, "template", templateId);
+  if (template.error || !template.segments) {
+    return { error: template.error ?? "Could not read that template." };
   }
-
-  const segmentRows = segments ?? [];
-  if (segmentRows.length === 0) {
+  const week1 = template.segments;
+  if (week1.length === 0) {
     return { error: "Save week 1's content before generating the rest of the block." };
   }
-
-  const { data: exercises, error: exercisesError } = await supabase
-    .from("template_exercises")
-    .select("id, segment_id, name, metric_type, each_side, tempo, note, video_url, sort_order")
-    .in("segment_id", segmentRows.map((s) => s.id))
-    .order("sort_order");
-
-  if (exercisesError) {
-    return { error: userFacingError(exercisesError) };
-  }
-
-  const exerciseRows = exercises ?? [];
-  const { data: sets, error: setsError } = await supabase
-    .from("template_exercise_sets")
-    .select("exercise_id, target, rest_seconds, intensity_type, intensity_value, sort_order")
-    .in("exercise_id", exerciseRows.map((e) => e.id))
-    .order("sort_order");
-
-  if (setsError) {
-    return { error: userFacingError(setsError) };
-  }
-
-  const setsByExercise = new Map<string, typeof sets>();
-  for (const set of sets ?? []) {
-    const list = setsByExercise.get(set.exercise_id) ?? [];
-    list.push(set);
-    setsByExercise.set(set.exercise_id, list);
-  }
-
-  const exercisesBySegment = new Map<string, typeof exerciseRows>();
-  for (const exercise of exerciseRows) {
-    const list = exercisesBySegment.get(exercise.segment_id) ?? [];
-    list.push(exercise);
-    exercisesBySegment.set(exercise.segment_id, list);
-  }
-
-  const week1: SegmentInput[] = segmentRows.map((segment) => ({
-    type: segment.type,
-    label: segment.label,
-    defaultRounds: segment.default_rounds,
-    isScored: segment.is_scored,
-    textContent: segment.text_content,
-    scoreType: toScoreType(segment.score_type),
-    exercises: (exercisesBySegment.get(segment.id) ?? []).map((exercise) => ({
-      name: exercise.name,
-      metricType: exercise.metric_type,
-      eachSide: exercise.each_side,
-      tempo: exercise.tempo,
-      note: exercise.note,
-      videoUrl: exercise.video_url,
-      sets: (setsByExercise.get(exercise.id) ?? []).map((set) => ({
-        target: set.target,
-        restSeconds: set.rest_seconds,
-        intensityType: toIntensityType(set.intensity_type),
-        intensityValue: set.intensity_value,
-      })),
-    })),
-  }));
 
   try {
     const weeks = await generateWeeksFromAI(week1, weekCount, instruction);

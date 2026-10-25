@@ -2,9 +2,10 @@
 
 import { requireOwner } from "@/lib/auth";
 import { refuseIfLogged } from "@/lib/session-workout";
-import { type SegmentInput, toIntensityType, intensityColumns, toScoreType } from "@/lib/workout-content";
-
+import { type SegmentInput } from "@/lib/workout-content";
 import { userFacingError } from "@/lib/user-facing-error";
+import { insertWorkout, loadWorkout, workoutProblem } from "@/lib/workout-store";
+
 export type ActionResult = { error?: string; templateId?: string };
 
 /**
@@ -26,22 +27,8 @@ export async function saveWorkoutTemplate(
   if (!trimmedName) {
     return { error: "Name this template." };
   }
-  if (segments.length === 0) {
-    return { error: "Add at least one segment." };
-  }
-  for (const segment of segments) {
-    if (segment.textContent === null && segment.exercises.length === 0) {
-      return { error: "Every segment needs at least one exercise." };
-    }
-    for (const exercise of segment.exercises) {
-      if (!exercise.name.trim()) {
-        return { error: "Every exercise needs a name." };
-      }
-      if (exercise.sets.length === 0) {
-        return { error: "Every exercise needs at least one set." };
-      }
-    }
-  }
+  const problem = workoutProblem(segments);
+  if (problem) return { error: problem };
 
   let id = templateId;
 
@@ -72,61 +59,8 @@ export async function saveWorkoutTemplate(
     id = inserted.id;
   }
 
-  for (const [i, segment] of segments.entries()) {
-    const { data: insertedSegment, error: segmentError } = await supabase
-      .from("template_segments")
-      .insert({
-        template_id: id,
-        type: segment.type,
-        label: segment.label?.trim() || null,
-        default_rounds: segment.defaultRounds,
-        is_scored: segment.isScored,
-        text_content: segment.textContent?.trim() || null,
-        score_type: segment.scoreType,
-        sort_order: i,
-      })
-      .select("id")
-      .single();
-
-    if (segmentError || !insertedSegment) {
-      return { error: userFacingError(segmentError, "Could not save segment.") };
-    }
-
-    for (const [j, exercise] of segment.exercises.entries()) {
-      const { data: insertedExercise, error: exerciseError } = await supabase
-        .from("template_exercises")
-        .insert({
-          segment_id: insertedSegment.id,
-          name: exercise.name.trim(),
-          metric_type: exercise.metricType,
-          each_side: exercise.eachSide,
-          tempo: exercise.tempo?.trim() || null,
-          note: exercise.note?.trim() || null,
-          video_url: exercise.videoUrl?.trim() || null,
-          sort_order: j,
-        })
-        .select("id")
-        .single();
-
-      if (exerciseError || !insertedExercise) {
-        return { error: userFacingError(exerciseError, "Could not save exercise.") };
-      }
-
-      const setRows = exercise.sets.map((set, k) => ({
-        exercise_id: insertedExercise.id,
-        set_number: k + 1,
-        target: set.target?.trim() || null,
-        rest_seconds: set.restSeconds,
-        ...intensityColumns(set),
-        sort_order: k,
-      }));
-
-      const { error: setsError } = await supabase.from("template_exercise_sets").insert(setRows);
-      if (setsError) {
-        return { error: userFacingError(setsError) };
-      }
-    }
-  }
+  const inserted = await insertWorkout(supabase, "template", id, segments);
+  if (inserted.error) return { error: inserted.error };
 
   return { templateId: id };
 }
@@ -196,76 +130,11 @@ export async function deleteWorkoutTemplate(templateId: string): Promise<ActionR
 export async function assignTemplateToSession(templateId: string, sessionId: string): Promise<ActionResult> {
   const { supabase } = await requireOwner();
 
-  const { data: segments, error: segmentsError } = await supabase
-    .from("template_segments")
-    .select("id, type, label, default_rounds, is_scored, text_content, score_type, sort_order")
-    .eq("template_id", templateId)
-    .order("sort_order");
-
-  if (segmentsError) {
-    return { error: userFacingError(segmentsError) };
+  const template = await loadWorkout(supabase, "template", templateId);
+  if (template.error || !template.segments) {
+    return { error: template.error ?? "Could not read that template." };
   }
-
-  const segmentRows = segments ?? [];
-  const { data: exercises, error: exercisesError } = await supabase
-    .from("template_exercises")
-    .select("id, segment_id, name, metric_type, each_side, tempo, note, video_url, sort_order")
-    .in("segment_id", segmentRows.map((s) => s.id))
-    .order("sort_order");
-
-  if (exercisesError) {
-    return { error: userFacingError(exercisesError) };
-  }
-
-  const exerciseRows = exercises ?? [];
-  const { data: sets, error: setsError } = await supabase
-    .from("template_exercise_sets")
-    .select("exercise_id, target, rest_seconds, intensity_type, intensity_value, sort_order")
-    .in("exercise_id", exerciseRows.map((e) => e.id))
-    .order("sort_order");
-
-  if (setsError) {
-    return { error: userFacingError(setsError) };
-  }
-
-  const setsByExercise = new Map<string, typeof sets>();
-  for (const set of sets ?? []) {
-    const list = setsByExercise.get(set.exercise_id) ?? [];
-    list.push(set);
-    setsByExercise.set(set.exercise_id, list);
-  }
-
-  const exercisesBySegment = new Map<string, typeof exerciseRows>();
-  for (const exercise of exerciseRows) {
-    const list = exercisesBySegment.get(exercise.segment_id) ?? [];
-    list.push(exercise);
-    exercisesBySegment.set(exercise.segment_id, list);
-  }
-
-  const input: SegmentInput[] = segmentRows.map((segment) => ({
-    type: segment.type,
-    label: segment.label,
-    defaultRounds: segment.default_rounds,
-    isScored: segment.is_scored,
-    textContent: segment.text_content,
-    scoreType: toScoreType(segment.score_type),
-    exercises: (exercisesBySegment.get(segment.id) ?? []).map((exercise) => ({
-      name: exercise.name,
-      metricType: exercise.metric_type,
-      eachSide: exercise.each_side,
-      tempo: exercise.tempo,
-      note: exercise.note,
-      videoUrl: exercise.video_url,
-      sets: (setsByExercise.get(exercise.id) ?? []).map((set) => ({
-        target: set.target,
-        restSeconds: set.rest_seconds,
-        intensityType: toIntensityType(set.intensity_type),
-        intensityValue: set.intensity_value,
-      })),
-    })),
-  }));
-
-  if (input.length === 0) {
+  if (template.segments.length === 0) {
     return { error: "That template has no content yet." };
   }
 
@@ -278,61 +147,6 @@ export async function assignTemplateToSession(templateId: string, sessionId: str
     return { error: userFacingError(deleteError) };
   }
 
-  for (const [i, segment] of input.entries()) {
-    const { data: insertedSegment, error: segmentError } = await supabase
-      .from("session_segments")
-      .insert({
-        session_id: sessionId,
-        type: segment.type,
-        label: segment.label,
-        default_rounds: segment.defaultRounds,
-        is_scored: segment.isScored,
-        text_content: segment.textContent?.trim() || null,
-        score_type: segment.scoreType,
-        sort_order: i,
-      })
-      .select("id")
-      .single();
-
-    if (segmentError || !insertedSegment) {
-      return { error: userFacingError(segmentError, "Could not assign segment.") };
-    }
-
-    for (const [j, exercise] of segment.exercises.entries()) {
-      const { data: insertedExercise, error: exerciseError } = await supabase
-        .from("session_exercises")
-        .insert({
-          segment_id: insertedSegment.id,
-          name: exercise.name,
-          metric_type: exercise.metricType,
-          each_side: exercise.eachSide,
-          tempo: exercise.tempo,
-          note: exercise.note,
-          video_url: exercise.videoUrl,
-          sort_order: j,
-        })
-        .select("id")
-        .single();
-
-      if (exerciseError || !insertedExercise) {
-        return { error: userFacingError(exerciseError, "Could not assign exercise.") };
-      }
-
-      const setRows = exercise.sets.map((set, k) => ({
-        exercise_id: insertedExercise.id,
-        set_number: k + 1,
-        target: set.target,
-        rest_seconds: set.restSeconds,
-        ...intensityColumns(set),
-        sort_order: k,
-      }));
-
-      const { error: insertSetsError } = await supabase.from("session_exercise_sets").insert(setRows);
-      if (insertSetsError) {
-        return { error: userFacingError(insertSetsError) };
-      }
-    }
-  }
-
-  return {};
+  return insertWorkout(supabase, "session", sessionId, template.segments);
 }
+

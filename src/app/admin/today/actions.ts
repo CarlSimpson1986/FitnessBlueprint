@@ -3,8 +3,8 @@
 import { requireStaffAccess } from "@/lib/coach-permissions";
 import { LATE_CANCEL_MS, ukSessionStart } from "@/lib/booking-window";
 import { SESSION_NOTE_MAX_LENGTH, SESSION_NOTE_TAGS, type SessionNote } from "@/lib/session-notes";
-
 import { userFacingError } from "@/lib/user-facing-error";
+
 export type ActionResult = { error?: string };
 
 export type Feeling = "great" | "okay" | "rough";

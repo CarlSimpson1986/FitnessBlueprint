@@ -2,8 +2,8 @@
 
 import { requireProfile } from "@/lib/auth";
 import { FEEDBACK_QUESTIONS, type FeedbackRatings } from "@/lib/session-feedback";
-
 import { userFacingError } from "@/lib/user-facing-error";
+
 export type SubmitFeedbackResult = { error?: string; alreadySubmitted?: boolean };
 
 /**

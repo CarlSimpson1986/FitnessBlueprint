@@ -6,8 +6,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { activateMembership, createAccountWithWelcome, escapeHtml } from "@/lib/accounts";
 import { sendEmail } from "@/lib/email";
 import { COACH_AREAS, type CoachArea } from "@/lib/coach-permissions";
-
 import { userFacingError } from "@/lib/user-facing-error";
+
 // Deliberately no revalidatePath() in these — they're called directly
 // from a client startTransition (not a <form action>), and pairing that
 // with revalidatePath caused the transition's pending state to hang

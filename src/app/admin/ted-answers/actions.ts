@@ -3,8 +3,8 @@
 import { requireOwner } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { embedText } from "@/lib/coach-ted/gemini";
-
 import { userFacingError } from "@/lib/user-facing-error";
+
 export type ActionResult = { error?: string };
 
 /*

@@ -1,8 +1,8 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-
 import { userFacingError } from "@/lib/user-facing-error";
+
 export type GuestResponse = {
   accept: boolean;
   phone?: string;

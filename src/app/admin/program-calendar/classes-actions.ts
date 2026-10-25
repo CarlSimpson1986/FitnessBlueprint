@@ -1,8 +1,8 @@
 "use server";
 
 import { requireOwner } from "@/lib/auth";
-
 import { userFacingError } from "@/lib/user-facing-error";
+
 export type ActionResult = { error?: string };
 
 export type ClassInput = {

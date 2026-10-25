@@ -2,8 +2,8 @@
 
 import { requireProfile } from "@/lib/auth";
 import { openCheckinWeek } from "@/lib/weekly-checkin";
-
 import { userFacingError } from "@/lib/user-facing-error";
+
 export type ActionResult = { error?: string };
 
 export type WeeklyCheckinInput = {

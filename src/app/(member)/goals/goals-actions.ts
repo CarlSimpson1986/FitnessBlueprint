@@ -2,8 +2,8 @@
 
 import { requireProfile } from "@/lib/auth";
 import { BODY_GOAL_METRICS, isBodyGoalMetric } from "@/lib/goal-tracking";
-
 import { userFacingError } from "@/lib/user-facing-error";
+
 export type ActionResult = { error?: string };
 
 export type GoalType = "lose_weight" | "build_muscle" | "build_strength" | "general_fitness" | "event_prep";

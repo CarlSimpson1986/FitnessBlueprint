@@ -2,8 +2,8 @@
 
 import { requireProfile } from "@/lib/auth";
 import { toLocalDateKey } from "@/lib/format";
-
 import { userFacingError } from "@/lib/user-facing-error";
+
 export type ToggleHabitResult = { error?: string };
 
 export async function toggleHabit(habitId: string, isCompleted: boolean): Promise<ToggleHabitResult> {
