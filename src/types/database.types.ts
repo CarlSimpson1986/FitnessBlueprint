@@ -1388,11 +1388,45 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_signin_codes: {
+        Row: {
+          session_id: string
+          user_id: string
+          code_hash: string
+          expires_at: string
+          attempts: number
+          sent_at: string
+          verified_at: string | null
+        }
+        Insert: {
+          session_id: string
+          user_id: string
+          code_hash: string
+          expires_at: string
+          attempts?: number
+          sent_at?: string
+          verified_at?: string | null
+        }
+        Update: {
+          session_id?: string
+          user_id?: string
+          code_hash?: string
+          expires_at?: string
+          attempts?: number
+          sent_at?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      staff_session_verified: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       set_health_choices: {
         Args: {
           p_consent: boolean

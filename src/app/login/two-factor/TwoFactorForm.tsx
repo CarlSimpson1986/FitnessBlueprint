@@ -12,16 +12,17 @@ type Setup = { factorId: string; qrCode: string; secret: string; uri: string };
 // devices were a minute or more off — so say so before they try.
 const CLOCK_WARNING_SECONDS = 25;
 
-const inputClass =
+export const codeInputClass =
   "w-full bg-blueprint-raised border border-blueprint-line rounded px-4 py-3 text-blueprint-ink tracking-[0.3em] text-center text-lg focus:outline-none focus:border-blueprint-accent";
-const buttonClass =
+export const codeButtonClass =
   "w-full bg-blueprint-accent text-blueprint-bg font-mono text-sm uppercase tracking-wide py-3 rounded hover:opacity-90 disabled:opacity-50 transition";
 
 /**
  * TOTP two-factor for staff (0038), on the browser client so the upgraded
  * aal2 session lands in the auth cookies. "enrol" = first-time setup
  * (QR code / "add to this phone" link + first code), "verify" = enter the
- * code at sign-in.
+ * code at sign-in. Anyone stuck can use an emailed code instead
+ * (EmailCodeForm, 0068).
  */
 export function TwoFactorForm({ mode, serverNow }: { mode: "enrol" | "verify"; serverNow: number }) {
   const router = useRouter();
@@ -114,11 +115,6 @@ export function TwoFactorForm({ mode, serverNow }: { mode: "enrol" | "verify"; s
     router.refresh();
   }
 
-  async function handleSignOut() {
-    await createClient().auth.signOut();
-    router.replace("/login");
-  }
-
   if (mode === "enrol" && !setup) {
     return (
       <div className="space-y-4">
@@ -139,12 +135,10 @@ export function TwoFactorForm({ mode, serverNow }: { mode: "enrol" | "verify"; s
             {error}
           </p>
         )}
-        <button type="button" onClick={startSetup} disabled={isPending} className={buttonClass}>
+        <button type="button" onClick={startSetup} disabled={isPending} className={codeButtonClass}>
           {isPending ? "Starting…" : "Set up two-factor"}
         </button>
-        <button type="button" onClick={handleSignOut} className="w-full text-xs text-blueprint-muted hover:text-blueprint-accent">
-          Sign out
-        </button>
+        <SignOutButton />
       </div>
     );
   }
@@ -153,7 +147,7 @@ export function TwoFactorForm({ mode, serverNow }: { mode: "enrol" | "verify"; s
     <form onSubmit={handleSubmit} className="space-y-5">
       {setup && (
         <div className="space-y-4">
-          <a href={setup.uri} className={`${buttonClass} block text-center`}>
+          <a href={setup.uri} className={`${codeButtonClass} block text-center`}>
             Add to this phone
           </a>
           <div className="flex justify-center">
@@ -185,7 +179,7 @@ export function TwoFactorForm({ mode, serverNow }: { mode: "enrol" | "verify"; s
           required
           value={code}
           onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))}
-          className={inputClass}
+          className={codeInputClass}
         />
       </div>
       {error && (
@@ -193,13 +187,24 @@ export function TwoFactorForm({ mode, serverNow }: { mode: "enrol" | "verify"; s
           {error}
         </p>
       )}
-      <button type="submit" disabled={isPending || code.length !== 6} className={buttonClass}>
+      <button type="submit" disabled={isPending || code.length !== 6} className={codeButtonClass}>
         {isPending ? "Checking…" : setup ? "Turn on two-factor" : "Continue"}
       </button>
-      <button type="button" onClick={handleSignOut} className="w-full text-xs text-blueprint-muted hover:text-blueprint-accent">
-        Sign out
-      </button>
+      <SignOutButton />
     </form>
+  );
+}
+
+export function SignOutButton() {
+  const router = useRouter();
+  async function handleSignOut() {
+    await createClient().auth.signOut();
+    router.replace("/login");
+  }
+  return (
+    <button type="button" onClick={handleSignOut} className="w-full text-xs text-blueprint-muted hover:text-blueprint-accent">
+      Sign out
+    </button>
   );
 }
 
