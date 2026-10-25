@@ -75,13 +75,20 @@ to main, etc). The rest depend on you reading this file.
 
 - Named exports, not default exports, for anything in `src/lib/`.
 - Money is always integer pence (`price_pence`), never a float.
+- Show database/Supabase errors with `userFacingError(error)` from
+  `src/lib/user-facing-error.ts`, never `error.message` — raw Postgres
+  messages leak table and policy names (security audit 2026-10-24). Our
+  own `raise exception` messages and Auth errors still come through.
 - Every new Supabase table needs a one-line `comment on table` if its
   purpose isn't obvious from the name — see existing migrations for the
   pattern.
 
 ## Verifying your own work
 
-Run `npm run verify` (typecheck + lint) before considering a change done.
+Run `npm run verify` (typecheck + lint) and `npm test` (unit tests in
+`tests/unit/`) before considering a change done — CI runs both on every
+push and PR. After an RLS change, also run `npm run test:rls` (read-only
+check of what signed-out visitors can read).
 For anything touching bookings, credits, or payments, also state which
 RLS policy governs the change and why it's still correct — don't just
 assert the code works, show the policy that makes it safe.
